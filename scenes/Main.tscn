@@ -340,9 +340,9 @@ mouse_filter = 2
 [node name="NextButton" type="Button" parent="UI/IntroOverlay"]
 layout_mode = 0
 offset_left = 516.0
-offset_top = 420.0
+offset_top = 556.0
 offset_right = 636.0
-offset_bottom = 458.0
+offset_bottom = 594.0
 text = "التالي"
 text_direction = 3
 language = "ar"

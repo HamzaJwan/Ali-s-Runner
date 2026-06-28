@@ -882,3 +882,22 @@ Validation:
 Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, spawn interval/X, all four speeds) — this milestone is entirely cinematic-presentation code; no physics or `Player._physics_process` logic was touched.
 
 Commit: `autopilot: add subtle idle life to story characters`.
+
+## Level 1 Polish Autopilot — Milestone 5: Cinematic Intro Layout Polish — STATUS: COMPLETE
+
+Files changed: `scenes/Main.tscn`.
+
+**Root cause of the reported overlap:** there is no `Camera2D` in this project (by explicit design — world coordinates map 1:1 to screen pixels), so `father_npc`'s world X (`ENCOUNTER_TARGET_X = 610`) lands directly under the static `NextButton`, which was placed at screen X `516-636`. Vertically, the button sat at Y `420-458`, and Father (now `215px` tall, standing with his feet anchored to `ROAD_SURFACE_Y = 510`) occupies roughly Y `295-510` — the button was squarely inside his torso/chest region the entire time he's on screen, exactly matching the report.
+
+**Fix:** moved `NextButton` down to Y `556-594` (same X `516-636`, same size), placing it well below every character's feet (`ROAD_SURFACE_Y = 510`) on the ground strip in front of them, clear of both Father's and Ali's silhouettes and clear of every dialogue-bubble position the narrator/Ali/Father lines can occupy (`DialogueBubbleHelper` never places a bubble bottom below Y `~318` in this scene, so there is a wide, intentional gap between the lowest bubble and the relocated button). `SkipButton` (top-right, `1016-1136 / 14-50`) was never reported as overlapping anything and was left untouched.
+
+**Composition (Ali on one side, Father as a heroic destination):** left `ALI_STORY_X` (`300`) and `ENCOUNTER_TARGET_X` (`610`) untouched rather than widening the gap further — both constants are shared with every checkpoint encounter (Fatima/Zainab/Jomana/Father all reuse `ENCOUNTER_TARGET_X`, and `_prepare_player_for_encounter()` reuses `ALI_STORY_X` for every cinematic, not just the intro), so changing either would have been a broad, higher-risk change touching code paths well outside "fix the button." The existing `~310px` separation already reads as two distinct sides of the screen with the dialogue centered between them, and Milestones 1 and 4 already added the requested heroic weight (Father's larger `visual_height`, the asymmetric dim/brighten tint, and his idle breathing) without needing to also move him.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running, `tmp_m5_smoke_test.gd` + its `.uid`): computed Father's actual on-screen bounding box from his live `visual_height` and position and confirmed the relocated `NextButton`'s rect no longer intersects it and sits clearly below his feet; confirmed `Next`/`Skip` still drive the intro correctly (Next still advances `intro_step_index`, Skip still ends `intro_active` and reaches gameplay). **0 failed assertions.**
+
+Immutable benchmarks unaffected — this milestone only moved one `Control` node's static offsets in `Main.tscn`; no script logic, physics, or shared world-position constant was touched.
+
+Commit: `autopilot: polish cinematic intro layout and controls`.
