@@ -28,6 +28,7 @@ const DIFFICULTY_MANAGER := preload("res://scripts/gameplay/difficulty_manager.g
 const OBSTACLE_SPAWNER := preload("res://scripts/gameplay/obstacle_spawner.gd")
 const DIALOGUE_BUBBLE_HELPER := preload("res://scripts/ui/dialogue_bubble_helper.gd")
 const BACKGROUND_MOTION := preload("res://scripts/visual/background_motion.gd")
+const AUDIO_MANAGER := preload("res://scripts/audio/audio_manager.gd")
 const BUILDINGS_PARALLAX_FACTOR := 0.05
 const FOREGROUND_PARALLAX_FACTOR := 0.15
 const GROUND_PARALLAX_FACTOR := 0.65
@@ -150,6 +151,7 @@ var checkpoint_cinematic_active := false
 var active_encounter_node: Node2D
 var encounter_controller := ENCOUNTER_CONTROLLER.new()
 var background_motion := BACKGROUND_MOTION.new()
+var audio_manager := AUDIO_MANAGER.new()
 var countdown_active := false
 var countdown_remaining := 0.0
 var countdown_number := 0
@@ -186,12 +188,19 @@ func _ready() -> void:
 	obstacle_spawner.setup(spawn_timer)
 	obstacle_spawner.obstacle_passed.connect(_on_obstacle_passed)
 	obstacle_spawner.obstacle_hit.connect(_on_obstacle_hit)
+	if not player.landed.is_connected(_on_player_landed):
+		player.landed.connect(_on_player_landed)
 	_apply_fixed_visual_layout()
 	_apply_optional_backgrounds()
 	_apply_optional_story_textures()
 	_apply_optional_ali_focus_texture()
 	_setup_background_motion()
+	audio_manager.setup(self)
 	_show_start_screen()
+
+
+func _on_player_landed() -> void:
+	audio_manager.play_land()
 
 
 func _process(delta: float) -> void:
@@ -246,10 +255,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("ui_accept"):
 		player.jump()
+		audio_manager.play_jump()
 	elif event is InputEventMouseButton and event.pressed:
 		player.jump()
+		audio_manager.play_jump()
 	elif event is InputEventScreenTouch and event.pressed:
 		player.jump()
+		audio_manager.play_jump()
 
 
 func _show_start_screen() -> void:
@@ -373,6 +385,7 @@ func _on_play_pressed() -> void:
 	if started or intro_active:
 		return
 	print("Play button pressed")
+	audio_manager.play_button_click()
 	_leave_menu_to_runner_framing()
 	if intro_shown:
 		_start_run()
@@ -384,6 +397,7 @@ func _on_skip_intro_button_pressed() -> void:
 	if started or intro_active:
 		return
 	print("Skip intro button pressed")
+	audio_manager.play_button_click()
 	_leave_menu_to_runner_framing()
 	intro_shown = true
 	_start_run()
@@ -413,6 +427,7 @@ func _show_intro_step() -> void:
 func _on_intro_next_pressed() -> void:
 	if not intro_active:
 		return
+	audio_manager.play_button_click()
 	intro_step_index += 1
 	if intro_step_index >= INTRO_LINES.size():
 		_finish_intro()
@@ -423,6 +438,7 @@ func _on_intro_next_pressed() -> void:
 func _on_intro_skip_pressed() -> void:
 	if not intro_active:
 		return
+	audio_manager.play_button_click()
 	_finish_intro()
 
 
@@ -488,6 +504,7 @@ func _on_obstacle_hit() -> void:
 
 func _consume_zainab_shield() -> void:
 	zainab_shield_active = false
+	audio_manager.play_hit()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	player.set_gameplay_active(false)
@@ -509,11 +526,13 @@ func _end_run() -> void:
 		return
 
 	game_over = true
+	audio_manager.play_hit()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	player.kill()
 	_play_impact_bounce()
 	await get_tree().create_timer(GAME_OVER_IMPACT_DELAY).timeout
+	audio_manager.play_game_over()
 	_show_game_over_options()
 
 
@@ -661,6 +680,7 @@ func _open_checkpoint_cinematic() -> void:
 	checkpoint_arriving = false
 	checkpoint_active = true
 	checkpoint_cinematic_active = true
+	audio_manager.play_checkpoint()
 	_configure_checkpoint_panel()
 	_show_encounter_dialogue_step()
 	checkpoint_panel.visible = true
@@ -711,8 +731,14 @@ func _show_encounter_dialogue_step() -> void:
 			_pop_reward_text()
 			if encounter_controller.character_id == EncounterCharacter.FATIMA:
 				_apply_fatima_reward_bonus()
+				audio_manager.play_reward_star()
 			elif encounter_controller.character_id == EncounterCharacter.ZAINAB:
 				_apply_zainab_shield_grant()
+				audio_manager.play_reward_heart()
+			elif encounter_controller.character_id == EncounterCharacter.JOMANA:
+				audio_manager.play_reward_key()
+			elif encounter_controller.character_id == EncounterCharacter.FATHER:
+				audio_manager.play_victory()
 
 	if encounter_controller.is_final_step():
 		checkpoint_next_hint.visible = false
@@ -783,6 +809,7 @@ func _apply_zainab_shield_grant() -> void:
 func _advance_encounter_dialogue() -> void:
 	if not encounter_controller.advance_dialogue():
 		return
+	audio_manager.play_dialogue_blip()
 	_show_encounter_dialogue_step()
 	print("[encounter] dialogue_step=",
 		encounter_controller.dialogue_step_index)
@@ -804,6 +831,7 @@ func _on_checkpoint_continue_pressed() -> void:
 	if not encounter_controller.is_final_step():
 		return
 
+	audio_manager.play_button_click()
 	if encounter_controller.character_id == EncounterCharacter.FATHER:
 		print("[encounter] Father ending complete; restarting from beginning")
 		_start_run()

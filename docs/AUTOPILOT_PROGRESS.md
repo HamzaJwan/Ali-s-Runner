@@ -421,3 +421,57 @@ Immutable benchmarks re-verified unchanged: gravity `1050.0`, jump `-440.0`, fal
 * Play through to a checkpoint, a Game Over, Retry, and Restart — confirm all still work exactly as before.
 
 Commit: `git add -A && git commit -m "autopilot: v1.2A-fix foreground and v1.25A hero menu redesign" && git push`.
+
+---
+
+## v0.95A — Safe Audio Integration for Existing CC0 SFX Candidates — 2026-06-28 (continued session)
+
+Status: **PARTIAL_COMPLETE** — SFX integrated, human listening review required, music/ambience missing and correctly left disabled.
+
+Files changed: new `scripts/audio/audio_manager.gd`, `scripts/main.gd`, `scripts/player.gd`. `scenes/Main.tscn` was not touched — `AudioStreamPlayer` nodes are created dynamically at runtime (mirroring `scripts/visual/background_motion.gd`'s established pattern of creating nodes in code rather than editing the scene file), so no scene wiring was needed.
+
+### Implementation
+
+`AudioManager` (`RefCounted`, instantiated once in `main.gd` exactly like `encounter_controller`/`background_motion`) holds a `SOUND_PATHS` dictionary (11 entries) and a `VOLUME_DB` dictionary matching the requested levels exactly (UI/checkpoint/reward/victory −8dB, hit/game_over −10dB, jump/land −12dB, dialogue blip −18dB). `setup(parent_node)` runs once in `main.gd`'s `_ready()`: for each sound, it checks `ResourceLoader.exists(path, &"AudioStream")`, loads the stream once, creates one `AudioStreamPlayer` child under `parent_node` (`Main` itself) with the correct `volume_db`, and caches the player in a dictionary — no per-frame loading anywhere. Missing/failed sounds are logged exactly once via a `_missing_logged` guard dictionary and simply skipped (`play_*()` on an unloaded sound is a silent no-op, confirmed safe by the smoke test). Exposed exactly the 11 requested methods: `play_button_click()`, `play_dialogue_blip()`, `play_jump()`, `play_land()`, `play_hit()`, `play_checkpoint()`, `play_reward_star()`, `play_reward_heart()`, `play_reward_key()`, `play_game_over()`, `play_victory()`.
+
+One small addition to `player.gd`: a new `signal landed`, emitted at the exact point `_update_visual_pose()` already detects the airborne→grounded transition (`_was_airborne` clearing). This was the cleanest way to detect "landing" from `main.gd` without duplicating ground-state logic — `main.gd` connects to it once in `_ready()` and calls `audio_manager.play_land()`.
+
+### Audio wiring (where each sound plays)
+
+* **button_click** — Play button, Skip-Intro button, intro Next button, intro Skip button, checkpoint Continue button (all `_on_*_pressed()` handlers).
+* **dialogue_blip** — every successful `_advance_encounter_dialogue()` call (i.e. every time the player advances a checkpoint dialogue line) — not on the first line's initial display, only on advance, per the task's literal wording.
+* **jump** — every `player.jump()` call site in `_unhandled_input()` (ui_accept / mouse / touch) — fires on the input attempt itself, same as the existing jump-input handling; not gated on whether the jump buffer actually triggered a real jump (kept simple, no change to `player.gd`'s jump logic).
+* **land** — via the new `player.landed` signal, the instant Ali's airborne→grounded transition is detected.
+* **hit** — in both `_end_run()` (a real Game Over) and `_consume_zainab_shield()` (a hit that gets absorbed by the shield) — both are genuinely a "hit" event; the shield path skips `game_over` audio entirely since the run doesn't end there.
+* **game_over** — in `_end_run()`, after the existing `GAME_OVER_IMPACT_DELAY` (0.45s) elapses, right before the Game Over UI becomes visible — so the sound and the visual land together.
+* **checkpoint** — in `_open_checkpoint_cinematic()`, the moment any of the four encounters (Fatima/Zainab/Jomana/Father) actually opens its dialogue panel.
+* **reward_star** — Fatima's reward dialogue step (alongside the existing `_apply_fatima_reward_bonus()` call).
+* **reward_heart** — Zainab's reward dialogue step (alongside `_apply_zainab_shield_grant()`).
+* **reward_key** — Jomana's reward dialogue step (new branch added to the same `match`).
+* **victory** — Father's reward/final-success dialogue step (new branch, same location).
+
+Explicitly **not** integrated: city/birds/wind ambience loops and the main theme music — confirmed via `docs/AUDIO_CREDITS.md` that all four remain `Missing (No safe CC0 candidate found yet)`. No playback code references them at all (not even disabled/commented-out hooks), so there's nothing that could accidentally try to load them later.
+
+### A real import gap found and fixed (not part of the original task, but blocking it)
+
+The 11 `.wav` files existed on disk but had **no `.import` files yet** — they were dropped into the project by another process but never opened in the Godot editor, so `ResourceLoader.exists(path, &"AudioStream")` returned `false` for all 11 on the first headless boot (logged as "missing" even though the files were physically present). Ran `Godot ... --headless --path . --import` (the dedicated CLI import-and-quit flag) to generate all 11 `.import` files; confirmed via a second headless boot that all 11 sounds then loaded correctly with their assigned `volume_db`. This wasn't a code bug — it's a one-time housekeeping step needed any time new raw assets are dropped into the project outside the editor.
+
+### Validation
+
+* Headless boot clean before and after the fix (exit 0 both times); audio log lines confirm all 11 sounds loaded post-import.
+* Smoke test (deleted after running): confirmed exactly 11 sound players exist; **simulated a missing sound** by removing `"jump"` from the manager's internal player dictionary and calling `play_jump()` — confirmed no crash, no error, silent no-op as designed; confirmed gameplay starts normally after skip-intro; confirmed the jump input path executes without error; confirmed a full Fatima-checkpoint regression (reward bonus, speed bump) still passes with the new audio hooks in place; confirmed Game Over still triggers correctly with the new `hit`/`game_over` sound calls inline; confirmed Restart still resets to baseline. **0 failed assertions.**
+* `git diff --stat`: only `scripts/main.gd` (28 lines) and `scripts/player.gd` (2 lines) changed, plus the new `scripts/audio/audio_manager.gd` file — `scenes/Main.tscn` untouched.
+
+Immutable benchmarks re-verified unchanged: gravity `1050.0`, jump `-440.0`, fall `700.0`, buffer `0.12`, road surface `510.0`, collision half-height `24.0`, spawn interval `2.25`, spawn X, base/post-checkpoint speeds `225/240/255/270`, all four trigger scores `15/35/60/90`. Story text, reward logic, retry/restart logic, and menu layout were not touched by this task.
+
+### HUMAN_AUDIO_REVIEW_REQUIRED checklist
+
+All 11 sounds are Kenney CC0 placeholders, not yet quality-checked by ear for this specific game's tone:
+
+* Confirm none of the 11 sounds feel jarring, too loud, or too quiet relative to each other at the assigned `volume_db` levels.
+* Confirm `dialogue_blip` (−18dB) doesn't get lost under the other sounds or feel mistimed against the Arabic dialogue advancing.
+* Confirm `hit`/`game_over` don't feel scary or violent for a child-friendly game (the source pack is generic UI clicks/switches, not impact/violence sounds, but verify in context).
+* Confirm `reward_star`/`reward_heart`/`reward_key`/`victory` feel emotionally appropriate for each character's gift, even though they're currently 4 different generic "switch" sounds rather than custom-composed stingers.
+* Confirm `jump`/`land` don't feel out of sync with the actual animation timing.
+* Confirm `button_click` doesn't feel repetitive when rapidly advancing dialogue (every Next/Continue press triggers it).
+* Music/ambience are silent by design — confirm that absence doesn't feel like a bug to a first-time player (it's expected at this stage, not a regression).

@@ -3,6 +3,7 @@ class_name Player
 extends CharacterBody2D
 
 signal died
+signal landed
 
 const ALI_VISUAL := preload("res://scripts/player_visual.gd")
 const GRAVITY := 1050.0
@@ -99,6 +100,7 @@ func _update_visual_pose(delta: float) -> void:
 	if _was_airborne:
 		_was_airborne = false
 		_land_pose_remaining = LAND_POSE_TIME
+		emit_signal("landed")
 	if _land_pose_remaining > 0.0:
 		_land_pose_remaining = maxf(_land_pose_remaining - delta, 0.0)
 		_update_visual(delta, ALI_VISUAL.LAND)

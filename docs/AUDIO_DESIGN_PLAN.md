@@ -121,8 +121,9 @@ Music:
 ## Implementation Order (See docs/AI_GAME_ROADMAP.md for full milestone details)
 
 1. **v0.95 — Audio Foundations**: button click, jump, land, checkpoint, game over, victory, one soft background loop.
-2. **v0.96 — Dialogue Typing Sound**: typewriter-style blips during Arabic story text.
-3. **v0.97 — Ambience Layers**: wind, birds, distant city loop.
+   * **v0.95A — STATUS: PARTIAL_COMPLETE (2026-06-28).** SFX wired via `scripts/audio/audio_manager.gd`: button click, dialogue blip, jump, land, hit, checkpoint, reward_star/heart/key, game over, victory — all 11 CC0 candidates from `docs/AUDIO_CREDITS.md` (Kenney UI Audio pack) load once and play through dynamically-created `AudioStreamPlayer`s, with safe no-crash fallback if any file is missing. **The "one soft background loop" part of v0.95 is still not done** — no ambience/music files exist yet (see `docs/AUDIO_CREDITS.md`), so it stays out of scope until a licensed loop is sourced. All 11 integrated sounds remain `HUMAN_AUDIO_REVIEW_REQUIRED` — they are generic Kenney UI clicks/switches repurposed for jump/land/hit/reward roles, not custom-composed for this game's tone, and haven't been quality-checked by ear yet.
+2. **v0.96 — Dialogue Typing Sound**: typewriter-style blips during Arabic story text. Note: v0.95A already added a simple non-typewriter `dialogue_blip` on each dialogue *advance* (one blip per line shown, not per character) — v0.96 would still be the separate, later step of blips per-character while text appears, if ever pursued.
+3. **v0.97 — Ambience Layers**: wind, birds, distant city loop. Still blocked — no licensed files exist.
 4. **Future — Dynamic Music**: mood changes per story chapter (intro calm → after Fatima warmer → after Zainab braver → after Jomana more energetic → father ending emotional/victory).
 
 Audio implementation must not begin before v0.95 is reached in the roadmap, and must not block or delay v0.65 (Fatima Checkpoint Prototype), which remains the next implementation task.
