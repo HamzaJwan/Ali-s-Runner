@@ -67,6 +67,7 @@ const OBSTACLE_DEFINITIONS := [
 
 var current_speed := 225.0
 var _spawn_timer: Timer
+var safety_window_spawns_remaining := 0
 
 
 func setup(spawn_timer: Timer) -> void:
@@ -91,9 +92,21 @@ func clear_obstacles() -> void:
 		obstacle.queue_free()
 
 
+func grant_safety_window(spawn_count: int) -> void:
+	safety_window_spawns_remaining = maxi(safety_window_spawns_remaining, spawn_count)
+
+
+func clear_safety_window() -> void:
+	safety_window_spawns_remaining = 0
+
+
 func _spawn_obstacle() -> void:
 	var chapter := DIFFICULTY_MANAGER.get_chapter_for_speed(current_speed)
-	var definition := _choose_weighted_definition(chapter)
+	var effective_chapter := chapter
+	if safety_window_spawns_remaining > 0:
+		effective_chapter = mini(chapter, 3)
+		safety_window_spawns_remaining -= 1
+	var definition := _choose_weighted_definition(effective_chapter)
 	var obstacle := OBSTACLE_SCENE.instantiate()
 	obstacle.configure(definition, current_speed)
 	obstacle.position = Vector2(
@@ -104,6 +117,7 @@ func _spawn_obstacle() -> void:
 	obstacle.hit.connect(obstacle_hit.emit)
 	add_child(obstacle)
 	print("[spawn] id=", definition["id"], " chapter=", chapter,
+		" effective_chapter=", effective_chapter,
 		" obstacle_x=", SPAWN_X, " margin=", SPAWN_MARGIN)
 
 

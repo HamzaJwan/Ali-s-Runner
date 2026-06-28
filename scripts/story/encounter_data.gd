@@ -19,12 +19,14 @@ const ARRIVAL_ENTER := "enter"
 const GAME_OVER_BEFORE_CHECKPOINT := \
 	"الطريق ما زال في بدايته يا علي… حاول مرة ثانية."
 
+const FATIMA_REWARD_BONUS := 5
+
 const ENCOUNTERS := {
 	FATIMA: {
 		"character_id": FATIMA,
 		"checkpoint_id": FATIMA,
 		"trigger_score": 15,
-		"retry_score": 15,
+		"retry_score": 15 + FATIMA_REWARD_BONUS,
 		"post_speed": 240.0,
 		"asset_path": "res://assets/characters/fatima/fatima_helper.png",
 		"placeholder_text": "فاطمة ⭐",

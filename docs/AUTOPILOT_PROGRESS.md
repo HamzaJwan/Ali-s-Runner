@@ -80,3 +80,59 @@ Immutable benchmark check (re-verified via grep after the edit):
 * Checkpoint trigger scores `15/35/60/90` — unchanged (`encounter_data.gd`).
 
 Remaining risk: the bounce tween moves `player.global_position.x` directly while `_alive = false` (so `_physics_process` is a no-op and won't fight the tween) — verified safe by code reading and the smoke test, but the *visual feel* of the bounce distance/timing is HUMAN_TEST_REQUIRED.
+
+---
+
+## v0.85 — Static Helper Asset Quality Integration — 2026-06-28 19:10
+
+Status: COMPLETE (reviewed, no code changes — generating/replacing assets is forbidden)
+
+Findings:
+
+* Zainab/Jomana/Father missing-asset fallback already works cleanly (confirmed in the v0.9 smoke tests below and the original baseline boot log) — placeholders display, no crash.
+* Fatima's existing `fatima_helper.png` (the real photo, previously flagged `HUMAN_ART_REVIEW_REQUIRED`) is presented via `TextureRect.stretch_mode = STRETCH_KEEP_ASPECT_CENTERED` in the panel and via visible-bounds-based fit/align in the in-world sprite — both already avoid stretching/distortion artifacts despite the asset being an opaque photo rather than the documented transparent game asset.
+* No further safe code-level improvement identified. Per the mission's asset rules, the photo itself is not replaced, deleted, or regenerated — it remains `HUMAN_ART_REVIEW_REQUIRED`, same status as before this mission.
+
+---
+
+## v0.9A — Fatima Reward Effect — 2026-06-28 19:18
+
+Status: COMPLETE
+
+Files changed: `scripts/main.gd`, `scripts/story/encounter_data.gd`
+
+Implemented: a one-time `+5` score bonus ("نجمة الفرح" joy bonus) applied exactly once when Fatima's reward dialogue step is shown live (`_apply_fatima_reward_bonus()`), guarded by `fatima_reward_applied` (reset each `_begin_run()` based on `checkpoint >= FATIMA`, so it won't re-apply on a retry-from-Fatima-or-later). Fatima's `retry_score` in `encounter_data.gd` was bumped from `15` to `15 + FATIMA_REWARD_BONUS (5) = 20`, so a future retry from the Fatima checkpoint starts already reflecting the bonus, consistent with "retry restores the post-Fatima reward state."
+
+No new dialogue/text was invented — only the existing documented reward line is shown; the bonus is a silent score addition.
+
+Validation: headless boot clean (exit 0, no errors). Smoke test: played to score 15 (triggers Fatima) → advanced dialogue to the reward step → asserted `score == 20` and `fatima_reward_applied == true` → asserted `encounter_data.get_checkpoint(FATIMA)["retry_score"] == 20` → pressed Continue → asserted `last_reached_checkpoint == FATIMA`, `current_obstacle_speed == 240.0` → asserted `_get_retry_state_config(FATIMA) == {score: 20, checkpoint: FATIMA, speed: 240.0}`. All assertions passed, no FAIL lines. Temp test file deleted after running.
+
+Immutable benchmarks re-verified unchanged (gravity/jump/fall/buffer, road surface, spawn constants, base/post-checkpoint speeds, all four trigger scores 15/35/60/90).
+
+---
+
+## v0.9B — Zainab Reward Effect — 2026-06-28 19:30
+
+Status: COMPLETE
+
+Files changed: `scripts/main.gd`
+
+Implemented: a one-hit shield ("قلب الشجاعة" courage), not an HP/lives counter. `zainab_shield_active` is granted live when Zainab's reward step is shown, and re-granted on every `_begin_run()` where `checkpoint >= ZAINAB` (carried forward through Jomana/Father retries too, consistent with the story's "he carries part of their gift even after a fall" framing in `docs/STORY_PLAN.md`). On the next obstacle hit while the shield is active, `_on_obstacle_hit()` intercepts before `_end_run()`: consumes the shield (one-time), stops/clears obstacles, plays a brief blue shield-flash tween on Ali (`_play_shield_flash()`, no new assets), and reuses the existing `_start_countdown()` 3-2-1 → resume flow instead of ending the run. A second hit with no shield remaining falls through to the normal v0.8D Game Over impact flow, unchanged.
+
+Validation: headless boot clean. Smoke test: simulated `_begin_run(35, ZAINAB, 255.0)` → asserted shield active → first `_on_obstacle_hit()` → asserted `game_over == false`, shield now `false`, countdown running → waited out the countdown → asserted gameplay resumed (`game_over == false`, `started == true`) → second `_on_obstacle_hit()` (no shield left) → asserted normal Game Over triggers with the correct post-Zainab message. All assertions passed.
+
+Immutable benchmarks re-verified unchanged.
+
+---
+
+## v0.9C — Jomana Reward Effect — 2026-06-28 19:42
+
+Status: COMPLETE
+
+Files changed: `scripts/main.gd`, `scripts/gameplay/obstacle_spawner.gd`
+
+Implemented: a temporary safer-spacing window ("مفتاح الطريق" guidance), not a permanent difficulty change. `ObstacleSpawner` gained `safety_window_spawns_remaining` plus `grant_safety_window()`/`clear_safety_window()`. While the window is active, each spawn temporarily caps the obstacle pool to chapter ≤3 (suppressing the chapter-4-only `crate`/`sign` types) and decrements the counter; once it reaches zero, the full chapter pool (including chapter 4) resumes automatically — no permanent state change, no edit to `min_chapter` data, no change to `SPAWN_INTERVAL` or any speed constant. The window (`JOMANA_SAFETY_WINDOW_SPAWNS = 4`) is granted live after the post-checkpoint countdown finishes (`jomana_safety_window_pending` flag set in `_apply_checkpoint_state()`, consumed in `_finish_countdown()` — granting it only after `start_spawning()` runs, so it isn't lost), and re-granted fresh on every `_begin_run()` where `checkpoint >= JOMANA`.
+
+Validation: headless boot clean. Smoke test: simulated `_begin_run(60, JOMANA, 270.0)` → asserted a fresh 4-spawn safety window and `current_obstacle_speed == 270.0` (unchanged) → manually drove 4 spawns → asserted the window reached `0` → drove 5 more spawns → asserted the spawner still produced exactly 5 obstacles with the window expired (no errors, pool returns to normal) → re-verified `SPAWN_INTERVAL == 2.25` and `BASE_SPEED == 225.0` unchanged. All assertions passed.
+
+Immutable benchmarks re-verified unchanged across all of v0.9A/B/C (final grep pass after all three): gravity `1050.0`, jump `-440.0`, fall `700.0`, buffer `0.12`, spawn interval `2.25`, base/post-checkpoint speeds `225/240/255/270`, all four trigger scores `15/35/60/90`.

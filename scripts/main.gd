@@ -46,6 +46,7 @@ const GAME_OVER_IMPACT_DELAY := 0.45
 const IMPACT_BOUNCE_DISTANCE := 10.0
 const IMPACT_BOUNCE_OUT_TIME := 0.08
 const IMPACT_BOUNCE_BACK_TIME := 0.18
+const JOMANA_SAFETY_WINDOW_SPAWNS := 4
 const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION := Vector2(
 	PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
@@ -122,6 +123,9 @@ var countdown_active := false
 var countdown_remaining := 0.0
 var countdown_number := 0
 var player_runner_position := START_PLAYER_POSITION
+var fatima_reward_applied := false
+var zainab_shield_active := false
+var jomana_safety_window_pending := false
 
 
 func _ready() -> void:
@@ -223,6 +227,9 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	last_reached_checkpoint = checkpoint
 	encounter_controller.reset_for_run(checkpoint)
 	checkpoint_active = false
+	fatima_reward_applied = checkpoint >= StoryCheckpoint.FATIMA
+	zainab_shield_active = checkpoint >= StoryCheckpoint.ZAINAB
+	jomana_safety_window_pending = false
 	current_obstacle_speed = obstacle_speed
 	_reset_checkpoint_encounter_state()
 	print("Game started: score=", score, " obstacle_speed=",
@@ -238,6 +245,9 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	player.set_gameplay_active(true)
 	obstacle_spawner.clear_obstacles()
 	obstacle_spawner.start_spawning(current_obstacle_speed)
+	obstacle_spawner.clear_safety_window()
+	if checkpoint >= StoryCheckpoint.JOMANA:
+		obstacle_spawner.grant_safety_window(JOMANA_SAFETY_WINDOW_SPAWNS)
 
 
 func _on_obstacle_passed() -> void:
@@ -249,7 +259,31 @@ func _on_obstacle_passed() -> void:
 
 
 func _on_obstacle_hit() -> void:
+	if (
+		zainab_shield_active and not game_over
+		and not checkpoint_encounter_started and not countdown_active
+	):
+		_consume_zainab_shield()
+		return
 	_end_run()
+
+
+func _consume_zainab_shield() -> void:
+	zainab_shield_active = false
+	obstacle_spawner.stop_spawning()
+	obstacle_spawner.clear_obstacles()
+	player.set_gameplay_active(false)
+	_play_shield_flash()
+	_start_countdown()
+	print("[reward] Zainab shield consumed; gameplay resumes after countdown")
+
+
+func _play_shield_flash() -> void:
+	var flash_tween := create_tween()
+	flash_tween.tween_property(
+		player, "modulate", Color(0.55, 0.85, 1.0, 1.0), 0.08
+	)
+	flash_tween.tween_property(player, "modulate", Color.WHITE, 0.25)
 
 
 func _end_run() -> void:
@@ -457,6 +491,10 @@ func _show_encounter_dialogue_step() -> void:
 			checkpoint_reward_label.text = text
 			checkpoint_reward_label.visible = true
 			_pop_reward_text()
+			if encounter_controller.character_id == EncounterCharacter.FATIMA:
+				_apply_fatima_reward_bonus()
+			elif encounter_controller.character_id == EncounterCharacter.ZAINAB:
+				_apply_zainab_shield_grant()
 
 	if encounter_controller.is_final_step():
 		checkpoint_next_hint.visible = false
@@ -509,6 +547,21 @@ func _pop_reward_text() -> void:
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
+func _apply_fatima_reward_bonus() -> void:
+	if fatima_reward_applied:
+		return
+	fatima_reward_applied = true
+	score += ENCOUNTER_DATA.FATIMA_REWARD_BONUS
+	score_label.text = "Score: %d" % score
+	print("[reward] Fatima joy bonus applied: +",
+		ENCOUNTER_DATA.FATIMA_REWARD_BONUS, " score=", score)
+
+
+func _apply_zainab_shield_grant() -> void:
+	zainab_shield_active = true
+	print("[reward] Zainab courage shield granted")
+
+
 func _advance_encounter_dialogue() -> void:
 	if not encounter_controller.advance_dialogue():
 		return
@@ -553,6 +606,8 @@ func _apply_checkpoint_state(character: int) -> bool:
 	current_obstacle_speed = DIFFICULTY_MANAGER.get_speed_for_checkpoint(
 		last_reached_checkpoint
 	)
+	if character == EncounterCharacter.JOMANA:
+		jomana_safety_window_pending = true
 	return true
 
 
@@ -606,6 +661,11 @@ func _finish_countdown() -> void:
 	get_tree().paused = false
 	player.set_gameplay_active(true)
 	obstacle_spawner.start_spawning(current_obstacle_speed)
+	if jomana_safety_window_pending:
+		jomana_safety_window_pending = false
+		obstacle_spawner.grant_safety_window(JOMANA_SAFETY_WINDOW_SPAWNS)
+		print("[reward] Jomana safer-spacing window granted: ",
+			JOMANA_SAFETY_WINDOW_SPAWNS, " spawns")
 	print("[encounter] countdown complete; gameplay resumed")
 
 
