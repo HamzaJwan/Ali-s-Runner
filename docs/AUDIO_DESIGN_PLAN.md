@@ -6,6 +6,16 @@ This is a planning document only. No audio is implemented yet, no audio files ar
 
 Make Ali Runner feel alive, emotional, warm, and story-driven — not dry or silent. Audio should support the existing tone from `docs/STORY_PLAN.md`: warm, suspenseful but not scary, family-friendly, no violence, no horror.
 
+## Owner Tone Feedback (2026-06-28, after testing v0.95A)
+
+Direct feedback after listening to the first integrated SFX pass (v0.95A, Kenney CC0 placeholders) — captured here for whoever sources the next round of audio (tracked as **v0.95B** in `docs/AI_GAME_ROADMAP.md`):
+
+* **Hit/collision sound** (`hit.wav`): currently feels like a weak "tick." Wants something more dramatic and emotionally clear, while staying strictly child-friendly — no violence, no explosion, no blood/injury feeling. Soft but meaningful is the target, not a generic UI click repurposed as an impact. Suggested future asset name: `hit_soft_impact.wav` (a new file alongside the current one), or a direct replacement of `hit.wav` only if a clearly better licensed CC0 candidate is found.
+* **Background music**: none exists yet. Desired tone: warm, light adventure, a touch of suspense — explicitly **not** horror, **not** battle/combat music, **not** sad. Family-friendly, low volume, and matching Al-Mantarah/Zliten's warm local atmosphere (see `docs/STORY_PLAN.md` Section 5 for the project's overall tone reference). Target path: `res://assets/audio/music/main_theme_soft_loop.ogg`.
+* **Ambience** (optional, desired later, lower priority than the above two): soft city ambience, birds, light wind — same low-volume, non-distracting requirement as already documented below. Paths: `res://assets/audio/ambience/city_soft_loop.ogg`, `birds_soft_loop.ogg`, `wind_soft_loop.ogg`.
+
+All three remain **BLOCKED_BY_AUDIO_ASSET** until a real, properly licensed (CC0 preferred) candidate is found and logged in `docs/AUDIO_CREDITS.md` — do not fabricate or download blindly, per `docs/ASSET_SOURCING_PLAN.md`.
+
 ## Full Sound List (Future)
 
 * Background music
@@ -122,6 +132,7 @@ Music:
 
 1. **v0.95 — Audio Foundations**: button click, jump, land, checkpoint, game over, victory, one soft background loop.
    * **v0.95A — STATUS: PARTIAL_COMPLETE (2026-06-28).** SFX wired via `scripts/audio/audio_manager.gd`: button click, dialogue blip, jump, land, hit, checkpoint, reward_star/heart/key, game over, victory — all 11 CC0 candidates from `docs/AUDIO_CREDITS.md` (Kenney UI Audio pack) load once and play through dynamically-created `AudioStreamPlayer`s, with safe no-crash fallback if any file is missing. **The "one soft background loop" part of v0.95 is still not done** — no ambience/music files exist yet (see `docs/AUDIO_CREDITS.md`), so it stays out of scope until a licensed loop is sourced. All 11 integrated sounds remain `HUMAN_AUDIO_REVIEW_REQUIRED` — they are generic Kenney UI clicks/switches repurposed for jump/land/hit/reward roles, not custom-composed for this game's tone, and haven't been quality-checked by ear yet.
+   * **v0.95B — STATUS: PLANNED, NOT IMPLEMENTED (2026-06-28).** Owner feedback after listening to v0.95A — see "Owner Tone Feedback" above and `docs/AI_GAME_ROADMAP.md` ("v0.95B"). Covers a better/more dramatic-but-soft hit sound, the main theme music loop, and the three ambience loops — all currently `BLOCKED_BY_AUDIO_ASSET`.
 2. **v0.96 — Dialogue Typing Sound**: typewriter-style blips during Arabic story text. Note: v0.95A already added a simple non-typewriter `dialogue_blip` on each dialogue *advance* (one blip per line shown, not per character) — v0.96 would still be the separate, later step of blips per-character while text appears, if ever pursued.
 3. **v0.97 — Ambience Layers**: wind, birds, distant city loop. Still blocked — no licensed files exist.
 4. **Future — Dynamic Music**: mood changes per story chapter (intro calm → after Fatima warmer → after Zainab braver → after Jomana more energetic → father ending emotional/victory).

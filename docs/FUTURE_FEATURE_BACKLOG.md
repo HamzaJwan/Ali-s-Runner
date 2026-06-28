@@ -45,6 +45,10 @@ More moving parts, still scoped to one feature at a time.
 * Ambience layers (wind, birds, distant city loop, kept low volume and non-distracting — see roadmap v0.97).
 * Game juice / feedback polish: small camera shake on hit or hard landing (separate from the v1.15 camera zoom/focus system), UI score number briefly scaling up/down when it changes, a small particle puff on jump and landing. All purely cosmetic, no gameplay effect. Overlaps with v0.8D above for the "hit" case specifically — implement together if convenient, but v0.8D's hurt-pose/spawner-stop/delay behavior is the priority, not camera shake.
 * Running footstep loop sound, tied to Ali's movement while running (distinct from the single one-shot jump/land sounds already in `docs/AUDIO_DESIGN_PLAN.md`) — needs simple loop start/stop logic tied to the run state.
+* **Audio asset improvement (v1.36 planning, owner feedback 2026-06-28; tracked as v0.95B in the roadmap):** the current `hit.wav` feels like a weak "tick" — owner wants a more dramatic-but-soft, child-friendly impact sound (no violence/explosion/blood feeling), e.g. `hit_soft_impact.wav`, or a direct replacement for `hit.wav` only if a better CC0 candidate is found. Background music (`main_theme_soft_loop.ogg` — warm, light adventure, slight suspense, not horror/battle/sad) and the three ambience loops (city/birds/wind) are still **BLOCKED_BY_AUDIO_ASSET** — see `docs/AUDIO_DESIGN_PLAN.md` and `docs/AI_GAME_ROADMAP.md` ("v0.95B").
+* **Menu motion smoothing (v1.36 planning; tracked as v1.25A-P):** the Play button's pulse feels jerky/rattling — owner wants it slower, more subtle, smooth sine ease, no sharp grow/shrink. Not started.
+* **Arabic title reconsideration (v1.36 planning; tracked as v1.25A-P):** "علي رنر" is too narrow for a story that may later include playable Jomana/Zainab. Owner-suggested first try: **"مغامرة نور البيت"** with subtitle **"رحلة في المنطرحة — زليتن"**, keeping "Ali Runner" as the internal/repo name only. Not started — see `docs/AI_GAME_ROADMAP.md` ("v1.25A-P") for the full candidate list.
+* **Cinematic intro redesign (v1.36 planning; tracked as v1.25B):** replace the current flat centered-text "الراوي" intro with an in-world Visual-Novel-Lite scene — Ali and Father facing each other, speech bubbles, speaker focus/dim, same fake-zoom style as the checkpoint encounters (v0.73). Reuses existing intro text only; **no new "Hamza" character** — Ali and Father by default. Not started — see `docs/AI_GAME_ROADMAP.md` ("v1.25B") and `docs/STORY_PLAN.md` ("Cinematic Checkpoint Presentation") for the full direction.
 
 ## High-Risk / Later Features
 
@@ -69,7 +73,7 @@ Ideas only — not scoped, not scheduled, must not affect Level 1 (Al-Mantarah) 
   * جمانة في الشط — Jomana at the beach (Zliten seafront).
   * زينب في حديقة أو طريق جديد — Zainab in a garden or a new road/area.
   * فاطمة كـ baby bonus character — Fatima as a baby bonus character (not a full runner, consistent with her size/role rules in `docs/STORY_PLAN.md`).
-  * Not touched now — focus stays on completing Ali's story in Al-Mantarah first.
+  * Not touched now — focus stays on completing Ali's story in Al-Mantarah first. Level 2 planning is formally scheduled to begin under **v1.35 — Complete Roadmap Refresh and Level 2 Planning** (see `docs/AI_GAME_ROADMAP.md`), only after Level 1 is confirmed stable end-to-end.
 * Beach level (Zliten seafront) as a continuation of Ali's own story, separate from the Part 2 sisters idea above.
 * Desert level.
 * Full cinematic cutscene system (beyond the simple static-background intro in v1.1).

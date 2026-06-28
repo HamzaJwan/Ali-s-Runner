@@ -475,3 +475,32 @@ All 11 sounds are Kenney CC0 placeholders, not yet quality-checked by ear for th
 * Confirm `jump`/`land` don't feel out of sync with the actual animation timing.
 * Confirm `button_click` doesn't feel repetitive when rapidly advancing dialogue (every Next/Continue press triggers it).
 * Music/ambience are silent by design — confirm that absence doesn't feel like a bug to a first-time player (it's expected at this stage, not a regression).
+
+---
+
+## v1.36 Planning — Owner Polish Feedback for Audio, Menu, Title, and Cinematic Intro — 2026-06-28 (continued session)
+
+Status: DOCUMENTATION ONLY — no code, scenes, or assets changed.
+
+This entry records owner feedback gathered after testing the build that included the Arabic UI pass, hero menu redesign, v1.2A background motion/parallax, v0.95A SFX integration, the intro scene, and full Level 1 gameplay/rewards/checkpoints. Nothing here was implemented — it was captured as four new planned roadmap milestones.
+
+**Owner feedback captured:**
+
+1. **Hit sound** feels like a weak "tick" — wants more dramatic but still soft/child-friendly (no violence/explosion/blood). Suggested `hit_soft_impact.wav` or a direct `hit.wav` replacement if a better CC0 candidate turns up.
+2. **Background music** — none exists; wants warm/light-adventure/slight-suspense (not horror, not battle, not sad), low volume, fitting Al-Mantarah/Zliten. Target: `main_theme_soft_loop.ogg`. Still `BLOCKED_BY_AUDIO_ASSET`.
+3. **Ambience** (city/birds/wind) — desired later, optional, still `BLOCKED_BY_AUDIO_ASSET`.
+4. **Play button pulse** feels jerky/rattling — wants slower, more subtle, smooth sine ease, no sharp grow/shrink.
+5. **Arabic title** "علي رنر" judged too narrow/weak — wants a more adventure-style title that supports future playable sisters (Jomana/Zainab). First title to try: **"مغامرة نور البيت"**, subtitle **"رحلة في المنطرحة — زليتن"**. "Ali Runner" stays as the internal/repo name only.
+6. **Opening intro presentation** — current flat centered-text "الراوي" narration should become an in-world cinematic dialogue scene (Ali and Father facing each other, speech bubbles, speaker focus/dim), reusing the same style as the v0.73 checkpoint encounters. **Explicit correction: do not add a new "Hamza" character — Ali and Father only**, unless the owner says otherwise later.
+7. **Presentation style reference**: "Visual Novel Lite / In-world Cinematic Dialogue" — speaker badge, speech bubble near speaker, character focus zoom via Tween (not Camera2D), smooth fade/slide, optional typewriter later, no video trailer, no cutscene framework.
+
+**New roadmap milestones added (all PLANNED, none marked complete):**
+
+* `docs/AI_GAME_ROADMAP.md` — **v0.95B** (Audio Asset Improvement: Better Hit Sound + Music/Ambience Sourcing), inserted after v0.97. **v1.25A-P** (Menu Motion Smoothing and Title Polish) and **v1.25B** (Cinematic Intro Story Presentation), inserted after v1.2. **v1.35** (Complete Roadmap Refresh and Level 2 Planning), inserted after v1.3 — kept in correct ascending numeric order relative to v1.4 (verified via `grep -n "^### v"` after editing).
+* `docs/FUTURE_FEATURE_BACKLOG.md` — four new bullets under "Medium-Risk Features" cross-referencing the same four roadmap entries, plus a cross-reference from the existing "Part 2 — Sisters Adventure" Dream Backlog bullet to v1.35.
+* `docs/AUDIO_DESIGN_PLAN.md` — new "Owner Tone Feedback (2026-06-28)" section with the hit-sound/music/ambience tone requirements verbatim, plus a `v0.95B` status line added next to the existing `v0.95A` status line in the Implementation Order list.
+* `docs/STORY_PLAN.md` — new "Cinematic intro update (v1.25B planning)" paragraph added to Section 13 (Cinematic Checkpoint Presentation), immediately following the existing v0.73/v0.74 presentation-direction history, including the explicit "no new Hamza character" correction.
+
+**Current blockers (unchanged by this task, just re-confirmed):** music and all three ambience loops remain `BLOCKED_BY_AUDIO_ASSET` — no safe licensed candidates sourced yet for any of the four loop files.
+
+**Confirmed:** no scripts, scenes, or assets were modified — this was a pure documentation/planning pass. `git diff --stat` should show only the four `docs/*.md` files listed above.

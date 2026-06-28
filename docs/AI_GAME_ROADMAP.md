@@ -1159,6 +1159,35 @@ Important:
 
 ---
 
+### v0.95B — Audio Asset Improvement: Better Hit Sound + Music/Ambience Sourcing
+
+Goal:
+Improve on v0.95A's placeholder SFX based on direct owner listening feedback, and continue sourcing the still-missing music/ambience loops. Planning only — not implemented yet.
+
+Owner feedback (2026-06-28, after testing the v0.95A audio integration):
+
+* **Collision/hit sound** currently feels like a weak "tick." Wants something more dramatic and emotionally clear, while staying strictly child-friendly: no violence, no explosion, no blood/injury feeling — soft but meaningful. Suggested future asset: `res://assets/audio/gameplay/hit_soft_impact.wav`, or replace `hit.wav` directly only if a better licensed CC0 candidate is found. Do not replace it with anything until a real candidate exists.
+* **Background music**: none exists yet. Wants a soft adventure/suspense loop — warm, light adventure, slight suspense, not horror, not battle music, not sad, family-friendly, low volume, fitting Al-Mantarah/Zliten's atmosphere. Target path: `res://assets/audio/music/main_theme_soft_loop.ogg`.
+* **Ambience** (optional, desired later): soft city ambience, birds, light wind. Paths: `res://assets/audio/ambience/city_soft_loop.ogg`, `res://assets/audio/ambience/birds_soft_loop.ogg`, `res://assets/audio/ambience/wind_soft_loop.ogg`.
+
+Current status: music and all three ambience loops remain **BLOCKED_BY_AUDIO_ASSET** — no safe licensed candidate has been sourced yet for any of the four loop files. Do not fabricate or download blindly; only integrate once a real CC0/CC-BY (with documented attribution) file exists and is logged in `docs/AUDIO_CREDITS.md`, per `docs/ASSET_SOURCING_PLAN.md`.
+
+Scope when unblocked:
+
+* Source or replace the hit sound with a softer, more deliberate "impact" feel — not a click/tick, not violent.
+* Source the main theme loop and the three ambience loops.
+* Wire them in following the same `scripts/audio/audio_manager.gd` pattern already used for v0.95A's SFX (load once, fallback-safe, one player per sound/loop, missing files logged once and skipped without crashing).
+
+Do not add:
+
+* Voice acting.
+* Dynamic mixer UI.
+* Procedural audio generation.
+
+See `docs/AUDIO_DESIGN_PLAN.md` for the updated tone/licensing guidance and `docs/AUTOPILOT_PROGRESS.md` (the "v0.95A" entry) for exactly what's already integrated and working today.
+
+---
+
 ### v1.0 — Level 1 Complete: Al-Mantarah, Zliten
 
 Goal:
@@ -1243,12 +1272,85 @@ Do not affect gameplay collision. Add one effect at a time and keep performance 
 
 ---
 
+### v1.25A-P — Menu Motion Smoothing and Title Polish
+
+Goal:
+Refine the hero-menu redesign (implemented on the autopilot branch as "v1.25A") based on direct owner feedback after testing. Planning only — not implemented yet.
+
+Owner feedback (2026-06-28):
+
+* The "ابدأ اللعب" Play button's pulse currently feels jerky/rattling. Wants: a slower pulse, a more subtle scale difference, sine/ease-in-out only (already used, just needs gentler numbers), no sharp grow/shrink, no distracting motion.
+* The Arabic title "علي رنر" is not strong enough and is too narrowly tied to Ali alone — wants a more exciting, adventure-style name that can support future playable characters (Jomana, Zainab) without implying the game is only about Ali.
+
+Candidate titles considered: مغامرة نور البيت / نور البيت / أبطال نور البيت / مغامرة علي والأخوات / رحلة نور البيت / أبطال المنطرحة / مغامرة البطل علي.
+
+**Recommendation to document (not yet implemented):** adopt a general story-friendly title rather than a literal "Ali Runner" translation, since future levels/characters may expand beyond Ali. First title to try: **"مغامرة نور البيت"**, with subtitle **"رحلة في المنطرحة — زليتن"**. Keep "Ali Runner" as the internal/project/repository name only — it does not need to be the in-game title shown to the player.
+
+Scope when implemented:
+
+* Retune the existing pulse constants in `scripts/main.gd` (currently `PLAY_BUTTON_PULSE_TIME = 0.9s`, `PLAY_BUTTON_PULSE_SCALE = 1.05`) toward a slower duration and smaller scale delta, keeping the existing `Tween.TRANS_SINE`/`EASE_IN_OUT`.
+* Replace the `TitleLabel`/`SubtitleLabel` text in `scenes/Main.tscn` with the new title/subtitle once the owner confirms the final choice.
+
+Do not add:
+
+* A new animation system — stays within the existing Tween-based approach already implemented.
+* A title that invents new story meaning — must stay consistent with the documented "نور البيت" (light of home) framing already in `docs/STORY_PLAN.md`.
+
+See `docs/AUTOPILOT_PROGRESS.md` (the "v1.2A-FIX + v1.25A" entry) for the current pulse/title implementation being refined here.
+
+---
+
+### v1.25B — Cinematic Intro Story Presentation
+
+Goal:
+Replace the current flat, centered-text "الراوي" narration intro with an in-world cinematic dialogue scene, matching the same "Visual Novel Lite / In-world Cinematic Dialogue" style already used for the checkpoint encounters (v0.73). Planning only — not implemented yet.
+
+Owner feedback (2026-06-28): the current intro (static centered text, generic "الراوي" narrator label) doesn't feel alive or cinematic. Wants the opening to reuse the same in-world presentation already proven for Fatima/Zainab/Jomana/Father:
+
+* Use the same Al-Mantarah street background already on screen.
+* Show **Ali and Father** facing each other (not a narrator caption).
+* Dialogue appears as a speech bubble near whichever character is speaking.
+* The speaking character gets a slight scale/focus emphasis; the non-speaking character dims/shrinks slightly.
+* Warm dim overlay, soft focus — no real `Camera2D` zoom (stays a "fake zoom," consistent with the rest of the project; real zoom remains deferred to v1.15).
+* Advance via التالي / تخطي (Next/Skip) — already exists in the current intro and should be kept.
+* Use only the existing documented intro lines (الراوي → الأب → علي, see `docs/STORY_PLAN.md` Section 9) — do not invent new Arabic story meaning. How the narrator line is re-attributed in-world (e.g. spoken as Father's opening line, or shown as plain on-screen text without a visible "narrator" character) is an implementation-time decision, not decided here.
+
+**Important correction (explicit owner instruction):** do **not** add a new character named "Hamza" unless explicitly instructed later. The cinematic intro must use **Ali and Father** by default — no new characters.
+
+Style reference — "Visual Novel Lite / In-world Cinematic Dialogue":
+
+* Speaker badge (reuse the existing `SpeakerName` pattern from the checkpoint panel).
+* Speech bubble near the speaker (reuse `scripts/ui/dialogue_bubble_helper.gd`'s placement logic).
+* Character focus zoom via sprite scale tween (reuse the v1.25A hero-zoom pattern), not a real Camera2D.
+* Smooth fade/slide transitions via `Tween` only.
+* Optional typewriter text reveal — later, not part of this step.
+* No full video trailer, no complex cutscene framework, no `Camera2D` unless isolated and proven safe (stays deferred to v1.15).
+
+See `docs/STORY_PLAN.md` ("Cinematic Checkpoint Presentation") for the existing in-world pattern this intro redesign should reuse, and the "v1.1 — Cinematic Intro Prototype" section above for the current implementation being replaced.
+
+---
+
 ### v1.3 — Character Animation Expansion
 
 Goal:
 Later animation expansion for Ali and family.
 
 Do not start this before static story (v1.0) works.
+
+---
+
+### v1.35 — Complete Roadmap Refresh and Level 2 Planning
+
+Goal:
+After v1.25B (or after a full Level 1 "Gold" review, whichever comes first), reconcile this roadmap with everything actually implemented on the `autopilot/v1-level1-...` branch — v1.2A (background motion + the foreground opacity fix), v1.25A (hero menu redesign), v0.95A (SFX integration), and any v1.25A-P/v1.25B/v0.95B work — since these were tracked in `docs/AUTOPILOT_PROGRESS.md` during fast iteration but were never folded back into this master roadmap's "Current Status" section. Planning only — not implemented yet, and explicitly should not happen before v1.25B (or a Level 1 Gold review) is reached.
+
+Scope:
+
+* Update "Current Status" (top of this document) to reflect the real, current implemented state, not the stale earlier-milestone status currently shown there.
+* Reconcile every autopilot-branch milestone (v1.2A, v1.25A, v1.25A-P, v1.25B, v0.95A, v0.95B) into this document's numbered milestone list with accurate STATUS tags.
+* Begin Level 2 / Part 2 planning (see `docs/FUTURE_FEATURE_BACKLOG.md` "Dream Backlog" — Jomana at the beach, Zainab in a garden/new road, Fatima as a baby bonus character) only after Level 1 is confirmed stable end-to-end.
+
+Do not implement yet.
 
 ---
 

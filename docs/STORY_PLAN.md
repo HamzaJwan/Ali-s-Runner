@@ -227,6 +227,17 @@ This direction applies to all four checkpoints/ending, reusing one shared presen
 
 See `docs/AI_GAME_ROADMAP.md` ("v0.74 — Dialogue Bubble Layout Fix and Story Code Modularization") for the full placement rules.
 
+**Cinematic intro update (v1.25B planning — owner feedback, 2026-06-28):** the opening intro (currently a flat, centered-text "الراوي" narration, implemented as v1.1) does not yet use this in-world presentation style. The owner wants the intro redesigned to match it:
+
+* Same Al-Mantarah street background, always visible.
+* **Ali and Father** facing each other in-world (not a narrator caption) — explicitly **not** a new character; do not add anyone named "Hamza" unless the owner instructs it later.
+* Dialogue as a speech bubble near whichever character is speaking, with the speaking character getting a slight scale/focus emphasis and the non-speaking character dimming/shrinking slightly.
+* Warm dim overlay, soft focus — a "fake zoom" exactly like the checkpoint encounters, not a real `Camera2D` (real zoom stays deferred to v1.15).
+* Advance via التالي / تخطي (Next/Skip), reusing the buttons that already exist on the current intro.
+* Use only the existing documented intro lines from Section 9 above (الراوي → الأب → علي) — no new Arabic story meaning is to be invented. Exactly how the narrator line gets re-attributed in-world (e.g. as Father's opening line, or as plain on-screen text with no visible narrator character) is left to implementation time.
+
+This is planning only — not implemented yet. See `docs/AI_GAME_ROADMAP.md` ("v1.25B — Cinematic Intro Story Presentation") for the full scope and the "Visual Novel Lite / In-world Cinematic Dialogue" style reference.
+
 ## 14. Do Not Do Yet
 
 * No real `Camera2D` zoom yet (see roadmap v1.15) — the v0.67 checkpoint cinematic uses a "fake zoom" (dim overlay + focused panel) instead, which is the approved exception.
