@@ -12,7 +12,11 @@ const JUMP_VELOCITY := -440.0
 const MAX_FALL_SPEED := 700.0
 const JUMP_BUFFER_TIME := 0.12
 const LAND_POSE_TIME := 0.10
-const SHADOW_COLOR := Color(0.05, 0.03, 0.02, 0.32)
+const SHADOW_COLOR := Color(0.08, 0.06, 0.05, 0.28)
+const SHADOW_SOFT_COLOR := Color(0.08, 0.06, 0.05, 0.12)
+const SHADOW_RADIUS := Vector2(14.0, 4.0)
+const SHADOW_SOFT_RADIUS := Vector2(20.0, 6.0)
+const SHADOW_OVAL_POINTS := 16
 const DUST_COLOR := Color(0.82, 0.74, 0.6, 0.5)
 const IMPACT_DUST_COLOR := Color(0.78, 0.7, 0.58, 0.6)
 
@@ -37,10 +41,16 @@ func _ready() -> void:
 func _setup_ground_polish() -> void:
 	var feet_y: float = ali_sprite.FEET_Y
 
+	var soft_shadow := Polygon2D.new()
+	soft_shadow.polygon = _build_oval_polygon(SHADOW_SOFT_RADIUS)
+	soft_shadow.color = SHADOW_SOFT_COLOR
+	soft_shadow.position = Vector2(0, feet_y)
+	soft_shadow.z_as_relative = true
+	soft_shadow.z_index = -5
+	add_child(soft_shadow)
+
 	_ground_shadow = Polygon2D.new()
-	_ground_shadow.polygon = PackedVector2Array([
-		Vector2(-14, -3), Vector2(14, -3), Vector2(14, 3), Vector2(-14, 3),
-	])
+	_ground_shadow.polygon = _build_oval_polygon(SHADOW_RADIUS)
 	_ground_shadow.color = SHADOW_COLOR
 	_ground_shadow.position = Vector2(0, feet_y)
 	_ground_shadow.z_as_relative = true
@@ -78,6 +88,14 @@ func _setup_ground_polish() -> void:
 	_impact_dust.scale_amount_max = 3.0
 	_impact_dust.color = IMPACT_DUST_COLOR
 	add_child(_impact_dust)
+
+
+func _build_oval_polygon(radius: Vector2) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in SHADOW_OVAL_POINTS:
+		var angle := TAU * float(i) / float(SHADOW_OVAL_POINTS)
+		points.append(Vector2(cos(angle) * radius.x, sin(angle) * radius.y))
+	return points
 
 
 func _play_impact_dust() -> void:

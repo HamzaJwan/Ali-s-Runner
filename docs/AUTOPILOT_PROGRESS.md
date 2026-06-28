@@ -825,3 +825,20 @@ Validation:
 Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, spawn interval/X, all four speeds) — this milestone only touched story-presentation data and a cinematic-only tween.
 
 Commit: `autopilot: polish character scales and father presentation`.
+
+## Level 1 Polish Autopilot — Milestone 2: Remove Black Rectangle Under Ali — STATUS: COMPLETE
+
+Files changed: `scripts/player.gd`.
+
+**Root cause:** the v1.2B dust/shadow polish added `_ground_shadow`, a `Polygon2D` literally built from 4 hard corner points (`Vector2(-14,-3), (14,-3), (14,3), (-14,3)`) — a flat-sided rectangle, not an oval — filled with a near-black, fairly opaque color (`Color(0.05, 0.03, 0.02, 0.32)`). It is always visible (never toggled off, unlike the dust particles), so it reads exactly as reported: a black rectangle sitting under Ali's feet at all times during gameplay.
+
+**Fix:** added a small `_build_oval_polygon(radius)` helper that generates a smooth 16-point ellipse outline, and rebuilt the shadow as two layered ovals instead of one rectangle — a slightly smaller, slightly darker core oval (`SHADOW_COLOR = Color(0.08, 0.06, 0.05, 0.28)`, radius `14x4`) plus a larger, much more transparent halo oval beneath it (`SHADOW_SOFT_COLOR = Color(0.08, 0.06, 0.05, 0.12)`, radius `20x6`) for a soft falloff look. Both are still plain `Polygon2D` nodes (no textures, no particles, no new draw calls beyond one extra cheap polygon) — same z-index/positioning/anchor approach as before, so it still tracks Ali's feet (`ali_sprite.FEET_Y`) exactly as it did.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running, `tmp_m2_smoke_test.gd` + its `.uid`): confirmed a dark-toned shadow polygon still exists under the player; confirmed no remaining shadow polygon has 4 or fewer points (i.e. the rectangle shape is gone); confirmed normal gameplay (start run, jump, land) is unaffected by the shape swap. **0 failed assertions.**
+
+Immutable benchmarks unaffected — purely cosmetic geometry/color change to a non-collidable visual node.
+
+Commit: `autopilot: remove ali foot artifact and clean shadow`.
