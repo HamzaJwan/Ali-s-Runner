@@ -4,15 +4,25 @@ extends RefCounted
 const SOUND_PATHS := {
 	"button_click": "res://assets/audio/ui/button_click.wav",
 	"dialogue_blip": "res://assets/audio/ui/dialogue_blip.wav",
-	"jump": "res://assets/audio/player/jump.wav",
+	"jump": "res://assets/audio/candidates/player/jump_option_1.wav",
 	"land": "res://assets/audio/player/land.wav",
-	"hit": "res://assets/audio/gameplay/hit.wav",
+	"hit": "res://assets/audio/candidates/gameplay/hit_option_1.wav",
 	"checkpoint": "res://assets/audio/story/checkpoint.wav",
 	"reward_star": "res://assets/audio/story/reward_star.wav",
 	"reward_heart": "res://assets/audio/story/reward_heart.wav",
 	"reward_key": "res://assets/audio/story/reward_key.wav",
 	"game_over": "res://assets/audio/story/game_over.wav",
 	"victory": "res://assets/audio/story/victory.wav",
+}
+
+# Drop-in-replacement safety net: if a preferred SOUND_PATHS candidate is ever
+# missing/renamed, _resolve_sound_path() falls back to the original documented
+# sound instead of going silent. Swapping a sound later only ever means
+# editing SOUND_PATHS (and SOUND_FALLBACK_PATHS if the old file should stay
+# as the safety net) - no other code needs to change.
+const SOUND_FALLBACK_PATHS := {
+	"jump": "res://assets/audio/player/jump.wav",
+	"hit": "res://assets/audio/gameplay/hit.wav",
 }
 
 const VOLUME_DB := {
@@ -48,9 +58,9 @@ func setup(parent_node: Node) -> void:
 
 
 func _load_sound(parent_node: Node, sound_name: String) -> void:
-	var path: String = SOUND_PATHS[sound_name]
-	if not ResourceLoader.exists(path, &"AudioStream"):
-		_log_missing_once(sound_name, path, "missing")
+	var path := _resolve_sound_path(sound_name)
+	if path == "":
+		_log_missing_once(sound_name, SOUND_PATHS[sound_name], "missing")
 		return
 
 	var stream := load(path) as AudioStream
@@ -66,6 +76,20 @@ func _load_sound(parent_node: Node, sound_name: String) -> void:
 	_players[sound_name] = player
 	print("[audio] loaded: ", sound_name, " -> ", path,
 		" volume_db=", player.volume_db)
+
+
+func _resolve_sound_path(sound_name: String) -> String:
+	var preferred: String = SOUND_PATHS[sound_name]
+	if ResourceLoader.exists(preferred, &"AudioStream"):
+		return preferred
+
+	var fallback: String = SOUND_FALLBACK_PATHS.get(sound_name, "")
+	if fallback != "" and ResourceLoader.exists(fallback, &"AudioStream"):
+		print("[audio] preferred sound missing for ", sound_name,
+			"; using documented fallback -> ", fallback)
+		return fallback
+
+	return ""
 
 
 func _log_missing_once(sound_name: String, path: String, reason: String) -> void:

@@ -918,3 +918,24 @@ Validation:
 Immutable benchmarks unaffected — purely a `.tscn` UI-sizing change with no script/physics involvement.
 
 Commit: `autopilot: polish companion ribbon readability`.
+
+## Level 1 Polish Autopilot — Milestone 7: Audio Structure Polish — STATUS: COMPLETE
+
+Files changed: `scripts/audio/audio_manager.gd`, `docs/AUDIO_CREDITS.md`.
+
+**Why jump/hit sounded like clicks:** their current files (`jump.wav`, `hit.wav`) are both sourced from the **Kenney UI Audio** pack — `switch7.wav` and `click5.wav` respectively, literally generic UI-click sounds, never intended for a runner's jump or an obstacle hit. A separate, already-running sourcing pass (visible in `docs/AUDIO_CREDITS.md`'s "Sourced Candidates Pass 2" section, present before this milestone started) had already found and fully documented two better-fitting CC0 candidates — `jump_option_1` (from "jump-and-run-and-stand" by dklon) and `hit_option_1.wav` (from "jump-landing-sound" by Iwan Gabovitch) — with complete source/author/license metadata, satisfying this project's own established "documented" bar (the same bar every currently-active sound, including `main_theme_soft_loop.ogg`, already meets while still flagged `HUMAN_AUDIO_REVIEW_REQUIRED` for tone).
+
+**Format blocker found and fixed:** `jump_option_1.flac` failed to load (`ResourceLoader.exists` returned `false`, confirmed live via the headless boot log) because **Godot 4 has no built-in FLAC importer** — `.flac` simply cannot become an `AudioStream` in this engine, independent of licensing. Re-encoded it losslessly to PCM16 WAV (`jump_option_1.wav`, via Python's `soundfile`, no audio editing/processing — same bytes, different container) so it can actually load. `hit_option_1.wav` was already a native WAV and needed no conversion. Documented this exact engine limitation and the new `.wav` twin directly in `docs/AUDIO_CREDITS.md` next to the original candidate entry, carrying over the same source/author/license/status.
+
+**Wired cleanly with a swap-ready safety net:** `SOUND_PATHS["jump"]` and `["hit"]` now point at the two candidates. Added `SOUND_FALLBACK_PATHS` (currently `jump -> jump.wav`, `hit -> hit.wav`) and a new `_resolve_sound_path(sound_name)` that tries the preferred path first and only falls back to the documented original if the preferred one genuinely fails to resolve — this is the exact mechanism that caught the `.flac` problem above safely (logged once, no crash, game kept working with the old click sound) before the fix, and is now the standing safety net for any future swap. Swapping any sound later is now just editing one dictionary entry; no other code changes are needed, satisfying "future drop-in replacements are easy."
+
+**Music untouched, on purpose:** a `level1_music_option_1.ogg` candidate also exists, but `docs/AUDIO_CREDITS.md` explicitly marks it `BLOCKED_BY_ASSET` ("download repeatedly timed out... owner must download manually") — not a clean "documented and ready" state like jump/hit. Per this milestone's own instruction ("otherwise keep current behavior"), `main_theme_soft_loop.ogg` stays the active track exactly as v0.95B left it; `AudioManager`'s music path (`_load_music`/`start_music`/`stop_music`/`duck_music`/`unduck_music`, single tracked `_music_player`, no duplicate-player risk) was not touched at all.
+
+Validation:
+
+* Ran `--headless --path . --import` to generate `.import` metadata for the new candidate files, then `--headless --path . --quit` → exit `0`. Boot log directly proves both the bug and the fix: before the WAV conversion it printed `preferred sound missing for jump; using documented fallback -> .../jump.wav` (graceful, no crash); after the conversion it prints `loaded: jump -> .../jump_option_1.wav` and `loaded: hit -> .../hit_option_1.wav`.
+* Smoke test (deleted after running, `tmp_m7_smoke_test.gd` + its `.uid`): confirmed `_resolve_sound_path()` returns the preferred candidate for both `jump` and `hit`; confirmed every entry in `SOUND_FALLBACK_PATHS` independently resolves to a real, loadable `AudioStream` (Godot's import cache makes deleting a file post-import an unreliable way to re-trigger the fallback path in a test, so this checks the fallback *targets* are themselves always healthy, while the actual fallback *trigger* was already proven for real by the `.flac` incident above); confirmed `start_music()` called twice still produces exactly one music `AudioStreamPlayer` (no duplicate-player regression); confirmed a live jump and a live hit both play without error during gameplay. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep — this milestone only touched audio loading/credits; no physics, spawn, speed, or checkpoint constant exists in the changed files.
+
+Commit: `autopilot: polish audio structure and replacement readiness`.
