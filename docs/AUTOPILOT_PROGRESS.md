@@ -781,3 +781,47 @@ Reconfirmed unchanged: gravity `1050`, jump `-440`, max fall `700`, jump buffer 
 * Explicitly accept shipping without city/birds/wind ambience and without the undocumented better-hit candidate, or provide verified licensed replacements.
 
 Do not start v1.35 or Level 2 until the owner completes these human-required reviews and accepts the remaining audio limitations.
+
+## Post-v1.34 — Real Character Art Integration (Father, Fatima, Zainab, Jomana) — STATUS: COMPLETE
+
+Files changed: `scripts/story/encounter_data.gd` only.
+
+The owner dropped four new character PNGs onto the branch: `assets/characters/father/father_left.png`, `assets/characters/fatima/fatima_companion.png`, `assets/characters/zainab/zainab_companion.png`, `assets/characters/jomana/jomana_companion.png`. All four are pre-drawn facing left (toward Ali, who is always positioned to the left of these nodes in every context — gameplay encounter X `610` vs Ali, cinematic intro, and the Father-ending family group at X `380/450/520` vs Father at `610`), so no `flip_h` change was needed anywhere.
+
+These four nodes (`fatima_npc`/`zainab_npc`/`jomana_npc`/`father_npc` and their `*_sprite`/checkpoint-panel textures) were already fully wired by v1.25B/v1.26/v1.27 to a single data-driven source: `EncounterData.ENCOUNTERS[...]["asset_path"]` and `["visual_height"]`, consumed once at boot by `EncounterController.apply_optional_character_texture()` (called from `_apply_optional_story_textures()` in `_ready()`). That one call already drives the checkpoint-panel icon, the companion-ribbon icon (via `fatima_texture.texture` etc.), the in-world encounter sprite, the cinematic intro sprite, and the Father-ending family-group sprite — so the only safe, smallest change was updating the data, not the code:
+
+* `asset_path` updated from the missing/placeholder filenames (`fatima_helper.png`, `zainab_helper.png`, `jomana_helper.png`, `father_ending.png` — none of which had ever existed on disk this whole sprint) to the four real files above.
+* `visual_height` for Fatima only: `100.0 -> 60.0`. This is the one value that violated the owner's requested relative-size rule once a real baseline (`ALI_STORY_VISUAL_HEIGHT = 160.0`, the height Ali renders at in every context these NPCs share the screen with him) was checked: Zainab (`84`) was already `<` Jomana (`92`), and Father (`200`) was already `>` Ali (`160`), but Fatima (`100`) was larger than both sisters, not the smallest. Lowering only Fatima to `60` satisfies the full requested chain — `Father(200) > Ali(160) > Jomana(92) > Zainab(84) > Fatima(60)` — without touching the other three already-compliant values.
+* No PNGs were edited. All sizing is the existing code-side `ASSET_UTILS.fit_sprite_visible_to_height()` / `align_sprite_visible_bottom()` pipeline (alpha-trimmed visible-bounds based, not raw pixel dimensions), so the four new images do not need matching canvas sizes or padding.
+* Missing-asset fallback is untouched and still safe: `apply_optional_character_texture()`'s `texture == null` branch (placeholder polygon + Arabic label) is unchanged code, only now unreachable for these four characters because the files genuinely exist.
+
+Validation:
+
+* `Godot --headless --path . --import` run once to generate `.import` metadata for the four new PNGs.
+* `Godot --headless --path . --quit` → exit `0`, no parser/runtime errors. Boot log confirms all four loaded and scaled exactly as intended: `FatimaSprite ... target_height=60.0`, `ZainabSprite ... target_height=84.0`, `JomanaSprite ... target_height=92.0`, `FatherSprite ... target_height=200.0`, each preceded by `exists=true` and `helper texture loaded`.
+* No temporary smoke script was needed — the boot log itself exercises the exact single code path (`_apply_optional_story_textures()`) shared by every consuming context (panel icon, ribbon icon, in-world sprite); intro/family-ending only reposition/rescale the same already-textured nodes and were not touched.
+
+Immutable benchmarks unaffected — no physics/collision/spawn/speed/checkpoint constant exists in this file.
+
+No commit made yet; left for the owner to review the four new assets in-engine (F6) before this is committed alongside their own concurrent uncommitted changes (`ali_land.png`, audio docs) already present on the branch.
+
+## Level 1 Polish Autopilot — Milestone 1: Character Scale and Father Heroic Presentation — STATUS: COMPLETE
+
+Files changed: `scripts/story/encounter_data.gd`, `scripts/main.gd`.
+
+**Owner feedback addressed:** Fatima looked too small/distant in story scenes; Father should feel more heroic.
+
+* Checked the real on-screen baseline before touching any number: in every context these NPCs share the screen with Ali (intro, checkpoint cinematic, family ending), Ali renders at `ALI_STORY_VISUAL_HEIGHT = 160`, not the gameplay `100`. Against that baseline, Zainab (`84`) was already `<` Jomana (`92`), and Father (`200`) was already `>` Ali (`160`) — only Fatima (`72` after the previous asset-integration pass) needed to move, and only enough to stop reading as "tiny" while staying the smallest.
+* `encounter_data.gd`: Fatima `visual_height` `60 -> 72` (the `60` value was a previous pass's placeholder fix that turned out too conservative once seen in motion); Father `visual_height` `200 -> 215` for a touch more stature. Final chain: **Father(215) > Ali(160) > Jomana(92) > Zainab(84) > Fatima(72)**.
+* `main.gd` — Father heroic treatment in the cinematic intro (`_update_intro_speaker_focus()`): previously both non-speaking characters dimmed to the same `INTRO_DIM_ALPHA = 0.55`. Father now gets his own, much lighter dim (`FATHER_NON_SPEAKER_DIM_ALPHA = 0.78`) when Ali is speaking, so he stays a clearly visible, important presence instead of fading into the background like a generic NPC. When Father himself speaks, he also gets a subtle warm brighten (`FATHER_SPEAKING_TINT = Color(1.06, 1.04, 0.96, 1)`) layered onto the existing scale-up focus, instead of plain white — a small, child-friendly "glow," not an exaggerated effect. Implemented by widening the existing tracked `_intro_focus_tween` (already `tween_property`-based and already killed/replaced safely) to animate `father_npc`'s full `modulate` Color instead of only `modulate:a`, so this reuses the same safe tween-tracking pattern rather than adding a second competing tween.
+* All three reset points that zero out `father_npc`'s modulate (`_teardown_intro_scene()`, `_reset_checkpoint_encounter_state()`, and the equivalent sister resets) were updated from `modulate.a = 1.0` to `modulate = Color.WHITE` so the new rgb tinting can never leak past its owning intro step into gameplay, a later encounter, or Retry/Restart.
+* Father's heroic treatment during the ending family scene (not just the intro) is intentionally deferred to Milestone 4, where a general speaker-emphasis system is added for checkpoint cinematics (today's heroic tint only existed for the intro's existing per-step focus system; the ending currently has no per-step in-world focus system at all to extend).
+
+Validation:
+
+* Headless boot clean, exit 0. Boot log confirms `FatherSprite ... target_height=215.0` applied correctly.
+* Smoke test (deleted after running, `tmp_m1_smoke_test.gd` + its `.uid`): confirmed the full size chain `father(215) > ali(160) > jomana(92) > zainab(84) > fatima(72)`; confirmed the narrator line keeps both Ali and Father at full visibility; confirmed Father's speaking step brightens him (`modulate.r > 1.0`) while Ali dims to `INTRO_DIM_ALPHA`; confirmed Ali's speaking step dims Father only to `FATHER_NON_SPEAKER_DIM_ALPHA` (not the deeper `INTRO_DIM_ALPHA`) while Ali stays fully visible; confirmed teardown resets Father's modulate to pure `Color.WHITE`. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, spawn interval/X, all four speeds) — this milestone only touched story-presentation data and a cinematic-only tween.
+
+Commit: `autopilot: polish character scales and father presentation`.

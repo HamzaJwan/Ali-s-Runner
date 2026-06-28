@@ -81,6 +81,11 @@ const INTRO_LINES := [
 const INTRO_FOCUS_TWEEN_TIME := 0.35
 const INTRO_DIM_ALPHA := 0.55
 const INTRO_FOCUS_SCALE := 1.08
+const FATHER_NON_SPEAKER_DIM_ALPHA := 0.78
+const FATHER_SPEAKING_TINT := Color(1.06, 1.04, 0.96, 1.0)
+const FATHER_RESTING_TINT := Color(1.0, 1.0, 1.0, 1.0)
+const IDLE_BREATH_TIME := 1.6
+const IDLE_BREATH_BOB := 2.0
 const FAMILY_GROUP_SCALE := 0.65
 const FAMILY_GROUP_FATIMA_X := 380.0
 const FAMILY_GROUP_ZAINAB_X := 450.0
@@ -486,7 +491,7 @@ func _teardown_intro_scene() -> void:
 		_intro_focus_tween.kill()
 	_intro_focus_tween = null
 	father_npc.visible = false
-	father_npc.modulate.a = 1.0
+	father_npc.modulate = Color.WHITE
 	father_npc.scale = Vector2.ONE
 	player.modulate = Color.WHITE
 	player_story_sprite.modulate.a = 1.0
@@ -531,13 +536,19 @@ func _update_intro_speaker_focus(speaker_visual: String) -> void:
 	var ali_scale_mult := 1.0
 	var father_scale_mult := 1.0
 	var ali_alpha := 1.0
-	var father_alpha := 1.0
+	# Father stays a heroic, important presence even while Ali is speaking,
+	# so he only dims slightly instead of matching Ali's full dim amount.
+	var father_modulate := FATHER_RESTING_TINT
 	if speaker_visual == "ali":
 		ali_scale_mult = INTRO_FOCUS_SCALE
-		father_alpha = INTRO_DIM_ALPHA
+		father_modulate = Color(
+			FATHER_RESTING_TINT.r, FATHER_RESTING_TINT.g, FATHER_RESTING_TINT.b,
+			FATHER_NON_SPEAKER_DIM_ALPHA
+		)
 	elif speaker_visual == "father":
 		father_scale_mult = INTRO_FOCUS_SCALE
 		ali_alpha = INTRO_DIM_ALPHA
+		father_modulate = FATHER_SPEAKING_TINT
 
 	if _intro_focus_tween != null and _intro_focus_tween.is_valid():
 		_intro_focus_tween.kill()
@@ -554,7 +565,7 @@ func _update_intro_speaker_focus(speaker_visual: String) -> void:
 		INTRO_FOCUS_TWEEN_TIME
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_intro_focus_tween.tween_property(
-		father_npc, "modulate:a", father_alpha, INTRO_FOCUS_TWEEN_TIME
+		father_npc, "modulate", father_modulate, INTRO_FOCUS_TWEEN_TIME
 	)
 
 
@@ -1108,10 +1119,10 @@ func _reset_checkpoint_encounter_state() -> void:
 	zainab_npc.visible = false
 	jomana_npc.visible = false
 	father_npc.visible = false
-	fatima_npc.modulate.a = 1.0
-	zainab_npc.modulate.a = 1.0
-	jomana_npc.modulate.a = 1.0
-	father_npc.modulate.a = 1.0
+	fatima_npc.modulate = Color.WHITE
+	zainab_npc.modulate = Color.WHITE
+	jomana_npc.modulate = Color.WHITE
+	father_npc.modulate = Color.WHITE
 	fatima_npc.scale = Vector2.ONE
 	zainab_npc.scale = Vector2.ONE
 	jomana_npc.scale = Vector2.ONE
