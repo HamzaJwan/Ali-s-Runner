@@ -37,7 +37,7 @@ const CURB_TOP_Y := 470.0
 const ROAD_SURFACE_Y := 510.0
 const GROUND_VISUAL_HEIGHT := 80.0
 const GROUND_COLLISION_HEIGHT := 70.0
-const PLAYER_START_X := 140.0
+const PLAYER_START_X := 220.0
 const PLAYER_COLLISION_HALF_HEIGHT := 24.0
 const ALI_TEXTURE_PATH := "res://assets/characters/ali/ali_idle.png"
 const CHECKPOINT_ARRIVAL_SPEED := 360.0
@@ -51,6 +51,15 @@ const IMPACT_BOUNCE_DISTANCE := 10.0
 const IMPACT_BOUNCE_OUT_TIME := 0.08
 const IMPACT_BOUNCE_BACK_TIME := 0.18
 const JOMANA_SAFETY_WINDOW_SPAWNS := 4
+const MENU_ALI_X := 320.0
+const MENU_ALI_VISUAL_HEIGHT := 190.0
+const MENU_HERO_ZOOM_IN_TIME := 0.5
+const MENU_IDLE_BOB_TIME := 1.2
+const MENU_IDLE_BOB_SCALE := 1.04
+const MENU_FADE_IN_TIME := 0.5
+const INTRO_FADE_IN_TIME := 0.3
+const PLAY_BUTTON_PULSE_SCALE := 1.05
+const PLAY_BUTTON_PULSE_TIME := 0.9
 const INTRO_LINES := [
 	{"speaker": "الراوي", "text": "في شارع المنطرحة بزليتن… بدأ نور البيت يضعف."},
 	{
@@ -97,7 +106,11 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var retry_button: Button = $UI/RetryButton
 @onready var restart_button: Button = $UI/RestartButton
 @onready var start_screen: Control = $UI/StartScreen
+@onready var menu_title_label: Label = $UI/StartScreen/TitleLabel
+@onready var menu_subtitle_label: Label = $UI/StartScreen/SubtitleLabel
+@onready var menu_instruction_label: Label = $UI/StartScreen/InstructionLabel
 @onready var play_button: Button = $UI/StartScreen/PlayButton
+@onready var skip_intro_button: Button = $UI/StartScreen/SkipIntroButton
 @onready var intro_overlay: Control = $UI/IntroOverlay
 @onready var intro_speaker: Label = $UI/IntroOverlay/IntroSpeaker
 @onready var intro_line: Label = $UI/IntroOverlay/IntroLine
@@ -147,12 +160,16 @@ var jomana_safety_window_pending := false
 var intro_shown := false
 var intro_active := false
 var intro_step_index := 0
+var _menu_idle_tween: Tween
+var _play_button_pulse_tween: Tween
 
 
 func _ready() -> void:
 	randomize()
 	if not play_button.pressed.is_connected(_on_play_pressed):
 		play_button.pressed.connect(_on_play_pressed)
+	if not skip_intro_button.pressed.is_connected(_on_skip_intro_button_pressed):
+		skip_intro_button.pressed.connect(_on_skip_intro_button_pressed)
 	if not restart_button.pressed.is_connected(_on_restart_pressed):
 		restart_button.pressed.connect(_on_restart_pressed)
 	if not retry_button.pressed.is_connected(_on_retry_pressed):
@@ -252,6 +269,103 @@ func _show_start_screen() -> void:
 	restart_button.visible = false
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
+	_show_menu_hero_presentation()
+
+
+func _show_menu_hero_presentation() -> void:
+	player.reset_player(Vector2(MENU_ALI_X, START_PLAYER_POSITION.y))
+	if player_story_sprite.texture != null:
+		ASSET_UTILS.fit_sprite_visible_to_height(
+			player_story_sprite, MENU_ALI_VISUAL_HEIGHT
+		)
+		ASSET_UTILS.align_sprite_visible_bottom(
+			player_story_sprite, PLAYER_COLLISION_HALF_HEIGHT
+		)
+	_play_menu_hero_zoom_in()
+	_start_menu_idle_motion()
+	_play_menu_intro_fade()
+
+
+func _play_menu_hero_zoom_in() -> void:
+	var target_scale := player_story_sprite.scale
+	player_story_sprite.scale = target_scale * 0.85
+	player_story_sprite.modulate.a = 0.0
+	var zoom_tween := create_tween().set_parallel()
+	zoom_tween.tween_property(
+		player_story_sprite, "scale", target_scale, MENU_HERO_ZOOM_IN_TIME
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	zoom_tween.tween_property(
+		player_story_sprite, "modulate:a", 1.0, MENU_HERO_ZOOM_IN_TIME
+	)
+
+
+func _start_menu_idle_motion() -> void:
+	_stop_menu_idle_motion()
+	var base_scale := player_story_sprite.scale
+	_menu_idle_tween = create_tween()
+	_menu_idle_tween.set_loops()
+	_menu_idle_tween.tween_property(
+		player_story_sprite, "scale", base_scale * MENU_IDLE_BOB_SCALE,
+		MENU_IDLE_BOB_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_menu_idle_tween.tween_property(
+		player_story_sprite, "scale", base_scale, MENU_IDLE_BOB_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_start_play_button_pulse()
+
+
+func _stop_menu_idle_motion() -> void:
+	if _menu_idle_tween != null and _menu_idle_tween.is_valid():
+		_menu_idle_tween.kill()
+	_menu_idle_tween = null
+	_stop_play_button_pulse()
+
+
+func _start_play_button_pulse() -> void:
+	_stop_play_button_pulse()
+	play_button.pivot_offset = play_button.size / 2.0
+	_play_button_pulse_tween = create_tween()
+	_play_button_pulse_tween.set_loops()
+	_play_button_pulse_tween.tween_property(
+		play_button, "scale", Vector2.ONE * PLAY_BUTTON_PULSE_SCALE,
+		PLAY_BUTTON_PULSE_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_play_button_pulse_tween.tween_property(
+		play_button, "scale", Vector2.ONE, PLAY_BUTTON_PULSE_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func _stop_play_button_pulse() -> void:
+	if _play_button_pulse_tween != null and _play_button_pulse_tween.is_valid():
+		_play_button_pulse_tween.kill()
+	_play_button_pulse_tween = null
+	play_button.scale = Vector2.ONE
+
+
+func _play_menu_intro_fade() -> void:
+	menu_title_label.modulate.a = 0.0
+	menu_subtitle_label.modulate.a = 0.0
+	menu_instruction_label.modulate.a = 0.0
+	play_button.modulate.a = 0.0
+	skip_intro_button.modulate.a = 0.0
+	var fade_tween := create_tween().set_parallel()
+	fade_tween.tween_property(menu_title_label, "modulate:a", 1.0, MENU_FADE_IN_TIME)
+	fade_tween.tween_property(
+		menu_subtitle_label, "modulate:a", 1.0, MENU_FADE_IN_TIME
+	).set_delay(0.08)
+	fade_tween.tween_property(
+		menu_instruction_label, "modulate:a", 1.0, MENU_FADE_IN_TIME
+	).set_delay(0.12)
+	fade_tween.tween_property(
+		play_button, "modulate:a", 1.0, MENU_FADE_IN_TIME
+	).set_delay(0.18)
+	fade_tween.tween_property(
+		skip_intro_button, "modulate:a", 1.0, MENU_FADE_IN_TIME
+	).set_delay(0.18)
+
+
+func _leave_menu_to_runner_framing() -> void:
+	_stop_menu_idle_motion()
 	player.reset_player(START_PLAYER_POSITION)
 
 
@@ -259,10 +373,20 @@ func _on_play_pressed() -> void:
 	if started or intro_active:
 		return
 	print("Play button pressed")
+	_leave_menu_to_runner_framing()
 	if intro_shown:
 		_start_run()
 	else:
 		_start_intro()
+
+
+func _on_skip_intro_button_pressed() -> void:
+	if started or intro_active:
+		return
+	print("Skip intro button pressed")
+	_leave_menu_to_runner_framing()
+	intro_shown = true
+	_start_run()
 
 
 func _start_intro() -> void:
@@ -270,6 +394,8 @@ func _start_intro() -> void:
 	intro_step_index = 0
 	start_screen.visible = false
 	intro_overlay.visible = true
+	intro_overlay.modulate.a = 0.0
+	create_tween().tween_property(intro_overlay, "modulate:a", 1.0, INTRO_FADE_IN_TIME)
 	_show_intro_step()
 
 
@@ -819,7 +945,7 @@ func _apply_optional_ali_focus_texture() -> void:
 func _apply_optional_backgrounds() -> void:
 	_apply_sky_texture()
 	_apply_scenery_layer(buildings_sprite, BUILDINGS_TEXTURE_PATH, 1.0)
-	_apply_scenery_layer(foreground_sprite, FOREGROUND_TEXTURE_PATH, 0.82)
+	_apply_scenery_layer(foreground_sprite, FOREGROUND_TEXTURE_PATH, 1.0)
 	_apply_ground_texture()
 
 

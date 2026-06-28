@@ -345,3 +345,79 @@ Owner reported the Game Over screen still showed English ("Score: 0", "Game Over
 Deliberately left unchanged: `TitleLabel` ("Ali Runner") — treated as the app/brand name rather than translatable UI copy, consistent with the project being referred to as "Ali Runner" throughout every doc, the GitHub repo name, and the branch name. Flagged to the owner in the response rather than silently assumed.
 
 Validation: headless boot clean. Smoke test: confirmed `PlayButton.text == "ابدأ / Play"`; confirmed `ScoreLabel.text` reads `"النقاط: 0"` then `"النقاط: 15"` after 15 obstacle passes; confirmed `GameOverLabel.text == "انتهت المحاولة"` and `RestartButton.text == "إعادة البدء من البداية"` after a Game Over. **0 failed assertions.** Immutable benchmarks re-verified unchanged (gravity/jump/fall, all four trigger scores) — this was a text-only change.
+
+---
+
+## v1.2A-FIX + v1.25A — Foreground Fix, Hero Menu Redesign, Ali Idle Menu Presentation — 2026-06-28 (continued session)
+
+Status: COMPLETE
+
+Files changed: `scenes/Main.tscn`, `scripts/main.gd`.
+
+### Task A — Foreground transparency: root cause and fix
+
+**Diagnosis (before touching anything):** ran a pixel-level alpha analysis on all four background PNGs (`python -c "from PIL import Image..."`):
+
+| Asset | avg alpha | fully opaque | fully transparent |
+|---|---|---|---|
+| `bg_foreground.png.png` | 48.7/255 | 18.8% | 80.2% |
+| `bg_buildings.png.png` | 143.2/255 | 55.9% | 43.0% |
+| `bg_sky.png.png` | 255/255 | 100% | 0% |
+| `ground_mantarha.png.png` | 217.2/255 | 84.9% | 14.5% |
+
+The foreground asset is mostly empty canvas by design (only ~19% of pixels are the actual wall/detail art — normal for a sparse foreground decoration layer). That alone isn't a bug. Then checked `git log -p -- scripts/main.gd` for the `_apply_scenery_layer(foreground_sprite, ...)` call history — **the `0.82` opacity value has never changed since it was first added**, ruling out a recent regression there. Then read `scripts/visual/background_motion.gd`'s `add_layer()` to confirm the v1.2A duplicate sprite correctly copies `modulate`, `z_index`, and `z_as_relative` from the original (it does) — ruling out a parallax-introduced bug.
+
+**Conclusion:** no code-side bug was introduced by v1.2A. The actual cause is that `foreground_sprite` was the *only* background layer with a deliberate opacity fade (`0.82`) while sky/buildings/ground all render at full `1.0` — so the foreground's already-sparse art looked visibly "weaker"/wrong sitting next to fully-opaque neighbors. **Fix:** changed `_apply_scenery_layer(foreground_sprite, FOREGROUND_TEXTURE_PATH, 0.82)` → `1.0` (one line, `scripts/main.gd`). This is a legitimate code-side fix (an arbitrary stylistic value, not asset corruption), so no `HUMAN_ART_REVIEW_REQUIRED` flag was needed for this part — though the foreground/buildings' overall photographic "haze" look (present since these assets were first added, visible in screenshots from much earlier in this project) is a separate, pre-existing characteristic of the real-photo assets themselves, unrelated to this fix.
+
+### Task B — Ali positioning
+
+* **Gameplay:** Ali was already structurally fixed at a constant X during gameplay (`player.gd`'s `_physics_process` never sets `velocity.x` — he only moves vertically; the world scrolls via obstacles, not Ali). Tuned `PLAYER_START_X` from `140.0` → `220.0` (≈19.1% of `VIEW_W=1152`, inside the requested 18%-22% band; was previously ≈12.2%, below it).
+* **Menu/start screen:** Added `_show_menu_hero_presentation()` — repositions Ali to `MENU_ALI_X = 320.0` (≈27.8%, left-center) and resizes him to `MENU_ALI_VISUAL_HEIGHT = 190px` (up from the normal ~100px gameplay height) using the exact same `ASSET_UTILS.fit_sprite_visible_to_height`/`align_sprite_visible_bottom` pattern already used for checkpoint cinematics (`_prepare_player_for_encounter`) — no new positioning mechanism invented. `_leave_menu_to_runner_framing()` (called from both `_on_play_pressed()` and the new `_on_skip_intro_button_pressed()`) calls `player.reset_player(START_PLAYER_POSITION)`, which restores the normal 100px scale via `player_visual.gd`'s own fixed `VISUAL_HEIGHT` constant during its `force_refresh` — so Ali correctly shrinks back to runner size before the intro or gameplay ever shows him, exactly mirroring how checkpoint cinematics already revert afterward.
+
+### Task C — Menu redesign
+
+* Title is now Arabic-first: **"علي رنر"** (52pt), with a smaller English subtitle **"Ali Runner"** beneath it (kept as a subtitle, not removed — gives both languages a place without ambiguity).
+* Primary CTA renamed to **"ابدأ اللعب"**, restyled with two new `StyleBoxFlat` resources (golden fill, rounded 14px corners, soft shadow — normal/hover/pressed/focus) reusing the same warm gold/dark-brown palette already established by the checkpoint dialogue card, so the menu now visually matches the rest of the game instead of using default gray Godot buttons.
+* Added one secondary button, **"تخطي المقدمة"** (skip the intro entirely, go straight to gameplay) — reuses the existing dark-brown bordered `StyleBoxFlat` (`id=2`, the same one the checkpoint card uses) so no new resource was needed for it.
+* **Deliberately skipped** "القصة" (story) and "خروج" (quit) buttons, per the task's own fallback instruction ("if secondary buttons increase scope too much, keep only one strong primary button") — "القصة" would need new summary content/UI I haven't designed, and adding both would start cluttering a screen the task also asked to keep clean. Flagging this trim explicitly rather than silently dropping it.
+* Re-spaced the whole column (title → subtitle → instructions → primary button → secondary button) with clearer vertical rhythm than the previous cramped layout.
+
+### Task D — Hero menu presentation (Tweens only, no shaders/Camera2D/AnimationPlayer)
+
+* **Fake zoom/emphasis:** `_play_menu_hero_zoom_in()` — Ali scales in from 85% to 100% of his menu size with a fade-in (`Tween.TRANS_BACK`/`EASE_OUT`, 0.5s) the moment the start screen appears.
+* **Idle motion:** `_start_menu_idle_motion()` — a looping (`set_loops()`) gentle scale breathing tween (±4%, 1.2s each way, sine ease) on Ali's sprite while he stands on the menu — a "tiny body bob" via scale rather than a position bob, since scale breathing reads as alive without risking him drifting off his floor alignment.
+* **Play button soft pulse:** `_start_play_button_pulse()` — a similar looping ±5% scale pulse on the primary CTA so it visibly invites a tap.
+* **Title/UI fade-in:** `_play_menu_intro_fade()` — title, subtitle, instructions, and both buttons fade in with a small staggered delay (0/0.08/0.12/0.18s) for a cleaner reveal instead of everything popping in at once.
+* **Critical safety detail:** all of the above are stored in `_menu_idle_tween`/`_play_button_pulse_tween` and explicitly `.kill()`ed by `_stop_menu_idle_motion()` the instant the player leaves the menu (`_leave_menu_to_runner_framing()`). Without this, the looping scale tween would keep fighting `player_visual.gd`'s pose-driven scale during actual gameplay, corrupting Ali's run-cycle visuals — confirmed this is handled correctly via the smoke test (menu tween is non-null and valid while on the menu, then `null` immediately after `_on_play_pressed()`).
+
+### Task E — Intro transition polish (logic untouched)
+
+* `_start_intro()` now fades `intro_overlay.modulate.a` from `0.0` to `1.0` over `0.3s` instead of an instant cut. No change to intro text, step order, or the Next/Skip logic itself — purely the visual entry transition.
+
+### Validation
+
+* Headless boot (`--quit`) clean, exit 0, no parser/runtime errors.
+* Pixel-level PIL analysis of all 4 background PNGs (see Task A table above) — diagnostic, not a runtime check, but recorded here for traceability.
+* `git log -p` history check on the foreground opacity line — confirmed no prior regression.
+* Comprehensive smoke test (deleted after running): confirmed `foreground_sprite.modulate.a == 1.0`; confirmed Ali stands at `MENU_ALI_X` on the start screen and the menu idle tween is running; confirmed title/subtitle/button text match the new Arabic copy; confirmed the title fades in; confirmed Ali returns to `PLAYER_START_X` and the menu tween stops the instant `_on_play_pressed()` fires; confirmed `PLAYER_START_X / VIEW_W` falls inside `0.18-0.22`; confirmed background-motion parallax still moves the ground during gameplay; confirmed a full Fatima-checkpoint regression (trigger → dialogue → continue → speed 240.0) still passes; confirmed Game Over still shows the Arabic label, and Retry/Restart still resume/reset state correctly. **0 failed assertions.**
+* `git diff --stat`: only `scenes/Main.tscn` (87 changed lines) and `scripts/main.gd` (130 changed lines) — exactly the allowed files, nothing else touched.
+
+Immutable benchmarks re-verified unchanged: gravity `1050.0`, jump `-440.0`, fall `700.0`, buffer `0.12`, road surface `510.0`, collision half-height `24.0`, spawn interval `2.25`, spawn X, base/post-checkpoint speeds `225/240/255/270`, all four trigger scores `15/35/60/90`.
+
+### Known visual risks (HUMAN_VISUAL_REVIEW_REQUIRED)
+
+* The foreground/buildings' photographic "haze" look is unchanged by this fix and may still read as slightly washed-out to the eye — that's the real-photo asset's inherent lighting, not something further code can correct without replacing the asset (out of scope, not attempted).
+* Whether Ali at `190px`/`x=320` on the menu actually reads as "heroic" rather than just "bigger" is a feel judgment only a human can make.
+* The golden button restyle's contrast/legibility (dark text on golden fill) should be checked against the bright sky background behind it.
+* The menu idle "breathing" scale bob and the play button pulse are both intentionally subtle (±4%/±5%) — confirm they don't read as distracting or buggy-looking (e.g. juddery) at actual frame rate.
+
+### Owner F6 test checklist
+
+* Open the project, confirm the foreground wall/details now look solid, not washed-out, next to the buildings.
+* Confirm Ali appears larger and more centered ("hero") on the start screen, gently breathing/bobbing, with the title/subtitle/buttons fading in.
+* Confirm the primary "ابدأ اللعب" button has a visible gold style and a subtle pulse.
+* Press "تخطي المقدمة" — confirm it skips straight to gameplay with Ali correctly back to normal runner size/position.
+* Press "ابدأ اللعب" instead — confirm the intro now fades in smoothly rather than cutting instantly, and Ali is back to normal runner framing during the intro (not still huge).
+* Play through to a checkpoint, a Game Over, Retry, and Restart — confirm all still work exactly as before.
+
+Commit: `git add -A && git commit -m "autopilot: v1.2A-fix foreground and v1.25A hero menu redesign" && git push`.
