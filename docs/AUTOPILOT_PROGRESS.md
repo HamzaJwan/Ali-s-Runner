@@ -324,3 +324,24 @@ Owner F6 test checklist (v1.2A):
 * Confirm obstacles, Ali, and collision all still feel exactly as before — this task should be invisible to gameplay feel, only the backdrop should look more alive.
 
 Commit: `git add -A && git commit -m "autopilot: v1.2A background motion lightweight parallax" && git push` — see git log for the resulting hash.
+
+---
+
+## UI Arabic Translation Pass (owner request) — 2026-06-28 (continued session)
+
+Status: COMPLETE
+
+Files changed: `scenes/Main.tscn`, `scripts/main.gd`.
+
+Owner reported the Game Over screen still showed English ("Score: 0", "Game Over", "Restart from Beginning") and asked to translate Score/Restart and review the rest of the UI for Arabic. Found and translated every remaining English-only UI string, matching the bilingual button style already used elsewhere in the game (`متابعة / Continue`, `تخطي / Skip`, `التالي / Next`, `العب من جديد / Play Again`) and the RTL label pattern already used on `GameOverMessage` (`text_direction = 3`, `language = "ar"`):
+
+* `InstructionLabel`: "Tap / Click / Space to jump" → "اضغط / انقر / المسافة — للقفز" (+ RTL props).
+* `PlayButton`: "Play" → "ابدأ / Play" (bilingual, matching the other buttons' style).
+* `ScoreLabel`: "Score: %d" → "النقاط: %d" (scene default text + all 3 runtime assignments in `main.gd`; + RTL props).
+* `GameOverLabel`: "Game Over" → "انتهت المحاولة" (softer than a literal "Game Over", matching the documented "try again, not failure" emotional tone from `docs/STORY_PLAN.md` Section 12; + RTL props).
+* `RetryButton`: "Retry from Last Checkpoint" → "إعادة المحاولة من آخر نقطة".
+* `RestartButton`: "Restart from Beginning" → "إعادة البدء من البداية".
+
+Deliberately left unchanged: `TitleLabel` ("Ali Runner") — treated as the app/brand name rather than translatable UI copy, consistent with the project being referred to as "Ali Runner" throughout every doc, the GitHub repo name, and the branch name. Flagged to the owner in the response rather than silently assumed.
+
+Validation: headless boot clean. Smoke test: confirmed `PlayButton.text == "ابدأ / Play"`; confirmed `ScoreLabel.text` reads `"النقاط: 0"` then `"النقاط: 15"` after 15 obstacle passes; confirmed `GameOverLabel.text == "انتهت المحاولة"` and `RestartButton.text == "إعادة البدء من البداية"` after a Game Over. **0 failed assertions.** Immutable benchmarks re-verified unchanged (gravity/jump/fall, all four trigger scores) — this was a text-only change.

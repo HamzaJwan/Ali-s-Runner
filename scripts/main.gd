@@ -328,7 +328,7 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 		current_obstacle_speed)
 	start_screen.visible = false
 	score_label.visible = true
-	score_label.text = "Score: %d" % score
+	score_label.text = "النقاط: %d" % score
 	game_over_label.visible = false
 	game_over_message.visible = false
 	retry_button.visible = false
@@ -344,7 +344,7 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 
 func _on_obstacle_passed() -> void:
 	score += 1
-	score_label.text = "Score: %d" % score
+	score_label.text = "النقاط: %d" % score
 	var encounter_id := encounter_controller.get_pending_for_score(score)
 	if encounter_id != EncounterCharacter.NONE:
 		_start_checkpoint_encounter(encounter_id)
@@ -644,7 +644,7 @@ func _apply_fatima_reward_bonus() -> void:
 		return
 	fatima_reward_applied = true
 	score += ENCOUNTER_DATA.FATIMA_REWARD_BONUS
-	score_label.text = "Score: %d" % score
+	score_label.text = "النقاط: %d" % score
 	print("[reward] Fatima joy bonus applied: +",
 		ENCOUNTER_DATA.FATIMA_REWARD_BONUS, " score=", score)
 

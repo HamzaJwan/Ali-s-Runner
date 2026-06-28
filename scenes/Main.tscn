@@ -222,15 +222,17 @@ offset_bottom = 220.0
 theme_override_font_sizes/font_size = 18
 theme_override_constants/outline_size = 4
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
-text = "Tap / Click / Space to jump"
+text = "اضغط / انقر / المسافة — للقفز"
 horizontal_alignment = 1
+text_direction = 3
+language = "ar"
 
 [node name="PlayButton" type="Button" parent="UI/StartScreen"]
 offset_left = 516.0
 offset_top = 245.0
 offset_right = 636.0
 offset_bottom = 286.0
-text = "Play"
+text = "ابدأ / Play"
 
 [node name="IntroOverlay" type="Control" parent="UI"]
 visible = false
@@ -304,7 +306,9 @@ offset_bottom = 44.0
 theme_override_font_sizes/font_size = 24
 theme_override_constants/outline_size = 5
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
-text = "Score: 0"
+text = "النقاط: 0"
+text_direction = 3
+language = "ar"
 visible = false
 
 [node name="GameOverLabel" type="Label" parent="UI"]
@@ -315,8 +319,10 @@ offset_bottom = 185.0
 theme_override_font_sizes/font_size = 42
 theme_override_constants/outline_size = 6
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
-text = "Game Over"
+text = "انتهت المحاولة"
 horizontal_alignment = 1
+text_direction = 3
+language = "ar"
 visible = false
 
 [node name="GameOverMessage" type="Label" parent="UI"]
@@ -341,7 +347,7 @@ offset_top = 325.0
 offset_right = 741.0
 offset_bottom = 373.0
 theme_override_font_sizes/font_size = 18
-text = "Retry from Last Checkpoint"
+text = "إعادة المحاولة من آخر نقطة"
 visible = false
 
 [node name="RestartButton" type="Button" parent="UI"]
@@ -350,7 +356,7 @@ offset_top = 390.0
 offset_right = 741.0
 offset_bottom = 438.0
 theme_override_font_sizes/font_size = 18
-text = "Restart from Beginning"
+text = "إعادة البدء من البداية"
 visible = false
 
 [node name="CheckpointPanel" type="Control" parent="UI"]
