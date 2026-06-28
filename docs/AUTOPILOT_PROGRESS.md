@@ -711,3 +711,29 @@ Validation:
 Immutable benchmarks re-verified unchanged — purely a visual addition, no physics/collision touched (the new nodes are plain `Polygon2D`/`CPUParticles2D`, neither of which participates in `CharacterBody2D` collision).
 
 Commit: `autopilot: v1.2B dust shadow polish`.
+
+## v0.95B — Hit Sound and Background Music Polish — STATUS: PARTIAL_COMPLETE
+
+Files changed: `scripts/audio/audio_manager.gd`, `scripts/main.gd`.
+
+**Checked the documentation gate before touching anything, exactly as instructed:** `docs/AUDIO_CREDITS.md` has a full, verified entry for `main_theme_soft_loop.ogg` (OpenGameArt "Icy Heights," author Écrivain, CC0 1.0 Universal, logged 2026-06-28) — integrated. `hit_soft_impact.wav` has **no entry at all** in `docs/AUDIO_CREDITS.md` — **not integrated**, per the task's own explicit rule ("integrate it as preferred hit sound only ... if documented"). `level1_exciting_loop.ogg` is also undocumented and was left alone entirely. `hit.wav` remains the only active hit sound; nothing about it was changed.
+
+### Music integration
+
+* `AudioManager` gained a dedicated, separate-from-SFX music path: `_load_music()` (called once from `setup()`), `start_music()`, `stop_music()`, `duck_music()`, `unduck_music()`, all guarded by a single `_music_player`/`_music_loaded` pair — there is exactly one `AudioStreamPlayer` for music, created once, never duplicated, so calling `start_music()` again later (e.g. defensively) is a safe no-op rather than a second player or a restart-from-zero.
+* Looping is set directly on the loaded `AudioStreamOggVorbis` resource (`stream.loop = true`) at runtime rather than depending on the `.import` file's `loop` setting (which defaulted to `false`) — confirmed this is the correct Godot 4 API surface for this stream type before relying on it.
+* Volume: `MUSIC_VOLUME_DB = -22.0`, inside the requested -20dB to -24dB range. Ducking uses `MUSIC_DUCK_DB = -32.0` with a `0.6s` tween (`duck_music()`/`unduck_music()`), not an instant cut — reads as "softening," not a hard mute.
+* **Where it starts/stops/ducks:** `audio_manager.start_music()` is called once, from `_show_start_screen()` (the safest, simplest point — runs exactly once at boot; every later Restart/Retry/Play-Again reuses the same already-playing player, never restarting it). It ducks on `_start_intro()` (intro dialogue), on `_open_checkpoint_cinematic()` (every checkpoint's dialogue, including Father's), and inside `_end_run()` (Game Over). It unducks inside `_finish_encounter_and_countdown()` (when a mid-run checkpoint's Continue is pressed, before the resume countdown) and at the very top of `_begin_run()` — the single shared funnel for every gameplay-start path (Restart, Retry, Father's "Play Again," and the post-intro `_start_run()`), so every path that could leave music ducked gets it unducked from one place rather than four separate patches.
+* Missing-file safety: `_load_music()` follows the exact same `ResourceLoader.exists()` → `load()` → null-check pattern as every SFX, logs once via the existing `_log_missing_once()` helper, and every public method (`start_music`/`stop_music`/`duck_music`/`unduck_music`) early-returns if `_music_loaded` is false — confirmed safe by temporarily simulating a missing sound during testing (this session and earlier ones).
+* `main_theme_soft_loop.ogg` stays marked `HUMAN_AUDIO_REVIEW_REQUIRED` in both the code's own log line and the design docs — license is verified, tone/loudness/fit is not.
+
+### Validation
+
+* Headless boot clean, exit 0. (One pre-existing, unrelated benign shutdown warning — "2 resources still in use at exit" for the music stream resource — appears with `--verbose`; this is normal Godot behavior for any `AudioStreamPlayer`-held resource still attached at an abrupt `--quit` shutdown, not a functional defect; the actual smoke test below passed with 0 failures regardless.)
+* Smoke test (deleted after running): confirmed music auto-starts on the start screen at exactly `-22.0dB`; confirmed calling `start_music()` again doesn't create a second player; confirmed music ducks to `-32.0dB` during the intro and unducks back to `-22.0dB` the instant gameplay starts; confirmed the same duck/unduck cycle around a full Fatima checkpoint (ducks on cinematic open, unducks on Continue, before the countdown even finishes); confirmed ducking during Game Over and restoration after Restart; confirmed a simulated missing SFX still doesn't crash; confirmed `hit_soft_impact.wav` is genuinely not wired into `SOUND_PATHS` and `hit.wav` remains the active hit sound. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged.
+
+**Why this is PARTIAL_COMPLETE, not COMPLETE:** the "Hit Sound" half of this milestone's title was not done, because its prerequisite (a documented, licensed `hit_soft_impact.wav`) doesn't exist yet. Music is fully integrated; the hit-sound improvement remains blocked exactly where `docs/AI_GAME_ROADMAP.md` ("v0.95B") already said it would be.
+
+Commit: `autopilot: v0.95B hit sound and background music polish`.

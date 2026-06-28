@@ -320,6 +320,7 @@ func _show_start_screen() -> void:
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	_show_menu_hero_presentation()
+	audio_manager.start_music()
 
 
 func _show_menu_hero_presentation() -> void:
@@ -465,6 +466,7 @@ func _start_intro() -> void:
 	create_tween().tween_property(intro_overlay, "modulate:a", 1.0, INTRO_FADE_IN_TIME)
 	_setup_intro_scene()
 	_show_intro_step()
+	audio_manager.duck_music()
 
 
 func _setup_intro_scene() -> void:
@@ -588,6 +590,7 @@ func _start_run() -> void:
 
 func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> void:
 	_stop_menu_presentation()
+	audio_manager.unduck_music()
 	get_tree().paused = false
 	started = true
 	score = initial_score
@@ -665,6 +668,7 @@ func _end_run() -> void:
 
 	game_over = true
 	audio_manager.play_hit()
+	audio_manager.duck_music()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	player.kill()
@@ -846,6 +850,7 @@ func _open_checkpoint_cinematic() -> void:
 	checkpoint_active = true
 	checkpoint_cinematic_active = true
 	audio_manager.play_checkpoint()
+	audio_manager.duck_music()
 	if encounter_controller.character_id == EncounterCharacter.FATHER:
 		_show_father_ending_family_group()
 	_configure_checkpoint_panel()
@@ -1037,6 +1042,7 @@ func _finish_encounter_and_countdown() -> void:
 	if active_encounter_node != null:
 		active_encounter_node.visible = false
 	player.reset_player(player_runner_position)
+	audio_manager.unduck_music()
 	_start_countdown()
 
 
