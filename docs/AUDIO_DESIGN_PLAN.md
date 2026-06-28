@@ -15,6 +15,7 @@ Make Ali Runner feel alive, emotional, warm, and story-driven — not dry or sil
 * Button click sound
 * Jump sound
 * Landing sound
+* Running footstep loop (continuous, tied to Ali's run state — distinct from the one-shot jump/land sounds above; a later refinement, not part of v0.95)
 * Obstacle hit sound
 * Checkpoint sound
 * Reward sound
@@ -74,9 +75,13 @@ When audio files are actually added (not now), create or update `docs/AUDIO_CRED
 * Usage in game
 * Whether attribution is required
 
+**No audio file may be added to the project without a matching `docs/AUDIO_CREDITS.md` entry at the same time.** See `docs/ASSET_SOURCING_PLAN.md` for the full sourcing/license plan shared with visual assets (CC0 preferred, no random downloads without a documented license).
+
+**Ambience loop requirement:** every ambience loop (wind, birds, distant city) must stay low-volume and loop cleanly — no audible seam, click, or volume jump at the loop point — so it stays in the background and never competes with dialogue, SFX, or the player's attention.
+
 ## Proposed Future Audio Asset Paths
 
-None of these files exist yet. Paths are documented now so future Codex tasks use consistent locations.
+As of v0.68, all six audio subfolders below already exist on disk (each kept tracked with a small `README.md`), but **no audio files exist in any of them yet**. Do not download or place any audio file without first documenting its license per the rules above — when an audio file is actually added, create or update `docs/AUDIO_CREDITS.md` for it. See `docs/ASSET_FOLDER_MAP.md` for the full folder map alongside characters/UI/obstacles.
 
 UI:
 

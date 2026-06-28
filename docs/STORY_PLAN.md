@@ -52,7 +52,7 @@ The player should always wonder:
 * Ali is the main playable character and the largest child character.
 * Jomana is Ali's older sister helper — smaller than Ali, but older than the other sisters.
 * Zainab is younger than Jomana and appears smaller than her.
-* Fatima is the baby sister and the smallest — shown as a seated baby helper/portrait, not a full runner.
+* Fatima is the baby sister and the smallest — shown as a seated baby helper/portrait, not a full runner. She is a newborn: she cannot stand, jump, or run. Her pose is always seated, calm/breathing or gently happy, reaching out one hand to offer her gift — never standing, jumping, or active like an older child.
 * Father appears only in the ending. He is about 2x Ali's height in the ending image/panel, because he is an adult.
 * Sisters are NPC story/helper moments, not playable characters yet.
 * A possible future Part 2 may allow playing as the sisters in another area. This is backlog only (see `docs/FUTURE_FEATURE_BACKLOG.md`) and does not affect Level 1 scope.
@@ -100,6 +100,8 @@ All in-game story dialogue is Arabic. This is the first official draft.
 "حاضر يا بابا… بنوصل للنهاية."
 
 ### Fatima Checkpoint (score 15)
+
+Visual note: Fatima is seated, calm/breathing or gently smiling, reaching out one hand to offer the star. She does not stand, jump, or move toward Ali — she is a newborn and physically cannot. Ali comes to her.
 
 فاطمة:
 "آآ… علي! ⭐"
@@ -186,10 +188,49 @@ Game Over should not feel like failure only — it should motivate Ali to contin
 * Retry from the last reached checkpoint and Restart from the beginning are both offered, so a fall never erases the emotional progress Ali has already made in the story.
 * This tone must carry through any future death/retry/checkpoint system: family, courage, hope — never punishment, fear, or shame.
 
-## 13. Do Not Do Yet
+## 13. Cinematic Checkpoint Presentation
 
-* No camera zoom yet (see roadmap v1.15).
-* No full cinematic system (see roadmap v1.1 for the simple version only).
+The Fatima checkpoint (and, by template, Zainab/Jomana/Father later) should not feel like a flat UI panel dropped on top of the game — it should feel like Ali actually arrives at a moment in the street.
+
+Fatima encounter flow (v0.65/v0.67, corrected by v0.70P):
+
+1. Obstacles stop spawning once the checkpoint score is reached, and any active obstacles clear safely — Ali is never put in danger during the encounter.
+2. Fatima is revealed already seated in place near the curb, with a gentle fade-in — she does not walk, run, or slide in like a world object. She is a newborn, so she never stands, jumps, or crawls toward Ali. Ali comes to her, not the other way around.
+3. Gameplay pauses, and the scene becomes cinematic: a soft dim overlay and a focused dialogue presentation (rounded golden-bordered card, speaker-name badge above the current line), while the same Al-Mantarah background stays visible underneath.
+4. Fatima speaks first, the player advances with Space/click/tap, Ali replies, the player advances again, the reward text appears (with a small pop animation), and the player presses Continue.
+5. Ali returns to his runner position, a 3-2-1 countdown plays (each digit popping in), and gameplay resumes at the harder post-checkpoint difficulty.
+
+This is a "fake zoom" presentation (dim overlay + focused panel/portraits), not a real `Camera2D` zoom — real camera zoom stays a separate, later milestone (v1.15) so it doesn't risk the fixed viewport layout.
+
+**v0.65, v0.66, v0.67, v0.70, v0.70P, v0.71, and v0.72 are all now complete** — this flow is the official, fully implemented template for every checkpoint and the ending, documented in `docs/AI_GAME_ROADMAP.md`:
+
+* **v0.70 — Zainab** (score 35, gives قلب الشجاعة). Enters actively from offscreen right, like the original Fatima pattern.
+* **v0.71 — Jomana** (score 60, gives مفتاح الطريق). Also enters actively from offscreen right.
+* **v0.72 — Father Ending / Level Complete** (score 90). A win state, not a mid-run checkpoint — no countdown/resume, since the run ends here. Revealed in place with a fade-in, like Fatima, since an adult shouldn't sprint down the road either.
+
+Entry style now varies sensibly by character: Fatima and Father are **revealed in place** (fade-in, no movement); Zainab and Jomana **enter actively** from offscreen right. All four share the same pause-and-cinematic-dialogue pattern, the same v0.70P-polished panel, and the same countdown-and-resume close (except Father, who ends the run instead). All dialogue stays Arabic-first, exactly as drafted in Section 9.
+
+**Presentation direction update (v0.73 — owner preference, 2026-06-28):** the large centered popup card from v0.67/v0.70P is being superseded as the long-term presentation, not erased from history — it was a real, working step, and v0.73 builds on it rather than discarding it. The preferred final direction is:
+
+* **In-world characters.** Ali and the current character appear facing/near each other in the street, not as portraits inside a card. Ali stands slightly left of center; the character (Fatima, Zainab, Jomana, Father) appears to his right.
+* **Speech bubble / small dialogue panel**, positioned above or near whoever is currently speaking — not a large card covering most of the screen.
+* **No large popup unless necessary for readability** — a subtle dim overlay is fine, but the Al-Mantarah street must stay visible underneath at all times.
+* **Fatima stays seated on the curb**, never in the road lane, never walking/running/crawling — she is a newborn. The scene should read as Ali reaching her, not her approaching him.
+* **Reward text appears in a small golden banner**, not a large centered label.
+
+This direction applies to all four checkpoints/ending, reusing one shared presentation rather than four separate implementations — see `docs/AI_GAME_ROADMAP.md` ("v0.73 — In-World Cinematic Encounter Template + Story Architecture Cleanup") for the full scene composition and the scalable per-character config fields.
+
+**Bubble placement update (v0.74 — owner observation, 2026-06-28):** the in-world presentation from v0.73 is implemented, but the dialogue bubble sometimes covers a character's face. Going forward:
+
+* In-world dialogue bubbles should avoid covering either character's face — Ali's or the current helper's — at all times, not just in the common cases.
+* The reward/system banner should likewise never hide either character; it stays a small centered golden banner, not a face-covering box.
+
+See `docs/AI_GAME_ROADMAP.md` ("v0.74 — Dialogue Bubble Layout Fix and Story Code Modularization") for the full placement rules.
+
+## 14. Do Not Do Yet
+
+* No real `Camera2D` zoom yet (see roadmap v1.15) — the v0.67 checkpoint cinematic uses a "fake zoom" (dim overlay + focused panel) instead, which is the approved exception.
+* No full cinematic cutscene system (see roadmap v1.1 for the simple intro version, and v0.67/Section 13 for the checkpoint version — both are intentionally small, not a general cutscene engine).
 * No complex dialogue tree.
 * No multiple playable characters.
 * No beach/desert level yet.

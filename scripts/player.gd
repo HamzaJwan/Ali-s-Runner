@@ -4,24 +4,25 @@ extends CharacterBody2D
 
 signal died
 
-const ASSET_UTILS := preload("res://scripts/asset_utils.gd")
-const ALI_IDLE_TEXTURE_PATH := "res://assets/characters/ali/ali_idle.png"
-const PLAYER_VISUAL_HEIGHT := 100.0
-const COLLISION_BOTTOM_Y := 24.0
+const ALI_VISUAL := preload("res://scripts/player_visual.gd")
 const GRAVITY := 1050.0
 const JUMP_VELOCITY := -440.0
 const MAX_FALL_SPEED := 700.0
 const JUMP_BUFFER_TIME := 0.12
+const LAND_POSE_TIME := 0.10
 
-@onready var ali_sprite: Sprite2D = $AliSprite
+@onready var ali_sprite = $AliSprite
 @onready var placeholder_shape: Polygon2D = $Polygon2D
 
 var _alive := true
+var _gameplay_active := false
+var _was_airborne := false
+var _land_pose_remaining := 0.0
 var _jump_buffer_remaining := 0.0
 
 
 func _ready() -> void:
-	_apply_optional_texture()
+	_set_visual_pose(ALI_VISUAL.IDLE, true)
 
 
 func _physics_process(delta: float) -> void:
@@ -36,6 +37,7 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer_remaining = 0.0
 
 	move_and_slide()
+	_update_visual_pose(delta)
 
 
 func jump() -> void:
@@ -53,28 +55,62 @@ func reset_player(start_position: Vector2) -> void:
 	velocity = Vector2.ZERO
 	_jump_buffer_remaining = 0.0
 	_alive = true
+	_gameplay_active = false
+	_was_airborne = false
+	_land_pose_remaining = 0.0
 	show()
-	_apply_optional_texture()
+	_set_visual_pose(ALI_VISUAL.IDLE, true)
+
+
+func set_gameplay_active(active: bool) -> void:
+	_gameplay_active = active
+	if not active and _alive:
+		_set_visual_pose(ALI_VISUAL.IDLE)
 
 
 func kill() -> void:
 	_alive = false
 	velocity = Vector2.ZERO
 	_jump_buffer_remaining = 0.0
-	hide()
+	_gameplay_active = false
+	show()
+	_set_visual_pose(ALI_VISUAL.HURT)
 	emit_signal("died")
 
 
-func _apply_optional_texture() -> void:
-	if ASSET_UTILS.set_sprite_texture_if_exists(ali_sprite, ALI_IDLE_TEXTURE_PATH):
-		ali_sprite.centered = true
-		ASSET_UTILS.fit_sprite_visible_to_height(ali_sprite, PLAYER_VISUAL_HEIGHT)
-		ASSET_UTILS.align_sprite_visible_bottom(
-			ali_sprite, COLLISION_BOTTOM_Y
+func show_victory_pose() -> void:
+	_gameplay_active = false
+	_set_visual_pose(ALI_VISUAL.VICTORY)
+
+
+func _update_visual_pose(delta: float) -> void:
+	if not _gameplay_active:
+		return
+
+	if not is_on_floor():
+		_was_airborne = true
+		_land_pose_remaining = 0.0
+		_update_visual(
+			delta,
+			ALI_VISUAL.JUMP if velocity.y < 0.0 else ALI_VISUAL.FALL
 		)
-		print("[layout] Ali final_scale=", ali_sprite.scale,
-			" visible_bottom=", COLLISION_BOTTOM_Y,
-			" collision_bottom=", COLLISION_BOTTOM_Y)
-		placeholder_shape.visible = false
+		return
+
+	if _was_airborne:
+		_was_airborne = false
+		_land_pose_remaining = LAND_POSE_TIME
+	if _land_pose_remaining > 0.0:
+		_land_pose_remaining = maxf(_land_pose_remaining - delta, 0.0)
+		_update_visual(delta, ALI_VISUAL.LAND)
 	else:
-		placeholder_shape.visible = true
+		_update_visual(delta, ALI_VISUAL.RUN)
+
+
+func _set_visual_pose(pose: StringName, force_refresh: bool = false) -> void:
+	ali_sprite.show_pose(pose, force_refresh)
+	placeholder_shape.visible = not ali_sprite.has_texture()
+
+
+func _update_visual(delta: float, pose: StringName) -> void:
+	ali_sprite.update_visual(delta, pose)
+	placeholder_shape.visible = not ali_sprite.has_texture()
