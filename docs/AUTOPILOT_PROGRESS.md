@@ -585,3 +585,41 @@ Immutable benchmarks re-verified unchanged: gravity `1050.0`, jump `-440.0`, fal
 ### Recommended next task
 
 Codex review of this fix pass — to confirm the menu-tween-leak repro no longer reproduces, the jump-SFX behavior matches the acceptance criteria, and the Arabic-control policy is now consistently applied, before deciding whether v0.95A can be considered "approved" (still pending the separate human-listening step) and before picking up the newly-found run-cycle frame-scale inconsistency as its own task.
+
+---
+
+## Level 1 Completion Sprint — Implementation Track — 2026-06-28 (continued session)
+
+This entry begins the implementation half of the work the parallel documentation track planned in its "v1.36 Planning" and "Parallel Documentation Track" entries above. Milestones are implemented and committed one at a time, in order.
+
+## v1.26A — Ali Visual Calibration — STATUS: COMPLETE
+
+Files changed: `scripts/player_visual.gd`.
+
+Measured every pose/run-frame texture's actual visible (non-transparent) bounding-box height with a one-off Python/PIL script (diagnostic only, not committed) to get real numbers instead of guessing:
+
+| Texture | Visible height (px) | Auto-computed scale (100/height) |
+|---|---:|---:|
+| `ali_idle.png` (reference) | 474 | 0.211 |
+| `ali_land.png` | 241 | **0.415** (≈1.97x idle — the reported "giant landing pose") |
+| `ali_run_1.png`/`ali_run1.png` | 517 | 0.193 |
+| `ali_run_2.png` | 981 | **0.102** (≈half of frames 1/3/4 — the run-cycle "pulse") |
+| `ali_run_3.png` | 513 | 0.195 |
+| `ali_run_4.png` | 513 | 0.195 |
+| `ali_jump.png` | 376 | 0.266 |
+| `ali_fall.png` | 416 | 0.240 |
+| `ali_hurt.png` | 447 | 0.224 |
+| `ali_victory.png` | 426 | 0.235 |
+
+Implemented exactly the suggested structure: `POSE_SCALE_OVERRIDES` (currently just `LAND: 0.224`, bringing it in line with the hurt/victory/idle band instead of nearly doubling it) and `RUN_FRAME_SCALE_OVERRIDES` (all four frame indices → `0.194`, matching frames 1/3/4's natural value and correcting frame 2's outlier). `_apply_texture()`/`_calculate_texture_layout()` now accept an optional `scale_override` float; when provided (and `> 0.0`) it replaces the auto-computed `VISUAL_HEIGHT / visible_rect.size.y` value, but the position/feet-alignment math is unchanged — it's derived from whichever scale value is in effect, so overriding the scale doesn't break feet alignment. `show_pose()` and `update_visual()`'s frame-cycling loop look up the override for the pose/frame index being shown and pass it through. No PNGs were touched; this is purely a code-side calibration step, per the explicit owner direction.
+
+**Deliberately not touched:** `ali_slide.png` shows a similarly suspicious ratio (visible height 308 → auto scale 0.325, ≈1.94x idle) but `SLIDE` is never actually requested by `player.gd` anywhere in the current gameplay loop (confirmed via `grep` — only IDLE/RUN/JUMP/FALL/LAND/HURT/VICTORY are ever shown). Since it's not currently visible to a player, it was left uncalibrated rather than guessed at — flagging it here so it isn't forgotten if `SLIDE` is ever wired up later.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running): confirmed `LAND` pose scale (`0.224`) is now within ~6% of idle's scale, not ~97% larger; confirmed all 8 simulated run-cycle steps produce the exact same scale (`0.194`, ratio `1.0`) instead of swinging between `0.102` and `0.194`; confirmed JUMP/FALL/HURT/VICTORY/IDLE still render with their original (unmodified, already-reasonable) auto-computed scales; confirmed `FEET_Y` constant unchanged; confirmed the menu hero presentation's separate scaling path (`main.gd`'s `_show_menu_hero_presentation()` → `ASSET_UTILS.fit_sprite_visible_to_height`) still produces a larger-than-gameplay scale, i.e. is unaffected by this change. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged (gravity/jump/fall/buffer, road surface, collision, spawn interval/X, all speeds, all four checkpoints).
+
+Commit: `autopilot: v1.26A Ali visual calibration`.
