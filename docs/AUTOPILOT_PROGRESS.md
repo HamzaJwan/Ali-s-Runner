@@ -136,3 +136,54 @@ Implemented: a temporary safer-spacing window ("مفتاح الطريق" guidanc
 Validation: headless boot clean. Smoke test: simulated `_begin_run(60, JOMANA, 270.0)` → asserted a fresh 4-spawn safety window and `current_obstacle_speed == 270.0` (unchanged) → manually drove 4 spawns → asserted the window reached `0` → drove 5 more spawns → asserted the spawner still produced exactly 5 obstacles with the window expired (no errors, pool returns to normal) → re-verified `SPAWN_INTERVAL == 2.25` and `BASE_SPEED == 225.0` unchanged. All assertions passed.
 
 Immutable benchmarks re-verified unchanged across all of v0.9A/B/C (final grep pass after all three): gravity `1050.0`, jump `-440.0`, fall `700.0`, buffer `0.12`, spawn interval `2.25`, base/post-checkpoint speeds `225/240/255/270`, all four trigger scores `15/35/60/90`.
+
+---
+
+## v0.95 / v0.96 / v0.97 — Audio Foundations / Dialogue Blip / Ambience — 2026-06-28 19:44
+
+Status: BLOCKED_BY_ASSET (all three)
+
+Findings: `assets/audio/` contains only the README scaffolding from v0.68 — no `.wav`/`.ogg`/`.mp3` files exist anywhere in the project. `docs/AUDIO_CREDITS.md` does not exist (required before any audio file may be used, per `docs/AUDIO_DESIGN_PLAN.md`/`docs/ASSET_SOURCING_PLAN.md`).
+
+Decision: per the mission rules (no downloading, no generating/fabricating audio), none of v0.95/v0.96/v0.97 can be implemented right now. The mission allows an *optional* lightweight audio-helper scaffold with silence fallback even without real files, but no such helper was added — there is no concrete integration point to wire it to yet (no `AudioStreamPlayer` nodes exist in `Main.tscn`, and adding speculative, never-exercised plumbing for a system with zero real assets would add surface area without a way to validate it). Continuing to v1.0 stabilization, which is independent of audio.
+
+Required owner action to unblock: generate or source licensed audio per `docs/ASSET_SOURCING_PLAN.md` (CC0 preferred), place files at the paths listed in `docs/AUDIO_DESIGN_PLAN.md`, and create `docs/AUDIO_CREDITS.md` entries for each.
+
+---
+
+## v1.0 — Level 1 Stabilization and Full Verification — 2026-06-28 20:05
+
+Status: COMPLETE (code/logic verified headlessly; visual/audio feel remains HUMAN_TEST_REQUIRED)
+
+Files changed: none (verification-only milestone; no bugs found that required a fix).
+
+Full end-to-end headless smoke test built and run, simulating a complete playthrough in one continuous session:
+
+1. Start screen visible before Play; Play transitions to `started=true`, `score=0`, `speed=225.0`.
+2. Jump call leaves the floor / sets upward velocity.
+3. Fatima checkpoint at score 15: cinematic opens (waited for `checkpoint_cinematic_active`, not a fixed delay — robust to both reveal-in-place and walk-in arrival timing), dialogue advances through all steps, joy bonus applied (`score == 20`), Continue → countdown → `last_reached_checkpoint == FATIMA`, `speed == 240.0`.
+4. Zainab checkpoint at score 35 (15 more passes): cinematic opens, dialogue completes, Continue → `last_reached_checkpoint == ZAINAB`, `speed == 255.0`, shield granted. A simulated hit immediately after is absorbed by the shield (`game_over` stays `false`, shield consumed), countdown runs, gameplay resumes normally.
+5. Jomana checkpoint at score 60 (25 more passes): cinematic opens, dialogue completes, Continue → `last_reached_checkpoint == JOMANA`, `speed == 270.0`, safer-spacing window granted (4 spawns).
+6. Father ending at score 90 (30 more passes): cinematic opens, dialogue completes, Continue → game restarts from beginning (`score == 0`, `speed == 225.0`), matching the documented win-state behavior (no countdown/resume, since the run ends here).
+7. Independent retry/restart check from a fresh post-Fatima state (`_begin_run(15, FATIMA, 240.0)`, no carried shield): a hit triggers the real Game Over path (impact bounce → `GAME_OVER_IMPACT_DELAY` → Game Over UI visible with the correct story-aware message → Retry button visible) → Retry resumes at `score == 20` (Fatima's joy bonus baked into `retry_score`), `speed == 240.0` → Restart resets to `score == 0`, `speed == 225.0`, `game_over == false`.
+
+**Result: 0 failed assertions** across the entire flow (one early test-harness bug was found and fixed along the way — see note below — it was in the *test*, not the game).
+
+Note on a false alarm during this milestone: the first version of this end-to-end test used a fixed delay before driving dialogue for every checkpoint. Zainab and Jomana use the "enter from offscreen" arrival mode (slower than Fatima/Father's "reveal in place" fade), so the fixed delay was too short and the test advanced dialogue before the real cinematic UI had opened — something a real player physically cannot do, since `_input()` only accepts dialogue-advance events while `checkpoint_cinematic_active` is true. This produced several false failures (wrong checkpoint/speed values) that looked like game bugs at first. Fixed by polling for `checkpoint_cinematic_active` instead of guessing a fixed delay; after the fix, the full flow passed cleanly. No game code was changed because of this — it was purely a test-harness timing bug. Documented here so it isn't mistaken for a real regression later.
+
+Quality gate checklist (code-verified items only; see "Human Test Checklist" in the final report for what still needs an in-engine pass):
+
+* [x] Start screen loads, Play works.
+* [x] Jump call produces upward motion.
+* [x] Score increments and triggers checkpoints at the correct thresholds (15/35/60/90), unchanged.
+* [x] Fatima/Zainab/Jomana/Father encounters all trigger, run dialogue, and apply the correct post-checkpoint state.
+* [x] Dialogue advances correctly once the cinematic is open (matches real input gating).
+* [x] Countdown completes and resumes gameplay (or restarts, for Father).
+* [x] Reward effects: Fatima score bonus, Zainab one-hit shield (absorb then expire), Jomana temporary safer-spacing window — all verified.
+* [x] Game Over impact delay + correct story-aware message + Retry/Restart buttons.
+* [x] Retry from checkpoint resumes at the correct score/speed (including the Fatima bonus baked into retry state).
+* [x] Restart from beginning resets all state (score, speed, game_over, shield, safety window).
+* [x] No parser/runtime errors at any point (clean headless boot before and after every milestone in this log).
+* [x] No immutable constant changed (re-verified by grep after every code milestone in this log).
+* [ ] Visual feel (run-cycle FPS, bounce distance, shield flash, Arabic text rendering) — HUMAN_TEST_REQUIRED, cannot be verified headlessly.
+* [ ] Audio — BLOCKED_BY_ASSET (no licensed audio files exist yet).
