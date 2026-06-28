@@ -1454,7 +1454,7 @@ Do not start this before static story (v1.0) works.
 
 ---
 
-### v1.34 — Level 1 Gold Candidate — STATUS: PLANNED
+### v1.34 — Level 1 Gold Candidate — STATUS: AUTOMATED PASS / HUMAN REVIEW REQUIRED
 
 **Numbering note:** the parallel documentation task that requested this milestone suggested calling it "v1.3," but that number is already taken by "v1.3 — Character Animation Expansion" directly above (an existing, older milestone). Using `v1.34` instead avoids overwriting/renumbering existing history, while still sitting clearly after the v1.2x/v1.25x/v1.26/v1.27 polish work and immediately before `v1.35`'s roadmap refresh — exactly where a pre-refresh "is Level 1 actually done" checkpoint belongs.
 

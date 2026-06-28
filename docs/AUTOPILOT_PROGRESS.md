@@ -737,3 +737,47 @@ Immutable benchmarks re-verified unchanged.
 **Why this is PARTIAL_COMPLETE, not COMPLETE:** the "Hit Sound" half of this milestone's title was not done, because its prerequisite (a documented, licensed `hit_soft_impact.wav`) doesn't exist yet. Music is fully integrated; the hit-sound improvement remains blocked exactly where `docs/AI_GAME_ROADMAP.md` ("v0.95B") already said it would be.
 
 Commit: `autopilot: v0.95B hit sound and background music polish`.
+
+## v1.34 — Level 1 Gold Candidate — STATUS: NOT YET GOLD (AUTOMATED PASS)
+
+Files changed: `scripts/player_visual.gd`, `docs/LEVEL_1_GOLD_CHECKLIST.md`, `docs/AUTOPILOT_PROGRESS.md`, and the v1.34 status tag in `docs/AI_GAME_ROADMAP.md`.
+
+### Ali run-size regression fixed
+
+The owner reported that Ali visibly grew and shrank while running. The v1.26A calibration had forced all four run textures to the same numeric scale (`0.194`) even though their source-image visible heights differ substantially (about 517/981/513/513 px). That made frame 2 render around 190 px tall while the other frames rendered around 100 px — exactly the reported pulse.
+
+Removed `RUN_FRAME_SCALE_OVERRIDES`, `POSE_SCALE_OVERRIDES`, and their override plumbing. `AliPlayerVisual` now consistently computes `VISUAL_HEIGHT / visible_rect.size.y` for every texture. Numeric scale is expected to differ by source resolution; the resulting visible character height is now the stable quantity.
+
+Focused validation against the current worktree (including the owner's modified `ali_land.png`): eight consecutive run-frame steps each measured `100 px` visible height and `feet_y = 24`; LAND also measured `100 px` and `feet_y = 24`. No asset file was changed by this fix.
+
+### Full continuous regression
+
+Headless boot completed with exit code 0 and no parser/runtime errors. One temporary smoke script then drove one `Main.tscn` instance through:
+
+* Start screen and Play.
+* In-world Ali/Father intro and music duck/restore.
+* Gameplay with all four run frames normalized to 100 px.
+* Fatima at 15, +5 reward, ribbon update, Continue/countdown, speed 240.
+* Zainab at 35, companion update, shield grant, one absorbed hit, speed 255.
+* Jomana at 60, all companions joined, four-spawn safety window, speed 270.
+* Father at 90, all three sisters visible at family-group scale, Play Again reset.
+* Verified companion flags/ribbon clear and all sister NPC scales return to `Vector2.ONE`.
+* Separate Game Over, Retry from Jomana (score 60/speed 270/all companions), then Restart from Beginning (score 0/speed 225/no companions).
+* Dust/shadow runtime nodes present and background music loaded/playing.
+
+Result: `GOLD_SMOKE_RESULT=PASS`. The temporary script was deleted and no temporary `.gd.uid` remained. Abrupt harness shutdown reported ObjectDB/resource cleanup warnings from active tweens/music; the normal required `--headless --path . --quit` run also exited 0. These are recorded as shutdown-test noise, not parser/runtime failures.
+
+### Immutable constants
+
+Reconfirmed unchanged: gravity `1050`, jump `-440`, max fall `700`, jump buffer `0.12`, road surface `510`, player collision `32x48`, spawn interval `2.25`, spawn X `1152 + 140 = 1292`, speeds `225/240/255/270`, and checkpoint scores `15/35/60/90`.
+
+### Verdict and blockers
+
+**NOT YET GOLD — automated Gold-candidate validation passed.** No remaining automated/code blocker was found after correcting Ali's run-frame normalization. Gold still requires owner-only decisions/checks:
+
+* Listen to and approve/remap/reject the integrated SFX and `main_theme_soft_loop.ogg` (`HUMAN_AUDIO_REVIEW_REQUIRED`).
+* Check Arabic RTL rendering, clipping, and readability in F6.
+* Check visual feel in F6: stable Ali size, run/land transitions, menu motion, parallax seams, dust/shadow, companion ribbon, and Father composition.
+* Explicitly accept shipping without city/birds/wind ambience and without the undocumented better-hit candidate, or provide verified licensed replacements.
+
+Do not start v1.35 or Level 2 until the owner completes these human-required reviews and accepts the remaining audio limitations.

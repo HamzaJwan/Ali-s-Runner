@@ -21,22 +21,22 @@ Status legend: ✅ code-verified (headless/automated test passed) · ⬜ HUMAN_T
 * ✅ Foreground opacity fix (the "weak/washed-out wall" issue) — root-caused and fixed (see `docs/AUTOPILOT_PROGRESS.md`, "v1.2A-FIX + v1.25A" entry).
 * ✅ Hero menu presentation (Ali enlarged on the start screen, idle bob, Play-button pulse, title/subtitle fade-in) implemented.
 * ✅ Menu tween leak fixed and regression-tested (Ali no longer stays enlarged after a fast Play/Skip).
-* ⬜ NOT IMPLEMENTED — **v1.26A Ali Visual Calibration**: Ali's run-cycle/landing frames still pulse in size (~1.9x swing observed) due to inconsistent PNG crop heights. This is a known, real, unfixed defect — see `docs/AI_GAME_ROADMAP.md` ("v1.26A").
-* ⬜ NOT IMPLEMENTED — **v1.2B Dust/Shadow Polish** (jump/landing dust puff, grounded drop shadow).
+* ✅ **v1.26A Ali Visual Calibration corrected during v1.34:** all run frames and the landing pose now normalize their visible character bounds to exactly 100 px while keeping feet at `FEET_Y = 24`. The earlier fixed-scale override was removed because equal numeric scale is incorrect for source images with different pixel dimensions; the corrected automated test covered eight run-frame steps and the current `ali_land.png`.
+* ✅ **v1.2B Dust/Shadow Polish:** grounded shadow, running dust, jump/landing puff, and Game Over impact puff are implemented and regression-tested.
 * ⬜ HUMAN_TEST_REQUIRED — parallax loop-seam quality, menu pulse/bob "feel," and general visual polish all need an in-engine look (`docs/AUTOPILOT_PROGRESS.md` lists several specific visual risk items under "HUMAN_VISUAL_REVIEW_REQUIRED").
 
 ## 3. Story Presentation
 
-* ⬜ NOT IMPLEMENTED — **v1.25B Cinematic Intro Story Presentation**: the intro is still flat centered-text "الراوي" narration, not yet the in-world Ali/Father speech-bubble scene the owner requested.
-* ⬜ NOT IMPLEMENTED — **v1.26 Family Companion Journey UI**: sisters do not yet visibly "join" Ali after their checkpoints.
-* ⬜ NOT IMPLEMENTED — **v1.27 Father Ending Family Group Scene**: the Father ending does not yet show the gathered family.
-* ✅ The underlying narrative direction for all three of the above is fully documented (`docs/STORY_PLAN.md` Section 14, "Family Companion Journey") — the design is settled even though the implementation isn't.
+* ✅ **v1.25B Cinematic Intro Story Presentation:** Ali and Father appear in-world with speaker focus, Arabic dialogue, and clean teardown into gameplay.
+* ✅ **v1.26 Family Companion Journey UI:** Fatima, Zainab, and Jomana accumulate in the companion ribbon; Retry restores the checkpoint set and Restart clears it.
+* ✅ **v1.27 Father Ending Family Group Scene:** the ending shows all three joined sisters, and Play Again resets companion state and all NPC scales to `1.0`.
+* ✅ The underlying narrative direction remains documented in `docs/STORY_PLAN.md` Section 14, "Family Companion Journey."
 
 ## 4. Audio
 
 * ✅ v0.95A: 11 CC0 SFX integrated (button click, dialogue blip, jump, land, hit, checkpoint, 3 rewards, game over, victory) via `scripts/audio/audio_manager.gd`. Missing-file-safe, no crash if any sound is absent.
 * ⛔ BLOCKED / ⬜ HUMAN_TEST_REQUIRED — **all 11 integrated SFX remain `HUMAN_AUDIO_REVIEW_REQUIRED`.** This is the single most important open item for Gold: the owner must listen to and approve/remap/reject each one before this branch is treated as a release candidate.
-* ⬜ NOT IMPLEMENTED — **v0.95B**: better hit sound, background music, ambience. Three candidate files exist on disk (`hit_soft_impact.wav`, `main_theme_soft_loop.ogg`, `level1_exciting_loop.ogg`); only `main_theme_soft_loop.ogg` has a verified license so far (OpenGameArt "Icy Heights," CC0 1.0). None are integrated in code yet, and none are tone-approved.
+* ✅ / ⛔ **v0.95B PARTIAL_COMPLETE:** licensed `main_theme_soft_loop.ogg` is integrated, loops at `-22 dB`, and ducks during intro/checkpoints/Game Over. `hit_soft_impact.wav` and `level1_exciting_loop.ogg` remain deliberately unintegrated because their source/license entries are not verified. All music/SFX still require human tone approval.
 * ⛔ BLOCKED — ambience loops (city/birds/wind): no candidates sourced at all yet.
 
 ## 5. Arabic / Localization
@@ -68,4 +68,4 @@ To keep this checklist honest and not a moving target, the following are explici
 3. The ⬜ HUMAN_TEST_REQUIRED items cannot be closed by any AI agent — they need the owner to actually press F6 and look/listen.
 4. Once every item is ✅ or explicitly owner-accepted, declare Level 1 Gold and proceed to `docs/AI_GAME_ROADMAP.md` ("v1.35 — Complete Roadmap Refresh") and then `docs/LEVEL_2_PLAN.md`.
 
-**Current overall status: NOT YET GOLD.** Most-blocking open items: human audio approval (Section 4) and the three not-yet-implemented presentation milestones (v1.25B, v1.26, v1.27).
+**Current overall status: NOT YET GOLD — AUTOMATED GOLD-CANDIDATE PASS.** The complete end-to-end v1.34 smoke test passed, including the corrected stable Ali size, all checkpoints/rewards/companions, Father family ending, Play Again, Game Over, Retry, Restart, dust/shadow, and music state. Remaining blockers require the owner: human audio approval, RTL/readability review, visual-feel review via F6, and an explicit decision to accept shipping without ambience/better hit audio or to provide verified replacements.
