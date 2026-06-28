@@ -238,7 +238,65 @@ See `docs/AI_GAME_ROADMAP.md` ("v0.74 — Dialogue Bubble Layout Fix and Story C
 
 This is planning only — not implemented yet. See `docs/AI_GAME_ROADMAP.md` ("v1.25B — Cinematic Intro Story Presentation") for the full scope and the "Visual Novel Lite / In-world Cinematic Dialogue" style reference.
 
-## 14. Do Not Do Yet
+## 14. Family Companion Journey
+
+Level 1 is not only about Ali collecting three rewards and leaving each sister behind. Its stronger emotional framing is **Ali gathering the light of the family** as he travels toward Father.
+
+Core theme:
+
+> نور البيت لا يرجع بقوة علي وحده، بل برجوع العائلة مع بعض.
+
+Owner's original phrasing of this same theme (recorded verbatim, 2026-06-28, for the record — both lines mean the same thing and may be used interchangeably in future dialogue/title work):
+
+> نور البيت يرجع برجوع العائلة مع بعض.
+
+Story progression:
+
+1. **Start — Ali begins alone.** The light of the house is weak. Father asks Ali to gather joy, courage, and wisdom.
+2. **Fatima — joy joins the journey.** Fatima gives Ali نجمة الفرح and becomes the first companion symbol. Because Fatima is a newborn, “joining” never means standing, running, jumping, or physically following Ali; her portrait/icon represents that Ali now carries her joy with him.
+3. **Zainab — courage joins the journey.** Zainab gives Ali قلب الشجاعة and symbolically stands with him. Her presence gives the shield reward a family meaning: Ali is protected by the courage they share.
+4. **Jomana — wisdom joins the journey.** Jomana gives Ali مفتاح الطريق and becomes the third companion symbol. Her presence explains the safer path/spacing reward as guidance rather than a mechanical power detached from the story.
+5. **Father ending — the family arrives together.** Father sees Ali arrive with Fatima, Zainab, and Jomana represented beside him. The final emotional beat is that نور البيت returns because the family is together, not because Ali won through strength alone.
+
+This direction supports broader story-facing titles such as **مغامرة نور البيت**, **رحلة نور البيت**, or **أبطال نور البيت**. The final public title remains an owner decision; these are title-universe references, not a rename implemented by this document.
+
+No new dialogue is made official by this section. Any future companion or reunion dialogue must be marked **DRAFT / NOT FINAL / OWNER APPROVAL REQUIRED** until approved by the owner.
+
+### Companion State Rules
+
+* Before Fatima: no sister has joined.
+* After Fatima: Fatima is joined.
+* After Zainab: Fatima and Zainab are joined.
+* After Jomana: Fatima, Zainab, and Jomana are joined.
+* Retry from a checkpoint restores the companion state associated with that checkpoint.
+* Restart from Beginning clears all joined companions.
+* The Father ending may display all three joined sisters as a family group.
+
+Companion state is a **story and visual layer first**. It does not change checkpoint thresholds (`15/35/60/90`), reward effects, obstacle speed, retry scoring, collision, jump physics, or the runner loop.
+
+### Safe Staged Presentation
+
+**Stage 1 — Companion Ribbon / Portraits (v1.26):** show small joined-sister portraits or icons on the HUD. This is UI only, with no physics, collision, world followers, or extra animation.
+
+**Stage 2 — In-World Companion Moments:** during checkpoint pauses or cinematic moments, show already-joined sisters beside or behind Ali. They remain static, non-colliding story visuals and do not participate in gameplay.
+
+**Stage 3 — Optional Non-Colliding Follow Sprites (future v1.4X):** older sisters may visually follow behind Ali as small sprites. They must have no collision and must pause during checkpoints, countdowns, Game Over, and the ending. Fatima remains a seated baby/portrait presentation and must never be depicted running.
+
+**Stage 4 — Father Ending Family Group Scene (v1.27):** compose Ali, Fatima, Zainab, Jomana, and Father as a reunion using the existing in-world/fake-zoom presentation. No new mechanic is required.
+
+Strict rules for every stage:
+
+* No HP or extra lives are added by companions.
+* No extra collision bodies.
+* No enemies or combat.
+* No multiple-lane system.
+* No checkpoint score changes.
+* No reward-logic changes unless separately requested.
+* Every optional companion visual must have a safe text/icon/portrait fallback.
+
+This feature is **PLANNED, NOT IMPLEMENTED**.
+
+## 15. Do Not Do Yet
 
 * No real `Camera2D` zoom yet (see roadmap v1.15) — the v0.67 checkpoint cinematic uses a "fake zoom" (dim overlay + focused panel) instead, which is the approved exception.
 * No full cinematic cutscene system (see roadmap v1.1 for the simple intro version, and v0.67/Section 13 for the checkpoint version — both are intentionally small, not a general cutscene engine).

@@ -16,7 +16,9 @@ Direct feedback after listening to the first integrated SFX pass (v0.95A, Kenney
 
 All three remain **BLOCKED_BY_AUDIO_ASSET** until a real, properly licensed (CC0 preferred) candidate is found and logged in `docs/AUDIO_CREDITS.md` — do not fabricate or download blindly, per `docs/ASSET_SOURCING_PLAN.md`.
 
-**Status update (v1.25A-P + v0.95A-FIX stabilization pass, 2026-06-28):** two files matching the requested names have appeared in the working tree — `assets/audio/gameplay/hit_soft_impact.wav` and `assets/audio/music/main_theme_soft_loop.ogg`. Neither has a verified source/license entry in `docs/AUDIO_CREDITS.md` yet, and **neither is integrated or played by any code** as of this pass (explicitly out of scope for this stabilization task). Both are marked **UNVERIFIED_AUDIO_CANDIDATE** until their license/source is confirmed and logged — do not treat their presence on disk as approval to use them.
+**Status update (v1.25A-P + v0.95A-FIX stabilization pass, 2026-06-28):** two files matching the requested names have appeared in the working tree — `assets/audio/gameplay/hit_soft_impact.wav` and `assets/audio/music/main_theme_soft_loop.ogg`. As of that pass, neither had a verified source/license entry in `docs/AUDIO_CREDITS.md`, and **neither was integrated or played by any code** (explicitly out of scope for that stabilization task).
+
+**License update (parallel documentation pass, 2026-06-28):** `main_theme_soft_loop.ogg`'s license is now **verified** — `docs/AUDIO_CREDITS.md` logs it as sourced from OpenGameArt ("Icy Heights," original file `theme-loop.ogg`), author **Écrivain**, license **CC0 1.0 Universal**, downloaded 2026-06-28. Confirmed via `grep` across `scripts/` that it is still **not referenced by `scripts/audio/audio_manager.gd` or any other script** — license-verified is not the same as integrated, and it remains `HUMAN_AUDIO_REVIEW_REQUIRED` for tone/loudness/fit even once integrated. `hit_soft_impact.wav` still has **no** credits entry — it remains **UNVERIFIED_AUDIO_CANDIDATE** until a source/license is logged. Do not treat any file's presence on disk as approval to use it.
 
 ## v0.95A Review Status (Codex PARTIAL review, 2026-06-28)
 
@@ -25,8 +27,9 @@ Codex reviewed the branch and returned **PARTIAL** with four findings. This pass
 * **v0.95A status: PARTIAL_COMPLETE / AUDIO_CANDIDATES_INTEGRATED_FOR_REVIEW.** The 11 SFX are wired into the game and play correctly, but this is *integration*, not *approval*.
 * All 11 integrated SFX remain **HUMAN_AUDIO_REVIEW_REQUIRED** — none have been listened to and approved/remapped/rejected by the owner yet.
 * **The owner must listen to and approve the 11 SFX before this branch is merged to `main` or treated as a release candidate.**
-* Music and ambience remain missing/unverified as documented above — `main_theme_soft_loop.ogg` exists on disk but is **UNVERIFIED_AUDIO_CANDIDATE**, not yet logged with a source/license in `docs/AUDIO_CREDITS.md`, and not integrated in code.
-* `hit_soft_impact.wav` is similarly **UNVERIFIED_AUDIO_CANDIDATE** — not integrated, not license-confirmed.
+* `main_theme_soft_loop.ogg` — license now **verified** (OpenGameArt "Icy Heights," Écrivain, CC0 1.0 — logged in `docs/AUDIO_CREDITS.md`), but still **not integrated in code** and still `HUMAN_AUDIO_REVIEW_REQUIRED` for tone once it is.
+* `hit_soft_impact.wav` remains **UNVERIFIED_AUDIO_CANDIDATE** — not integrated, no credits entry yet.
+* **New candidate found (parallel documentation pass, 2026-06-28):** `assets/audio/music/level1_exciting_loop.ogg` has also appeared in the working tree. It is **UNVERIFIED_AUDIO_CANDIDATE** — no source/license entry exists in `docs/AUDIO_CREDITS.md`, and it is not referenced by `scripts/audio/audio_manager.gd` or any other script. Its name suggests a higher-energy loop (possibly for a later/harder chapter or Jomana-onward difficulty) rather than the calmer `main_theme_soft_loop.ogg` — this distinction, and whether the game should ever switch between two music moods, is an open design question for whoever picks up **v0.95B**, not decided here. Do not integrate it until it is license-verified and the owner has approved its tone by listening.
 
 ## Full Sound List (Future)
 

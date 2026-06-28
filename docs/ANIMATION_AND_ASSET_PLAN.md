@@ -77,6 +77,8 @@ Asset creation guidance:
 * Same feet baseline across all four frames, and the same approximate height — misaligned feet or inconsistent height will visibly "slide" or "jump" during the cycle.
 * Small dust under Ali's feet is acceptable as future polish (see the dust/shadow reminder below), but it must not break transparency or feet-baseline alignment.
 
+**Confirmed issue (v1.26A planning, 2026-06-28):** the warning above was a prediction at the time it was written — it has since been confirmed real. Testing during the v1.25A-P + v0.95A-FIX stabilization pass found the four `ali_run_1..4.png` frames (and `ali_land.png`) do have inconsistent cropped/visible heights, causing Ali's on-screen size to visibly pulse (observed swinging as much as ~1.9x) during the run cycle and on landing. Owner direction: fix this **code-side** in `scripts/player_visual.gd` rather than relying solely on re-cropping the source PNGs in Photoshop — e.g. a per-frame reference-height override table, or normalizing every pose against a single trusted reference frame (`ali_idle.png`) instead of each frame's own independently-measured visible-rect. Tracked as **v1.26A — Ali Visual Calibration** in `docs/AI_GAME_ROADMAP.md`. Planned, not implemented.
+
 **Next code step (v0.75D planning, 2026-06-28): not full animation yet.** The next implementation task is `v0.8A — Ali Animation Slot System` — building the pose-slot/fallback mechanism described in Stage 1 above (one named slot per pose, each falling back to `ali_idle.png` if its file doesn't exist), without requiring any real pose art to exist yet. The easiest path remains unchanged: (1) support separate pose PNG files first, reusing the existing fallback pattern; (2) support sprite sheets later, only if Stage 2 proves it's actually needed. When real pose images are eventually needed, the assistant must proactively tell the owner the exact path, required size/style, a ready AI-generation prompt, and whether a static PNG or sprite sheet is needed — per the Asset Request Workflow in Section 7 below.
 
 **Future polish reminder (v0.74 planning, 2026-06-28):** when Ali's animation image-generation prompts are actually written (v0.8), include these small ground-feel details so Ali reads as grounded and in motion rather than floating:
@@ -116,6 +118,37 @@ Reward icons (shown alongside or instead of a full helper portrait during the re
 See roadmap `v0.85 — Static Helper Assets` for the implementation milestone.
 
 **Static-for-now note (v0.73 planning, 2026-06-28):** static PNGs remain fully acceptable for every encounter character right now, including Fatima — a static `fatima_helper.png` is enough for the in-world cinematic encounter template (v0.73). Later idle/breathing animations (small subtle motion, not full pose-switching) would make encounter characters feel more alive, but are not required and should wait until well after the in-world presentation is stable. Separately, Ali's own animation (v0.8) will eventually solve the related issue of Ali standing in a static idle pose while the world implies he's running — but that's Ali's own animation milestone, not a helper-character concern, and is not part of v0.73.
+
+### Family Companion Journey Visual Plan — PLANNED
+
+The story direction now treats each sister as symbolically joining Ali after her checkpoint. This is first a UI/story presentation, not a follower-physics system.
+
+Future optional companion slots:
+
+* `res://assets/characters/fatima/fatima_companion.png`
+* `res://assets/characters/zainab/zainab_companion.png`
+* `res://assets/characters/jomana/jomana_companion.png`
+
+Existing `fatima_helper.png`, `zainab_helper.png`, and `jomana_helper.png` may be reused for the first HUD version if they remain legible at small size.
+
+**Stage 1 — Companion Ribbon / Portraits (v1.26):** static transparent portraits/icons only. Recommended display height is roughly 40-64 px. No animation, physics, collision, or world placement.
+
+**Stage 2 — In-World Companion Moments:** show joined sisters during paused checkpoints or story compositions. Static sprites are sufficient. They remain non-colliding and do not move with obstacles.
+
+**Stage 3 — Optional Non-Colliding Followers (future v1.4X):** only after Stage 1 is stable, Zainab and Jomana may receive small following/running visuals. Any follower animation must be purely cosmetic, pause during story/Game Over/countdown states, and never affect Ali's jump, obstacle collision, score, or lane. Fatima is excluded from running/following animation because she is a newborn; she stays seated as a portrait or ending-scene visual.
+
+**Stage 4 — Father Ending Family Group (v1.27):** compose the existing Ali/character visuals into a reunion near Father. Prefer the existing fake-zoom/in-world cinematic approach; no real Camera2D or new mechanics are required.
+
+Asset safety rules:
+
+* Transparent PNG with clean alpha; no baked checkerboard.
+* One clearly readable character per companion image.
+* Consistent identity, clothing, age, and relative size rules.
+* No weapons, combat pose, enemy framing, or HP/life symbolism.
+* Every companion slot must have a helper-portrait, icon, text, or color fallback.
+* Do not create running/following pose sets until a separate Stage 3 task is approved.
+
+This plan is not implemented and adds no animation requirement to the current checkpoints.
 
 ---
 

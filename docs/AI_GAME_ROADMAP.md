@@ -1172,6 +1172,8 @@ Owner feedback (2026-06-28, after testing the v0.95A audio integration):
 
 Current status: music and all three ambience loops remain **BLOCKED_BY_AUDIO_ASSET** — no safe licensed candidate has been sourced yet for any of the four loop files. Do not fabricate or download blindly; only integrate once a real CC0/CC-BY (with documented attribution) file exists and is logged in `docs/AUDIO_CREDITS.md`, per `docs/ASSET_SOURCING_PLAN.md`.
 
+**Status update (parallel documentation pass, 2026-06-28):** three candidate files now exist on disk — `assets/audio/gameplay/hit_soft_impact.wav`, `assets/audio/music/main_theme_soft_loop.ogg`, and a newly-appeared `assets/audio/music/level1_exciting_loop.ogg`. **`main_theme_soft_loop.ogg`'s license is now verified** (OpenGameArt "Icy Heights," author Écrivain, CC0 1.0 Universal — logged in `docs/AUDIO_CREDITS.md`); the other two still have no credits entry and remain **UNVERIFIED_AUDIO_CANDIDATE**. None of the three are integrated in code yet (confirmed via `scripts/audio/audio_manager.gd`) — see `docs/AUDIO_DESIGN_PLAN.md` for the up-to-date status table. This moves `main_theme_soft_loop.ogg` from "blocked, no candidate" to "candidate license-verified, integration + human tone-approval still pending" — it does not mean v0.95B is unblocked/complete.
+
 Scope when unblocked:
 
 * Source or replace the hit sound with a softer, more deliberate "impact" feel — not a click/tick, not violent.
@@ -1272,6 +1274,27 @@ Do not affect gameplay collision. Add one effect at a time and keep performance 
 
 ---
 
+### v1.2B — Dust/Shadow Polish — STATUS: PLANNED
+
+Goal:
+Carve out and implement the two specific cosmetic details already scoped (but not yet built) inside v1.2's broader list above — a grounded drop shadow and feet-level dust — as their own small, testable step, separate from the parallax/clouds/birds work that v1.2A already delivered.
+
+Scope:
+
+* A small particle puff on jump and on landing (`CPUParticles2D`, reusing the existing jump/land pose-transition hooks in `player.gd`/`player_visual.gd` as the trigger points).
+* Running dust under Ali's feet while the run pose is active.
+* A soft, simple drop shadow anchored under Ali (and optionally under obstacles) so they read as grounded rather than floating — a flat dark ellipse/blob is enough; no dynamic lighting system.
+
+Do not add:
+
+* Moving clouds, palm-leaf sway, or birds — those stay under the broader v1.2 scope, not this carve-out.
+* Shaders, unless a simple sway/shadow effect turns out to need one and it's proven safe in isolation.
+* Any change to collision, physics, or obstacle/player hitboxes — purely cosmetic.
+
+This milestone is planned, not implemented. See `docs/ANIMATION_AND_ASSET_PLAN.md` ("Future polish reminder") for the original dust/shadow note this carves out of.
+
+---
+
 ### v1.25A-P — Menu Motion Smoothing and Title Polish
 
 Goal:
@@ -1330,6 +1353,98 @@ See `docs/STORY_PLAN.md` ("Cinematic Checkpoint Presentation") for the existing 
 
 ---
 
+### v1.26A — Ali Visual Calibration — STATUS: PLANNED
+
+Goal:
+Fix a real, already-discovered visual defect: Ali's size visibly pulses during the run cycle and during landing, because the underlying pose PNGs were not cropped to a consistent visible-rect height.
+
+Owner direction: fix this **code-side**, in `scripts/player_visual.gd` — not by relying solely on re-cropping the source PNGs in Photoshop (asset-side fixes remain welcome too, but the system should not be fragile to imperfect source art).
+
+Background (discovered during the v1.25A-P + v0.95A-FIX stabilization pass, see `docs/AUTOPILOT_PROGRESS.md`): `_calculate_texture_layout()` always targets the fixed `VISUAL_HEIGHT = 100.0` constant, computing `uniform_scale := VISUAL_HEIGHT / visible_rect.size.y` per texture. Because the four `ali_run_1..4.png` frames (and reportedly `ali_land.png`) have inconsistent cropped/visible heights, this produces a different scale per frame/pose — observed swinging as much as ~1.9x between frames during testing — which reads as Ali growing/shrinking while running or landing.
+
+Scope:
+
+* Add a code-side calibration step in `scripts/player_visual.gd` so every pose/frame renders at a consistent, intended height regardless of small inconsistencies in each PNG's own crop/padding — for example, a per-frame reference height override table, or normalizing against a single trusted reference frame (e.g. `ali_idle.png`) instead of each frame's own independently-measured visible-rect.
+* Cover at minimum: the four run-cycle frames and `ali_land.png` (the two areas already confirmed inconsistent); audit the remaining poses (`ali_jump.png`, `ali_fall.png`, `ali_slide.png`, `ali_hurt.png`, `ali_victory.png`) for the same issue while in this code.
+* Keep the existing fallback chain (frames → `ali_run.png` → `ali_idle.png` → placeholder) and the existing feet-alignment behavior fully intact — this is a scale-consistency fix, not a rewrite of the pose system.
+
+Do not add:
+
+* A full animation/rigging system.
+* Sprite sheets or `AnimatedSprite2D` (still deferred, per the staged plan in `docs/ANIMATION_AND_ASSET_PLAN.md`).
+* Any change to collision, physics, or gameplay timing.
+
+Acceptance criteria:
+
+* Ali's visual height stays consistent (no visible pulsing) across all four run frames and through a jump→fall→land→run cycle.
+* No regression to the existing fallback behavior or feet-baseline alignment.
+
+This milestone is planned, not implemented. See `docs/ANIMATION_AND_ASSET_PLAN.md` for the asset-side cropping guidance this complements, and `docs/AUTOPILOT_PROGRESS.md` (the "v1.25A-P + v0.95A-FIX" entry) for the original discovery writeup.
+
+---
+
+### v1.26 — Family Companion Journey UI — STATUS: PLANNED
+
+Goal:
+Show that each sister symbolically joins Ali after her checkpoint, so Level 1 reads as Ali gathering the light of the family rather than collecting rewards alone.
+
+Scope:
+
+* Add a small companion ribbon/status area to the HUD.
+* Show Fatima after the Fatima checkpoint.
+* Show Zainab after the Zainab checkpoint.
+* Show Jomana after the Jomana checkpoint.
+* Restore the correct joined portraits when retrying from Fatima, Zainab, or Jomana.
+* Clear all joined portraits on Restart from Beginning.
+* Make the joined state available to the Father ending presentation.
+* Use existing helper portraits when suitable; otherwise use optional companion PNG slots with safe fallbacks.
+
+Acceptance criteria:
+
+* Fatima appears as joined after Fatima.
+* Zainab appears as joined after Zainab.
+* Jomana appears as joined after Jomana.
+* Retry restores the companion set implied by the checkpoint.
+* Restart clears companions.
+* Father ending can read all three companions as joined.
+* Missing companion art never breaks the game.
+* No physics, collision, checkpoint score, reward, speed, or obstacle behavior changes.
+
+Important:
+
+* Stage 1 is UI only. Do not create world-following characters yet.
+* Fatima is a newborn and must remain a seated portrait/icon representation, never a running follower.
+* This milestone is planned and must not be marked complete until implemented and tested.
+
+See `docs/STORY_PLAN.md` ("Family Companion Journey") for the narrative meaning and state rules.
+
+---
+
+### v1.27 — Father Ending Family Group Scene — STATUS: PLANNED
+
+Goal:
+Upgrade the Father ending so Ali arrives with the sisters he gathered, making the restored نور البيت a visible family reunion.
+
+Scope:
+
+* Show Ali, Fatima, Zainab, and Jomana near Father in the ending composition.
+* Reuse the existing in-world cinematic/fake-zoom approach; do not require a real `Camera2D`.
+* Use the companion state from v1.26 rather than inventing a second state system.
+* Preserve the existing Father trigger at score 90 and the current ending/restart flow.
+* Fall back to helper portraits, icons, or labeled placeholders when group assets are missing.
+
+Acceptance criteria:
+
+* The family group scene appears safely at the Father ending.
+* All three joined sisters are represented.
+* Missing sister or Father assets fall back gracefully.
+* No checkpoint, reward, retry, collision, or gameplay-physics changes.
+* Existing Father ending dialogue remains unchanged unless a separately approved dialogue task replaces it.
+
+This milestone is planned, not implemented.
+
+---
+
 ### v1.3 — Character Animation Expansion
 
 Goal:
@@ -1339,16 +1454,39 @@ Do not start this before static story (v1.0) works.
 
 ---
 
+### v1.34 — Level 1 Gold Candidate — STATUS: PLANNED
+
+**Numbering note:** the parallel documentation task that requested this milestone suggested calling it "v1.3," but that number is already taken by "v1.3 — Character Animation Expansion" directly above (an existing, older milestone). Using `v1.34` instead avoids overwriting/renumbering existing history, while still sitting clearly after the v1.2x/v1.25x/v1.26/v1.27 polish work and immediately before `v1.35`'s roadmap refresh — exactly where a pre-refresh "is Level 1 actually done" checkpoint belongs.
+
+Goal:
+Declare Level 1 (Al-Mantarah, Zliten) a "Gold Candidate" — feature-complete, stable, and ready for the owner's final pre-`main` review — before any roadmap refresh or Level 2 work begins.
+
+Scope:
+
+* Consolidate every outstanding Level 1 polish/fix item that's been tracked piecemeal across `docs/AUTOPILOT_PROGRESS.md` and this roadmap (v1.2A/v1.2B, v1.25A/v1.25A-P/v1.25B, v1.26/v1.26A/v1.27, v0.95A/v0.95B) into one definitive readiness checklist.
+* See `docs/LEVEL_1_GOLD_CHECKLIST.md` for the actual checklist — this milestone's job is to walk that checklist to completion, not to re-derive it here.
+* A build only qualifies as "Gold Candidate" once every item on that checklist is either done, or explicitly accepted as a known/documented limitation by the owner (e.g. "ship without ambience music" is an acceptable owner decision; "ship with the menu tween leak" is not).
+
+Do not add:
+
+* Any Level 2 content or code (that's `v2.0` and beyond, and explicitly waits for this milestone).
+* New gameplay mechanics — this is a stabilization/review milestone, not a feature milestone.
+
+This milestone is planned, not implemented/declared yet. See `docs/LEVEL_1_GOLD_CHECKLIST.md` for the full checklist.
+
+---
+
 ### v1.35 — Complete Roadmap Refresh and Level 2 Planning
 
 Goal:
-After v1.25B (or after a full Level 1 "Gold" review, whichever comes first), reconcile this roadmap with everything actually implemented on the `autopilot/v1-level1-...` branch — v1.2A (background motion + the foreground opacity fix), v1.25A (hero menu redesign), v0.95A (SFX integration), and any v1.25A-P/v1.25B/v0.95B work — since these were tracked in `docs/AUTOPILOT_PROGRESS.md` during fast iteration but were never folded back into this master roadmap's "Current Status" section. Planning only — not implemented yet, and explicitly should not happen before v1.25B (or a Level 1 Gold review) is reached.
+After v1.34 (Level 1 Gold Candidate) — or after a full Level 1 "Gold" review, whichever comes first — reconcile this roadmap with everything actually implemented on the `autopilot/v1-level1-...` branch — v1.2A/v1.2B, v1.25A/v1.25A-P/v1.25B, v1.26/v1.26A/v1.27, v0.95A/v0.95B, and v1.34 itself — since these were tracked in `docs/AUTOPILOT_PROGRESS.md` during fast iteration but were never folded back into this master roadmap's "Current Status" section. Planning only — not implemented yet, and explicitly should not happen before v1.34 (or a Level 1 Gold review) is reached.
 
 Scope:
 
 * Update "Current Status" (top of this document) to reflect the real, current implemented state, not the stale earlier-milestone status currently shown there.
-* Reconcile every autopilot-branch milestone (v1.2A, v1.25A, v1.25A-P, v1.25B, v0.95A, v0.95B) into this document's numbered milestone list with accurate STATUS tags.
-* Begin Level 2 / Part 2 planning (see `docs/FUTURE_FEATURE_BACKLOG.md` "Dream Backlog" — Jomana at the beach, Zainab in a garden/new road, Fatima as a baby bonus character) only after Level 1 is confirmed stable end-to-end.
+* Reconcile every autopilot-branch milestone (v1.2A, v1.2B, v1.25A, v1.25A-P, v1.25B, v1.26, v1.26A, v1.27, v0.95A, v0.95B, v1.34) into this document's numbered milestone list with accurate STATUS tags.
+* Begin Level 2 / Part 2 planning (see `docs/FUTURE_FEATURE_BACKLOG.md` "Dream Backlog" and the new `docs/LEVEL_2_PLAN.md`) only after Level 1 is confirmed stable end-to-end via v1.34.
+* Hand off to **v2.0 — Level 2 Design Plan** (see below) once this refresh is done.
 
 Do not implement yet.
 
@@ -1401,6 +1539,28 @@ Future idea only.
 Maybe allow playing as one of Ali's sisters in another location such as beach, garden, or another part of Zliten.
 
 This is backlog only and should not affect Level 1 development. See `docs/FUTURE_FEATURE_BACKLOG.md` ("Dream backlog") for details.
+
+---
+
+### v2.0 — Level 2 Design Plan — STATUS: PLANNED (plan only, not started)
+
+Goal:
+Turn the long-standing v1.6 "Level 2 / Part 2: Sisters Adventure" idea into an actual design plan, once Level 1 is confirmed Gold (v1.34) and the roadmap refresh (v1.35) is done. This milestone is the planning step itself — it does not implement any Level 2 content or code.
+
+Scope:
+
+* See the new `docs/LEVEL_2_PLAN.md` for the full plan-only document — this section intentionally does not duplicate it.
+* Broad title-universe direction: the public title should not be permanently tied to "Ali Runner"/"علي رنر" alone, since Level 2 may center on a different playable character. Candidate Arabic title-universe names already under consideration (see `docs/STORY_PLAN.md` Section 14 and `docs/AI_GAME_ROADMAP.md` "v1.25A-P"): **مغامرة نور البيت**, **رحلة نور البيت**, **أبطال نور البيت**. No final title decision is made by this milestone.
+* Future playable/helper characters: Jomana (beach/seafront setting) and Zainab (garden or new road/area) are the leading candidates, per the existing `docs/FUTURE_FEATURE_BACKLOG.md` ("Dream Backlog — Part 2 Sisters Adventure") notes. Fatima stays a baby/portrait presence, never a playable runner, consistent with her established character rules.
+* Should account for the v1.26/v1.27 Family Companion Journey work — if sisters can already appear as joined companions/portraits in Level 1, Level 2's "become the sister" framing should feel like a natural continuation, not a contradiction.
+
+Do not add:
+
+* Any Level 2 code, scenes, or assets.
+* A final title decision (owner call, not an AI-agent call).
+* Any change to Level 1's gameplay, story, checkpoints, or assets.
+
+This milestone is planned only. See `docs/LEVEL_2_PLAN.md` for the full write-up.
 
 ---
 
