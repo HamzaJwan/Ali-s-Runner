@@ -901,3 +901,20 @@ Validation:
 Immutable benchmarks unaffected — this milestone only moved one `Control` node's static offsets in `Main.tscn`; no script logic, physics, or shared world-position constant was touched.
 
 Commit: `autopilot: polish cinematic intro layout and controls`.
+
+## Level 1 Polish Autopilot — Milestone 6: Companion Ribbon Polish — STATUS: COMPLETE
+
+Files changed: `scenes/Main.tscn`.
+
+Enlarged the top-right "رفاق الرحلة" ribbon for readability: label font size `14 -> 17`; each companion icon/placeholder slot `36x36 -> 44x44`; placeholder emoji font size `16 -> 20` to match. The container grew from `200x54` to `220x74` to fit the bigger label/icons with the same internal spacing proportions, but its **right edge stayed pinned at screen X `1136`** (same `16px` margin from the `1152`-wide viewport's right edge as before) — it only grew leftward/downward, so it stays anchored to the same top-right corner and the right margin everyone already expects is unchanged. The three icon slots keep their original right-to-left order (Fatima rightmost, Jomana leftmost) and 8px gaps, just scaled up.
+
+No script logic was touched — `_update_companion_ribbon()` / `_update_companion_slot()` in `main.gd` already drive visibility/texture purely by node reference, so resizing the `.tscn` nodes needed no code changes; retry/restart/checkpoint companion-state logic is completely unaffected.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running, `tmp_m6_smoke_test.gd` + its `.uid`): confirmed the label's effective font size is now `>14`; confirmed the ribbon's full rect stays inside the `1152x648` viewport (no right/top/left overflow); confirmed all three icon slots grew to at least `40x40` and stay within the ribbon's own bounds; confirmed the existing `_update_companion_ribbon()` flow still toggles the ribbon visible and shows a texture-or-placeholder for each joined companion after the resize. **0 failed assertions.**
+
+Immutable benchmarks unaffected — purely a `.tscn` UI-sizing change with no script/physics involvement.
+
+Commit: `autopilot: polish companion ribbon readability`.
