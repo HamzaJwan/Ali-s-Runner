@@ -164,6 +164,8 @@ var intro_active := false
 var intro_step_index := 0
 var _menu_idle_tween: Tween
 var _play_button_pulse_tween: Tween
+var _menu_zoom_tween: Tween
+var _menu_fade_tween: Tween
 
 
 func _ready() -> void:
@@ -190,6 +192,8 @@ func _ready() -> void:
 	obstacle_spawner.obstacle_hit.connect(_on_obstacle_hit)
 	if not player.landed.is_connected(_on_player_landed):
 		player.landed.connect(_on_player_landed)
+	if not player.jumped.is_connected(_on_player_jumped):
+		player.jumped.connect(_on_player_jumped)
 	_apply_fixed_visual_layout()
 	_apply_optional_backgrounds()
 	_apply_optional_story_textures()
@@ -201,6 +205,10 @@ func _ready() -> void:
 
 func _on_player_landed() -> void:
 	audio_manager.play_land()
+
+
+func _on_player_jumped() -> void:
+	audio_manager.play_jump()
 
 
 func _process(delta: float) -> void:
@@ -255,13 +263,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("ui_accept"):
 		player.jump()
-		audio_manager.play_jump()
 	elif event is InputEventMouseButton and event.pressed:
 		player.jump()
-		audio_manager.play_jump()
 	elif event is InputEventScreenTouch and event.pressed:
 		player.jump()
-		audio_manager.play_jump()
 
 
 func _show_start_screen() -> void:
@@ -302,11 +307,11 @@ func _play_menu_hero_zoom_in() -> void:
 	var target_scale := player_story_sprite.scale
 	player_story_sprite.scale = target_scale * 0.85
 	player_story_sprite.modulate.a = 0.0
-	var zoom_tween := create_tween().set_parallel()
-	zoom_tween.tween_property(
+	_menu_zoom_tween = create_tween().set_parallel()
+	_menu_zoom_tween.tween_property(
 		player_story_sprite, "scale", target_scale, MENU_HERO_ZOOM_IN_TIME
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	zoom_tween.tween_property(
+	_menu_zoom_tween.tween_property(
 		player_story_sprite, "modulate:a", 1.0, MENU_HERO_ZOOM_IN_TIME
 	)
 
@@ -360,25 +365,39 @@ func _play_menu_intro_fade() -> void:
 	menu_instruction_label.modulate.a = 0.0
 	play_button.modulate.a = 0.0
 	skip_intro_button.modulate.a = 0.0
-	var fade_tween := create_tween().set_parallel()
-	fade_tween.tween_property(menu_title_label, "modulate:a", 1.0, MENU_FADE_IN_TIME)
-	fade_tween.tween_property(
+	_menu_fade_tween = create_tween().set_parallel()
+	_menu_fade_tween.tween_property(menu_title_label, "modulate:a", 1.0, MENU_FADE_IN_TIME)
+	_menu_fade_tween.tween_property(
 		menu_subtitle_label, "modulate:a", 1.0, MENU_FADE_IN_TIME
 	).set_delay(0.08)
-	fade_tween.tween_property(
+	_menu_fade_tween.tween_property(
 		menu_instruction_label, "modulate:a", 1.0, MENU_FADE_IN_TIME
 	).set_delay(0.12)
-	fade_tween.tween_property(
+	_menu_fade_tween.tween_property(
 		play_button, "modulate:a", 1.0, MENU_FADE_IN_TIME
 	).set_delay(0.18)
-	fade_tween.tween_property(
+	_menu_fade_tween.tween_property(
 		skip_intro_button, "modulate:a", 1.0, MENU_FADE_IN_TIME
 	).set_delay(0.18)
 
 
-func _leave_menu_to_runner_framing() -> void:
+func _stop_menu_presentation() -> void:
+	if _menu_zoom_tween != null and _menu_zoom_tween.is_valid():
+		_menu_zoom_tween.kill()
+	_menu_zoom_tween = null
+	if _menu_fade_tween != null and _menu_fade_tween.is_valid():
+		_menu_fade_tween.kill()
+	_menu_fade_tween = null
 	_stop_menu_idle_motion()
+
+
+func _reset_ali_for_gameplay() -> void:
 	player.reset_player(START_PLAYER_POSITION)
+
+
+func _leave_menu_to_runner_framing() -> void:
+	_stop_menu_presentation()
+	_reset_ali_for_gameplay()
 
 
 func _on_play_pressed() -> void:
@@ -418,9 +437,9 @@ func _show_intro_step() -> void:
 	intro_speaker.text = step["speaker"]
 	intro_line.text = step["text"]
 	intro_next_button.text = (
-		"ابدأ / Start"
+		"ابدأ"
 		if intro_step_index >= INTRO_LINES.size() - 1
-		else "التالي / Next"
+		else "التالي"
 	)
 
 
@@ -454,6 +473,7 @@ func _start_run() -> void:
 
 
 func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> void:
+	_stop_menu_presentation()
 	get_tree().paused = false
 	started = true
 	score = initial_score
@@ -475,7 +495,7 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	game_over_message.visible = false
 	retry_button.visible = false
 	restart_button.visible = false
-	player.reset_player(START_PLAYER_POSITION)
+	_reset_ali_for_gameplay()
 	player.set_gameplay_active(true)
 	obstacle_spawner.clear_obstacles()
 	obstacle_spawner.start_spawning(current_obstacle_speed)
@@ -744,9 +764,9 @@ func _show_encounter_dialogue_step() -> void:
 		checkpoint_next_hint.visible = false
 		continue_button.visible = true
 		continue_button.text = (
-			"العب من جديد / Play Again"
+			"العب من جديد"
 			if encounter_controller.character_id == EncounterCharacter.FATHER
-			else "متابعة / Continue"
+			else "متابعة"
 		)
 		continue_button.grab_focus()
 

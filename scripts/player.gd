@@ -4,6 +4,7 @@ extends CharacterBody2D
 
 signal died
 signal landed
+signal jumped
 
 const ALI_VISUAL := preload("res://scripts/player_visual.gd")
 const GRAVITY := 1050.0
@@ -36,6 +37,7 @@ func _physics_process(delta: float) -> void:
 	elif _jump_buffer_remaining > 0.0:
 		velocity.y = JUMP_VELOCITY
 		_jump_buffer_remaining = 0.0
+		emit_signal("jumped")
 
 	move_and_slide()
 	_update_visual_pose(delta)
@@ -49,6 +51,7 @@ func jump() -> void:
 	if is_on_floor():
 		velocity.y = JUMP_VELOCITY
 		_jump_buffer_remaining = 0.0
+		emit_signal("jumped")
 
 
 func reset_player(start_position: Vector2) -> void:

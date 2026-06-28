@@ -504,3 +504,84 @@ This entry records owner feedback gathered after testing the build that included
 **Current blockers (unchanged by this task, just re-confirmed):** music and all three ambience loops remain `BLOCKED_BY_AUDIO_ASSET` — no safe licensed candidates sourced yet for any of the four loop files.
 
 **Confirmed:** no scripts, scenes, or assets were modified — this was a pure documentation/planning pass. `git diff --stat` should show only the four `docs/*.md` files listed above.
+
+---
+
+## v1.25A-P + v0.95A-FIX — Stabilization Fix Pass After Codex PARTIAL Review — 2026-06-28 (continued session)
+
+Status: COMPLETE (code fixes for Tasks A/B/C; Task D/E are status/documentation corrections, not implementation — by design, since human listening approval cannot be satisfied by code).
+
+Files changed: `scripts/main.gd`, `scripts/player.gd`, `scenes/Main.tscn`, `docs/AUDIO_DESIGN_PLAN.md`, `docs/AUTOPILOT_PROGRESS.md`.
+
+Context: Codex reviewed the branch (`docs/CODEX_LATEST_BRANCH_REVIEW.md`) and returned **PARTIAL** with one High, two Medium, and two Low findings. This pass addresses the High and both Medium findings, plus the bilingual-controls Low finding.
+
+### Task A — Menu tween leak (High, FIXED)
+
+Root cause confirmed exactly as Codex described: `_play_menu_hero_zoom_in()` created its zoom tween as a **local variable**, never stored anywhere, so `_stop_menu_idle_motion()` (which only killed the idle-bob and Play-button-pulse tweens) could never kill it. The zoom tween kept running in the background and could write the 190px menu scale back onto `player_story_sprite` during/after the intro→gameplay transition.
+
+Fix:
+
+* Added two new tracked tween vars: `_menu_zoom_tween`, `_menu_fade_tween` (alongside the pre-existing `_menu_idle_tween`, `_play_button_pulse_tween`).
+* `_play_menu_hero_zoom_in()` and `_play_menu_intro_fade()` now store their tweens in these vars instead of local variables.
+* New `_stop_menu_presentation()` kills **all four** menu tweens (zoom, fade, idle, pulse) in one place.
+* New `_reset_ali_for_gameplay()` wraps `player.reset_player(START_PLAYER_POSITION)` — the existing call already force-refreshes Ali's pose/scale/position back to the normal 100px gameplay transform; it just didn't help before because the leaked tween kept overwriting it afterward.
+* `_leave_menu_to_runner_framing()` (called from `_on_play_pressed()` and `_on_skip_intro_button_pressed()`, i.e. the moment the player leaves the menu) now calls `_stop_menu_presentation()` then `_reset_ali_for_gameplay()`.
+* **Defensive belt-and-suspenders fix:** `_stop_menu_presentation()` is also called at the very top of `_begin_run()` — the single shared function every gameplay-start path funnels through (`_start_run()` for Play/Skip/intro-completion/Restart/Father-Play-Again, and `_on_retry_pressed()` calling `_begin_run()` directly for Retry). This guarantees the fix covers every listed exit path (Play, Skip intro, intro completed, Restart, Retry, Father Play Again) from one location, not six separate patches.
+
+Validation: a same-lifecycle-point comparison (see "A real bug found while testing this fix" below for why a naive comparison doesn't work) between a "clean" slow Play→Skip and a "fast" immediate Play→Skip showed **identical scale** (`(0.21097, 0.21097)` both, at `run_frame_index=0` both — i.e. both readings captured at the exact same point in Ali's pose lifecycle, before either menu tweens or run-cycle animation could have diverged them). Confirmed `_menu_zoom_tween`/`_menu_idle_tween`/`_play_button_pulse_tween` are all `null` immediately after Play, after the fast exit, 0.65s later, after a full checkpoint cycle, after Retry, and after Restart. Confirmed Ali's X position returns to `PLAYER_START_X` (gameplay X) — never lingers at `MENU_ALI_X` (320) — at every one of those points.
+
+**A real bug found while testing this fix (separate, out of scope, documented honestly rather than hidden):** while building the verification test, raw scale readings of `player_story_sprite` taken at different moments during active gameplay swung between ~`0.102` and ~`0.195` — almost exactly a 1.9x ratio. This is **not** the menu tween leak (confirmed: no menu tween was alive during these readings) — it's that the four `ali_run_1..4` PNG frames have inconsistent visible-rect (cropped) heights, so `player_visual.gd`'s `_calculate_texture_layout()` (which always targets the fixed `VISUAL_HEIGHT = 100.0`) computes a different `uniform_scale` per frame, causing a visible size pulse as the run cycle advances through its 4 frames. This is a real, pre-existing visual-quality issue (likely belongs under `v0.8C — Ali Pose Polish Pass`), but **was not fixed in this task** — fixing it would mean re-cropping/recalibrating the run-frame assets, which is out of scope for a "fix these blockers only" pass and isn't one of the four findings this task was scoped to address. Flagging it here so it isn't lost, and so nobody mistakes it for evidence that the tween-leak fix failed.
+
+### Task B — Jump SFX (Medium, FIXED)
+
+Root cause confirmed exactly as Codex described: `_unhandled_input()` called `audio_manager.play_jump()` unconditionally right after `player.jump()`, but `player.jump()` can merely *buffer* the input while airborne without actually changing velocity — so rapid taps while airborne played the sound every time with no corresponding real jump.
+
+Fix:
+
+* Added `signal jumped` to `player.gd`, emitted at the **exact two points** `velocity.y` is actually set to `JUMP_VELOCITY`: the immediate on-floor branch in `jump()`, and the buffered-jump branch in `_physics_process()` (when a previously-buffered jump finally executes on landing).
+* `main.gd` connects to `player.jumped` once in `_ready()` (same pattern as the existing `player.landed` → `play_land()` wiring) via a new `_on_player_jumped()` → `audio_manager.play_jump()`.
+* Removed the three direct `audio_manager.play_jump()` calls from `_unhandled_input()` — jump input no longer triggers audio directly at all; only a real velocity change does.
+
+Validation: pressed `player.jump()` once on the ground → exactly 1 `jumped` signal (confirmed via a connected counter, not the audio manager directly, to test the signal contract precisely) → confirmed airborne (`is_on_floor() == false`) 0.15s later → spammed `jump()` 5 more times while airborne (0.05s apart, enough real time for physics frames to actually elapse, unlike an earlier draft of this test that used single render-frame awaits and produced a false positive) → signal count stayed at 1, confirmed no extra emissions while airborne.
+
+### Task C — Arabic-only story controls (Low, FIXED)
+
+Per Codex's exact line references, replaced every remaining bilingual control:
+
+| Control | Before | After |
+|---|---|---|
+| Intro Next button | `التالي / Next` (+ runtime `"التالي / Next"`/`"ابدأ / Start"`) | `التالي` / `ابدأ` |
+| Intro Skip button | `تخطي / Skip` | `تخطي` |
+| Checkpoint "next" hint | `Space / Click / Tap — التالي` | `اضغط / انقر / المسافة — للتقدم` |
+| Checkpoint Continue button | `متابعة / Continue` (+ runtime `"العب من جديد / Play Again"`) | `متابعة` / `العب من جديد` |
+
+Fixed both the static `scenes/Main.tscn` defaults and the dynamic runtime assignments in `scripts/main.gd` (`_show_intro_step()`, `_show_encounter_dialogue_step()`'s final-step branch) — the scene defaults are what's visible before any dynamic text overwrites them, so both needed the same fix. Also added `text_direction = 3`/`language = "ar"` to the intro's `NextButton`/`SkipButton`, which hadn't had them set previously (a minor RTL-correctness gap, not just a translation one). Confirmed via `grep` across `scenes/Main.tscn` that no remaining `text = "..."` value mixes Arabic and Latin letters in the same string, except the intentional `SubtitleLabel` ("Ali Runner") and the three single-emoji character placeholder labels (فاطمة/زينب/جمانة + emoji, not English text).
+
+Not touched (already Arabic-only from earlier work, re-verified, not part of this fix): `ابدأ اللعب` (Play), `تخطي المقدمة` (Skip Intro), `إعادة المحاولة من آخر نقطة` (Retry), `إعادة البدء من البداية` (Restart), `النقاط` (Score), `انتهت المحاولة` (Game Over).
+
+### Task D — Audio review status (documentation correction)
+
+No code removed, no SFX deleted, no claim of final quality made. Updated `docs/AUDIO_DESIGN_PLAN.md` with a new "v0.95A Review Status" section stating: v0.95A is `PARTIAL_COMPLETE` / `AUDIO_CANDIDATES_INTEGRATED_FOR_REVIEW`; all 11 SFX remain `HUMAN_AUDIO_REVIEW_REQUIRED`; the owner must listen and approve before any merge to `main`; music/ambience remain missing. Checked for an existing audio settings/mute flag (`grep` across `audio_manager.gd`/`main.gd`) — **none exists**, so there is nothing to document there; no settings menu was added (none was requested).
+
+### Task E — New audio file safety (documentation correction, no integration)
+
+Confirmed via `grep` across `scripts/` that neither `hit_soft_impact.wav` nor `main_theme_soft_loop.ogg` is referenced, loaded, or played by any code — they are not in `AudioManager.SOUND_PATHS` and nothing else touches `assets/audio/gameplay/hit_soft_impact.wav` or `assets/audio/music/main_theme_soft_loop.ogg`. Documented both as **UNVERIFIED_AUDIO_CANDIDATE** in `docs/AUDIO_DESIGN_PLAN.md` since neither has a logged source/license entry in `docs/AUDIO_CREDITS.md` yet (that file was intentionally left untouched — it's outside this task's allowed-files list).
+
+### Validation
+
+* Headless boot (`--quit`) clean, exit 0, no parser/runtime errors, both before and after all fixes.
+* Smoke test (deleted after running, along with its `.uid`): covered the same-lifecycle-point scale comparison (Task A), the jumped-signal-count test with real elapsed time (Task B), all Arabic control text values (Task C), and a full regression — intro, Fatima checkpoint trigger/dialogue/reward/countdown, Game Over, Retry, Restart, audio manager player count. **0 failed assertions** in the final run (after fixing two test-only bugs along the way — a flawed "runner_scale" baseline captured mid-tween, and single-render-frame awaits that didn't reliably let physics frames elapse — both documented so they aren't mistaken for product regressions later).
+* `git diff --stat` confirmed only the listed files changed.
+
+Immutable benchmarks re-verified unchanged: gravity `1050.0`, jump `-440.0`, fall `700.0`, buffer `0.12`, road surface `510.0`, collision half-height `24.0`, spawn interval `2.25`, spawn X, base/post-checkpoint speeds `225/240/255/270`, all four trigger scores `15/35/60/90`.
+
+### Remaining blockers (unchanged by this task, explicitly not addressed per scope)
+
+* Human listening review for the 11 integrated SFX — required before merge to `main`.
+* `hit_soft_impact.wav` — license/source unverified, not integrated.
+* `main_theme_soft_loop.ogg` — license/source unverified, not integrated.
+* Ambience loops (city/birds/wind) — still missing entirely.
+
+### Recommended next task
+
+Codex review of this fix pass — to confirm the menu-tween-leak repro no longer reproduces, the jump-SFX behavior matches the acceptance criteria, and the Arabic-control policy is now consistently applied, before deciding whether v0.95A can be considered "approved" (still pending the separate human-listening step) and before picking up the newly-found run-cycle frame-scale inconsistency as its own task.

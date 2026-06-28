@@ -16,6 +16,18 @@ Direct feedback after listening to the first integrated SFX pass (v0.95A, Kenney
 
 All three remain **BLOCKED_BY_AUDIO_ASSET** until a real, properly licensed (CC0 preferred) candidate is found and logged in `docs/AUDIO_CREDITS.md` — do not fabricate or download blindly, per `docs/ASSET_SOURCING_PLAN.md`.
 
+**Status update (v1.25A-P + v0.95A-FIX stabilization pass, 2026-06-28):** two files matching the requested names have appeared in the working tree — `assets/audio/gameplay/hit_soft_impact.wav` and `assets/audio/music/main_theme_soft_loop.ogg`. Neither has a verified source/license entry in `docs/AUDIO_CREDITS.md` yet, and **neither is integrated or played by any code** as of this pass (explicitly out of scope for this stabilization task). Both are marked **UNVERIFIED_AUDIO_CANDIDATE** until their license/source is confirmed and logged — do not treat their presence on disk as approval to use them.
+
+## v0.95A Review Status (Codex PARTIAL review, 2026-06-28)
+
+Codex reviewed the branch and returned **PARTIAL** with four findings. This pass fixed three of them in code (menu tween leak, jump SFX correctness, remaining bilingual story controls — see `docs/AUTOPILOT_PROGRESS.md` for the full fix details) and re-confirms the audio-approval finding here, since it cannot be "fixed" by code — it requires a human:
+
+* **v0.95A status: PARTIAL_COMPLETE / AUDIO_CANDIDATES_INTEGRATED_FOR_REVIEW.** The 11 SFX are wired into the game and play correctly, but this is *integration*, not *approval*.
+* All 11 integrated SFX remain **HUMAN_AUDIO_REVIEW_REQUIRED** — none have been listened to and approved/remapped/rejected by the owner yet.
+* **The owner must listen to and approve the 11 SFX before this branch is merged to `main` or treated as a release candidate.**
+* Music and ambience remain missing/unverified as documented above — `main_theme_soft_loop.ogg` exists on disk but is **UNVERIFIED_AUDIO_CANDIDATE**, not yet logged with a source/license in `docs/AUDIO_CREDITS.md`, and not integrated in code.
+* `hit_soft_impact.wav` is similarly **UNVERIFIED_AUDIO_CANDIDATE** — not integrated, not license-confirmed.
+
 ## Full Sound List (Future)
 
 * Background music
