@@ -62,13 +62,25 @@ const INTRO_FADE_IN_TIME := 0.3
 const PLAY_BUTTON_PULSE_SCALE := 1.05
 const PLAY_BUTTON_PULSE_TIME := 0.9
 const INTRO_LINES := [
-	{"speaker": "الراوي", "text": "في شارع المنطرحة بزليتن… بدأ نور البيت يضعف."},
+	{
+		"speaker": "الراوي",
+		"text": "في شارع المنطرحة بزليتن… بدأ نور البيت يضعف.",
+		"speaker_visual": "narrator",
+	},
 	{
 		"speaker": "الأب",
 		"text": "يا علي… لو تبي ترجع النور، اجمع فرحة فاطمة، وشجاعة زينب، وحكمة جمانة.",
+		"speaker_visual": "father",
 	},
-	{"speaker": "علي", "text": "حاضر يا بابا… بنوصل للنهاية."},
+	{
+		"speaker": "علي",
+		"text": "حاضر يا بابا… بنوصل للنهاية.",
+		"speaker_visual": "ali",
+	},
 ]
+const INTRO_FOCUS_TWEEN_TIME := 0.35
+const INTRO_DIM_ALPHA := 0.55
+const INTRO_FOCUS_SCALE := 1.08
 const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION := Vector2(
 	PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
@@ -166,6 +178,9 @@ var _menu_idle_tween: Tween
 var _play_button_pulse_tween: Tween
 var _menu_zoom_tween: Tween
 var _menu_fade_tween: Tween
+var _intro_focus_tween: Tween
+var _intro_ali_base_scale := Vector2.ONE
+var _intro_father_base_scale := Vector2.ONE
 
 
 func _ready() -> void:
@@ -393,6 +408,7 @@ func _stop_menu_presentation() -> void:
 
 func _reset_ali_for_gameplay() -> void:
 	player.reset_player(START_PLAYER_POSITION)
+	player.modulate = Color.WHITE
 
 
 func _leave_menu_to_runner_framing() -> void:
@@ -429,7 +445,31 @@ func _start_intro() -> void:
 	intro_overlay.visible = true
 	intro_overlay.modulate.a = 0.0
 	create_tween().tween_property(intro_overlay, "modulate:a", 1.0, INTRO_FADE_IN_TIME)
+	_setup_intro_scene()
 	_show_intro_step()
+
+
+func _setup_intro_scene() -> void:
+	_prepare_player_for_encounter()
+	_intro_ali_base_scale = player_story_sprite.scale
+	father_npc.position = Vector2(
+		ENCOUNTER_TARGET_X, _get_encounter_world_y(EncounterCharacter.FATHER)
+	)
+	father_npc.modulate.a = 1.0
+	father_npc.scale = Vector2.ONE
+	father_npc.visible = true
+	_intro_father_base_scale = father_npc.scale
+
+
+func _teardown_intro_scene() -> void:
+	if _intro_focus_tween != null and _intro_focus_tween.is_valid():
+		_intro_focus_tween.kill()
+	_intro_focus_tween = null
+	father_npc.visible = false
+	father_npc.modulate.a = 1.0
+	father_npc.scale = Vector2.ONE
+	player.modulate = Color.WHITE
+	player_story_sprite.modulate.a = 1.0
 
 
 func _show_intro_step() -> void:
@@ -440,6 +480,61 @@ func _show_intro_step() -> void:
 		"ابدأ"
 		if intro_step_index >= INTRO_LINES.size() - 1
 		else "التالي"
+	)
+	_position_intro_bubble_for_speaker(step["speaker_visual"])
+	_update_intro_speaker_focus(step["speaker_visual"])
+
+
+func _position_intro_bubble_for_speaker(speaker_visual: String) -> void:
+	var role := DialogueRole.REWARD
+	if speaker_visual == "father":
+		role = DialogueRole.HELPER
+	elif speaker_visual == "ali":
+		role = DialogueRole.ALI
+
+	var ali_visual_top := Vector2(
+		player.global_position.x, ROAD_SURFACE_Y - ALI_STORY_VISUAL_HEIGHT
+	)
+	var father_config := ENCOUNTER_DATA.get_encounter(EncounterCharacter.FATHER)
+	var father_visual_top := Vector2(
+		father_npc.global_position.x,
+		ROAD_SURFACE_Y - float(father_config.get("visual_height", 200.0))
+	)
+	var bubble_position := DIALOGUE_BUBBLE_HELPER.get_position(
+		role, ali_visual_top, father_visual_top
+	)
+	intro_speaker.position = bubble_position
+	intro_line.position = bubble_position + Vector2(-100.0, 36.0)
+
+
+func _update_intro_speaker_focus(speaker_visual: String) -> void:
+	var ali_scale_mult := 1.0
+	var father_scale_mult := 1.0
+	var ali_alpha := 1.0
+	var father_alpha := 1.0
+	if speaker_visual == "ali":
+		ali_scale_mult = INTRO_FOCUS_SCALE
+		father_alpha = INTRO_DIM_ALPHA
+	elif speaker_visual == "father":
+		father_scale_mult = INTRO_FOCUS_SCALE
+		ali_alpha = INTRO_DIM_ALPHA
+
+	if _intro_focus_tween != null and _intro_focus_tween.is_valid():
+		_intro_focus_tween.kill()
+	_intro_focus_tween = create_tween().set_parallel()
+	_intro_focus_tween.tween_property(
+		player_story_sprite, "scale", _intro_ali_base_scale * ali_scale_mult,
+		INTRO_FOCUS_TWEEN_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_intro_focus_tween.tween_property(
+		player_story_sprite, "modulate:a", ali_alpha, INTRO_FOCUS_TWEEN_TIME
+	)
+	_intro_focus_tween.tween_property(
+		father_npc, "scale", _intro_father_base_scale * father_scale_mult,
+		INTRO_FOCUS_TWEEN_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_intro_focus_tween.tween_property(
+		father_npc, "modulate:a", father_alpha, INTRO_FOCUS_TWEEN_TIME
 	)
 
 
@@ -465,6 +560,7 @@ func _finish_intro() -> void:
 	intro_active = false
 	intro_shown = true
 	intro_overlay.visible = false
+	_teardown_intro_scene()
 	_start_run()
 
 
@@ -953,6 +1049,7 @@ func _reset_checkpoint_encounter_state() -> void:
 	zainab_npc.modulate.a = 1.0
 	jomana_npc.modulate.a = 1.0
 	father_npc.modulate.a = 1.0
+	father_npc.scale = Vector2.ONE
 	checkpoint_panel.visible = false
 	checkpoint_panel.modulate.a = 1.0
 	checkpoint_card.scale = Vector2.ONE

@@ -623,3 +623,28 @@ Validation:
 Immutable benchmarks re-verified unchanged (gravity/jump/fall/buffer, road surface, collision, spawn interval/X, all speeds, all four checkpoints).
 
 Commit: `autopilot: v1.26A Ali visual calibration`.
+
+## v1.25B — Cinematic Intro Presentation — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`.
+
+Replaced the flat, centered-text "الراوي" narration with an in-world scene reusing the same patterns already proven for the checkpoint encounters, rather than inventing a new presentation system:
+
+* **Positioning:** reused the existing `_prepare_player_for_encounter()` (Ali at `ALI_STORY_X`, resized via `ALI_STORY_VISUAL_HEIGHT`) for Ali, and positioned `father_npc` at `ENCOUNTER_TARGET_X`/`_get_encounter_world_y(FATHER)` — the exact same spot Father already stands at for the real ending. No new world-position constants were needed.
+* **Speech bubble placement:** added `_position_intro_bubble_for_speaker()`, which reuses `scripts/ui/dialogue_bubble_helper.gd`'s existing `get_position()` (the same helper the checkpoint dialogue already uses) by mapping each intro line's new `speaker_visual` field (`"narrator" | "father" | "ali"`) onto the existing `DialogueRole` enum (`REWARD` for narrator → centered top banner; `HELPER` for Father → bubble near Father; `ALI` for Ali → bubble near Ali). No new placement math was written.
+* **Speaker focus/dim:** added `_update_intro_speaker_focus()` — the speaking character's sprite scales up by `INTRO_FOCUS_SCALE` (1.08x) relative to its own captured base scale and stays at full alpha; the non-speaking character dims to `INTRO_DIM_ALPHA` (0.55) at its normal scale. Both properties animate via one shared, explicitly-tracked `_intro_focus_tween` (killed and replaced on every line change) — applying the same "track every tween, kill before replacing" discipline the v1.25A-P menu-tween-leak fix established, specifically to avoid repeating that exact class of bug here.
+* **Warm overlay:** the existing `IntroOverlay/Dim` `ColorRect` (`Color(0.04, 0.03, 0.02, 0.6)`, already warm dark-brown) was reused as-is — already satisfied this requirement, no change needed.
+* **Buttons:** `التالي`/`تخطي` were already Arabic-only from the earlier stabilization pass — no change needed here either.
+* **Story text:** the three documented lines (الراوي/الأب/علي) are byte-for-byte unchanged — only a new `speaker_visual` tag was added per line, no wording changed. No "Hamza" or any new character was added — only Ali and Father appear, per the explicit instruction.
+* **Teardown:** new `_setup_intro_scene()`/`_teardown_intro_scene()` pair brackets the whole intro. Teardown kills the focus tween, hides `father_npc`, and resets its `modulate`/`scale` back to neutral — called from `_finish_intro()`, which runs on both the natural last-line "ابدأ" press and the "تخطي" skip button, so both exit paths clean up identically. Also added `father_npc.scale = Vector2.ONE` to the existing `_reset_checkpoint_encounter_state()` (defense-in-depth, since that function already resets every NPC's visibility/alpha on every gameplay-start path) and `player.modulate = Color.WHITE` to `_reset_ali_for_gameplay()` (same defense-in-depth reasoning, so a future feature that dims Ali can't leak past intro either).
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running): confirmed Ali is positioned at `ALI_STORY_X` and `father_npc` becomes visible the moment intro starts; confirmed both stay neutral during the narrator line; confirmed Father visibly brightens/scales up and Ali dims while Father speaks, and vice versa for Ali's line; confirmed that after the final "ابدأ" press, intro ends, gameplay starts, `father_npc` is hidden again with alpha/scale fully reset, `player`/`player_story_sprite` modulate are back to `1.0`, Ali is back at `PLAYER_START_X`, `_intro_focus_tween` is `null`, and none of the v1.25A-P menu tweens leaked through this new code path either; confirmed the real Father checkpoint ending (triggered independently via `_begin_run(89, JOMANA, 270.0)` + one obstacle pass) still triggers normally afterward, proving the intro's reuse of `father_npc` doesn't interfere with its later checkpoint use. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged.
+
+Known visual risk (HUMAN_VISUAL_REVIEW_REQUIRED): the intro's speech-bubble labels (`IntroSpeaker`/`IntroLine`) are sized 500x30 / 700x90, while `DIALOGUE_BUBBLE_HELPER`'s clamping logic assumes a single 480x160 `BUBBLE_SIZE` box. The position is still computed correctly (near the right character, clamped to the viewport), but the exact box dimensions used for that clamping don't precisely match the actual label sizes — worth a follow-up visual pass to confirm the text never clips off-screen at the extremes, rather than a code-level bug.
+
+Commit: `autopilot: v1.25B cinematic intro presentation`.
