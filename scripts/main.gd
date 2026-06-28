@@ -114,6 +114,13 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var ground_base: Polygon2D = $Ground/GroundBase
 @onready var ground_placeholder: Polygon2D = $Ground/Polygon2D
 @onready var score_label: Label = $UI/ScoreLabel
+@onready var companion_ribbon: Control = $UI/CompanionRibbon
+@onready var fatima_companion_texture: TextureRect = $UI/CompanionRibbon/FatimaCompanionTexture
+@onready var fatima_companion_placeholder: Control = $UI/CompanionRibbon/FatimaCompanionPlaceholder
+@onready var zainab_companion_texture: TextureRect = $UI/CompanionRibbon/ZainabCompanionTexture
+@onready var zainab_companion_placeholder: Control = $UI/CompanionRibbon/ZainabCompanionPlaceholder
+@onready var jomana_companion_texture: TextureRect = $UI/CompanionRibbon/JomanaCompanionTexture
+@onready var jomana_companion_placeholder: Control = $UI/CompanionRibbon/JomanaCompanionPlaceholder
 @onready var game_over_label: Label = $UI/GameOverLabel
 @onready var game_over_message: Label = $UI/GameOverMessage
 @onready var retry_button: Button = $UI/RetryButton
@@ -171,6 +178,9 @@ var player_runner_position := START_PLAYER_POSITION
 var fatima_reward_applied := false
 var zainab_shield_active := false
 var jomana_safety_window_pending := false
+var companion_fatima_joined := false
+var companion_zainab_joined := false
+var companion_jomana_joined := false
 var intro_shown := false
 var intro_active := false
 var intro_step_index := 0
@@ -293,6 +303,10 @@ func _show_start_screen() -> void:
 	last_reached_checkpoint = StoryCheckpoint.NONE
 	encounter_controller.reset_for_run(StoryCheckpoint.NONE)
 	_reset_checkpoint_encounter_state()
+	companion_fatima_joined = false
+	companion_zainab_joined = false
+	companion_jomana_joined = false
+	_update_companion_ribbon()
 	start_screen.visible = true
 	score_label.visible = false
 	game_over_label.visible = false
@@ -580,6 +594,10 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	fatima_reward_applied = checkpoint >= StoryCheckpoint.FATIMA
 	zainab_shield_active = checkpoint >= StoryCheckpoint.ZAINAB
 	jomana_safety_window_pending = false
+	companion_fatima_joined = checkpoint >= StoryCheckpoint.FATIMA
+	companion_zainab_joined = checkpoint >= StoryCheckpoint.ZAINAB
+	companion_jomana_joined = checkpoint >= StoryCheckpoint.JOMANA
+	_update_companion_ribbon()
 	current_obstacle_speed = obstacle_speed
 	_reset_checkpoint_encounter_state()
 	print("Game started: score=", score, " obstacle_speed=",
@@ -848,11 +866,17 @@ func _show_encounter_dialogue_step() -> void:
 			if encounter_controller.character_id == EncounterCharacter.FATIMA:
 				_apply_fatima_reward_bonus()
 				audio_manager.play_reward_star()
+				companion_fatima_joined = true
+				_update_companion_ribbon()
 			elif encounter_controller.character_id == EncounterCharacter.ZAINAB:
 				_apply_zainab_shield_grant()
 				audio_manager.play_reward_heart()
+				companion_zainab_joined = true
+				_update_companion_ribbon()
 			elif encounter_controller.character_id == EncounterCharacter.JOMANA:
 				audio_manager.play_reward_key()
+				companion_jomana_joined = true
+				_update_companion_ribbon()
 			elif encounter_controller.character_id == EncounterCharacter.FATHER:
 				audio_manager.play_victory()
 
@@ -1054,6 +1078,42 @@ func _reset_checkpoint_encounter_state() -> void:
 	checkpoint_panel.modulate.a = 1.0
 	checkpoint_card.scale = Vector2.ONE
 	countdown_overlay.visible = false
+
+
+func _update_companion_ribbon() -> void:
+	var any_joined := (
+		companion_fatima_joined or companion_zainab_joined or companion_jomana_joined
+	)
+	companion_ribbon.visible = any_joined
+	_update_companion_slot(
+		companion_fatima_joined, fatima_texture.texture,
+		fatima_companion_texture, fatima_companion_placeholder
+	)
+	_update_companion_slot(
+		companion_zainab_joined, zainab_texture.texture,
+		zainab_companion_texture, zainab_companion_placeholder
+	)
+	_update_companion_slot(
+		companion_jomana_joined, jomana_texture.texture,
+		jomana_companion_texture, jomana_companion_placeholder
+	)
+
+
+func _update_companion_slot(
+		joined: bool, helper_texture: Texture2D,
+		icon_texture_node: TextureRect, icon_placeholder_node: Control
+) -> void:
+	if not joined:
+		icon_texture_node.visible = false
+		icon_placeholder_node.visible = false
+		return
+	if helper_texture != null:
+		icon_texture_node.texture = helper_texture
+		icon_texture_node.visible = true
+		icon_placeholder_node.visible = false
+	else:
+		icon_texture_node.visible = false
+		icon_placeholder_node.visible = true
 
 
 func _apply_optional_story_textures() -> void:

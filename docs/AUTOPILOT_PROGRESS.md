@@ -648,3 +648,22 @@ Immutable benchmarks re-verified unchanged.
 Known visual risk (HUMAN_VISUAL_REVIEW_REQUIRED): the intro's speech-bubble labels (`IntroSpeaker`/`IntroLine`) are sized 500x30 / 700x90, while `DIALOGUE_BUBBLE_HELPER`'s clamping logic assumes a single 480x160 `BUBBLE_SIZE` box. The position is still computed correctly (near the right character, clamped to the viewport), but the exact box dimensions used for that clamping don't precisely match the actual label sizes — worth a follow-up visual pass to confirm the text never clips off-screen at the extremes, rather than a code-level bug.
 
 Commit: `autopilot: v1.25B cinematic intro presentation`.
+
+## v1.26 — Family Companion Journey UI — STATUS: COMPLETE
+
+Files changed: `scenes/Main.tscn`, `scripts/main.gd`.
+
+Added a small `CompanionRibbon` Control under `UI`, top-right (clear of `ScoreLabel` top-left and the centered checkpoint/intro dialogue) with a small "رفاق الرحلة" label and three 36x36 icon slots (Fatima/Zainab/Jomana), each with a `TextureRect` (for when a real/helper portrait exists) plus a `ColorRect`+emoji `Label` placeholder fallback, reusing the exact placeholder colors already established for each sister (golden/red/green) for visual consistency. The ribbon container itself stays hidden until at least one companion has joined.
+
+State: three new bools (`companion_fatima_joined`, `companion_zainab_joined`, `companion_jomana_joined`) plus `_update_companion_ribbon()`/`_update_companion_slot()`. Wired at exactly the same point each sister's existing reward effect is already granted (Fatima's `_apply_fatima_reward_bonus()` call site, Zainab's `_apply_zainab_shield_grant()` call site, Jomana's `audio_manager.play_reward_key()` call site) — no new trigger points invented. `_begin_run()` sets all three from the `checkpoint` parameter using the exact same `checkpoint >= StoryCheckpoint.X` pattern already used for `fatima_reward_applied`/`zainab_shield_active`, so Retry naturally restores the right companion set and a fresh Restart/Play naturally clears it — this is the same mechanism, not a second state system. `_show_start_screen()` also explicitly clears all three and updates the ribbon, defensively covering the start-screen path too.
+
+Icon source: each slot first tries the same `Texture2D` already loaded for that sister's checkpoint-panel portrait (`fatima_texture.texture` etc., set by the existing `encounter_controller.apply_optional_character_texture()` call in `_apply_optional_story_textures()`) — no new texture loading was added. If that's `null` (the common case today, since Zainab/Jomana have no real art yet and Fatima's is the real-photo placeholder), the slot falls back to its small colored placeholder instead.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running): confirmed the ribbon is hidden at boot; confirmed it becomes visible and Fatima's icon appears the moment her reward step fires, while Zainab's icon stays hidden until hers does; confirmed all three icons accumulate correctly through Fatima → Zainab → Jomana; confirmed a Game Over + Retry from the Jomana checkpoint restores all three companions and keeps the ribbon visible; confirmed Restart from Beginning clears all three and hides the ribbon again. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged. No collision, physics, checkpoint-score, or reward-logic changes — this is UI/state only, exactly as scoped.
+
+Commit: `autopilot: v1.26 family companion journey UI`.

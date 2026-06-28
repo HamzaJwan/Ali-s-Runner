@@ -368,6 +368,118 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 text = "النقاط: 0"
 text_direction = 3
 language = "ar"
+
+[node name="CompanionRibbon" type="Control" parent="UI"]
+visible = false
+offset_left = 936.0
+offset_top = 10.0
+offset_right = 1136.0
+offset_bottom = 64.0
+mouse_filter = 2
+
+[node name="CompanionLabel" type="Label" parent="UI/CompanionRibbon"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 200.0
+offset_bottom = 20.0
+theme_override_font_sizes/font_size = 14
+theme_override_constants/outline_size = 4
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+text = "رفاق الرحلة"
+horizontal_alignment = 2
+text_direction = 3
+language = "ar"
+mouse_filter = 2
+
+[node name="FatimaCompanionTexture" type="TextureRect" parent="UI/CompanionRibbon"]
+visible = false
+offset_left = 128.0
+offset_top = 24.0
+offset_right = 164.0
+offset_bottom = 60.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="FatimaCompanionPlaceholder" type="ColorRect" parent="UI/CompanionRibbon"]
+visible = false
+offset_left = 128.0
+offset_top = 24.0
+offset_right = 164.0
+offset_bottom = 60.0
+color = Color(0.78, 0.57, 0.22, 1)
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="UI/CompanionRibbon/FatimaCompanionPlaceholder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "⭐"
+mouse_filter = 2
+
+[node name="ZainabCompanionTexture" type="TextureRect" parent="UI/CompanionRibbon"]
+visible = false
+offset_left = 84.0
+offset_top = 24.0
+offset_right = 120.0
+offset_bottom = 60.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="ZainabCompanionPlaceholder" type="ColorRect" parent="UI/CompanionRibbon"]
+visible = false
+offset_left = 84.0
+offset_top = 24.0
+offset_right = 120.0
+offset_bottom = 60.0
+color = Color(0.82, 0.43, 0.34, 1)
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="UI/CompanionRibbon/ZainabCompanionPlaceholder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "❤️"
+mouse_filter = 2
+
+[node name="JomanaCompanionTexture" type="TextureRect" parent="UI/CompanionRibbon"]
+visible = false
+offset_left = 40.0
+offset_top = 24.0
+offset_right = 76.0
+offset_bottom = 60.0
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="JomanaCompanionPlaceholder" type="ColorRect" parent="UI/CompanionRibbon"]
+visible = false
+offset_left = 40.0
+offset_top = 24.0
+offset_right = 76.0
+offset_bottom = 60.0
+color = Color(0.36, 0.56, 0.42, 1)
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="UI/CompanionRibbon/JomanaCompanionPlaceholder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "🗝️"
+mouse_filter = 2
 visible = false
 
 [node name="GameOverLabel" type="Label" parent="UI"]
