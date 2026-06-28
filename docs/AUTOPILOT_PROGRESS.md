@@ -939,3 +939,35 @@ Validation:
 Immutable benchmarks re-verified unchanged via grep — this milestone only touched audio loading/credits; no physics, spawn, speed, or checkpoint constant exists in the changed files.
 
 Commit: `autopilot: polish audio structure and replacement readiness`.
+
+## Level 1 Polish Autopilot — Milestone 8: Final Polish Pass and Report — STATUS: COMPLETE
+
+Files changed: `docs/AUTOPILOT_PROGRESS.md` only.
+
+Final headless boot: clean, exit `0`, no parser/runtime errors.
+
+Final comprehensive smoke test (deleted after running, `tmp_m8_final_smoke_test.gd` + its `.uid`) drove one continuous `Main.tscn` instance through every system touched by this sprint, in order: start screen visible at boot → Play opens the intro → Skip ends it and reaches gameplay → player lands on the floor and runs → a real Fatima checkpoint triggered the same way gameplay triggers it (`score = 14` then `_on_obstacle_passed()`, not a direct internal call) → checkpoint panel opens, dialogue advances to its final reward step, Fatima's `+5` bonus applies correctly (`score 15 -> 20`), the companion ribbon becomes visible → Continue resumes gameplay through the countdown at the correct post-Fatima speed → a real Game Over via `_end_run()` (not a raw `player.kill()`, which only kills the sprite and does not set the game's own `game_over` state) sets `game_over` and shows the Game Over label → Retry restores score `20` and Fatima's companion flag → Restart from Beginning resets score to `0`, clears every companion flag, and hides the ribbon again → a Father ending triggered with all three sisters flagged as joined shows all three sister NPCs and Father himself visible together in the family group. **0 failed assertions** after two test-only bugs were found and fixed (first attempt mistakenly bypassed the real score-trigger and real game-over state-machine entry points and was correctly diagnosed as a test flaw, not a regression, before being fixed).
+
+Immutable constants reconfirmed via grep across every script touched this sprint (`player.gd`, `player_visual.gd`, `obstacle_spawner.gd`, `difficulty_manager.gd`, `encounter_data.gd`, `main.gd`): gravity `1050`, jump velocity `-440`, max fall speed `700`, jump buffer `0.12`, road surface Y `510`, spawn interval `2.25`, spawn X `1292`, speeds `225/240/255/270`, checkpoint trigger scores `15/35/60/90` — all unchanged across all eight milestones.
+
+No temporary smoke-test scripts or `.gd.uid` files remain in the working tree from this sprint.
+
+### Sprint summary (all 8 milestones complete)
+
+1. Character scale + Father heroic presentation (`autopilot: polish character scales and father presentation`)
+2. Black-rectangle shadow fix (`autopilot: remove ali foot artifact and clean shadow`)
+3. Run smoothness (`autopilot: polish ali run smoothness`)
+4. Living idle motion (`autopilot: add subtle idle life to story characters`)
+5. Cinematic intro layout (`autopilot: polish cinematic intro layout and controls`)
+6. Companion ribbon polish (`autopilot: polish companion ribbon readability`)
+7. Audio structure polish (`autopilot: polish audio structure and replacement readiness`)
+8. Final polish pass and report (this entry)
+
+### Remaining human-only items (unchanged scope from before this sprint)
+
+* Listen to and approve/remap/reject every integrated SFX, `main_theme_soft_loop.ogg`, and the two newly-active jump/hit candidates (all still `HUMAN_AUDIO_REVIEW_REQUIRED` for tone/loudness, even though all are now license-documented and code-safe).
+* `level1_music_option_1.ogg` remains `BLOCKED_BY_ASSET` per `docs/AUDIO_CREDITS.md` — needs a manual re-download before it can even be considered.
+* `hit_soft_impact.wav` and ambience (city/birds/wind) remain undocumented/missing and were correctly left untouched.
+* Check Arabic RTL rendering/readability and overall visual feel in a real F6 session — nothing in this sprint can substitute for an owner's eyes on the actual running game.
+
+Recommended next task: **v1.35 — Roadmap Refresh and Level 2 Planning**, once the owner has completed the human-only audio/visual review above.
