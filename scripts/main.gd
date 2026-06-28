@@ -42,6 +42,10 @@ const ALI_STORY_VISUAL_HEIGHT := 160.0
 const ENCOUNTER_TARGET_X := 610.0
 const CURB_STORY_Y := CURB_TOP_Y
 const COUNTDOWN_DURATION := 3.0
+const GAME_OVER_IMPACT_DELAY := 0.45
+const IMPACT_BOUNCE_DISTANCE := 10.0
+const IMPACT_BOUNCE_OUT_TIME := 0.08
+const IMPACT_BOUNCE_BACK_TIME := 0.18
 const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION := Vector2(
 	PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
@@ -254,8 +258,23 @@ func _end_run() -> void:
 
 	game_over = true
 	obstacle_spawner.stop_spawning()
+	obstacle_spawner.clear_obstacles()
 	player.kill()
+	_play_impact_bounce()
+	await get_tree().create_timer(GAME_OVER_IMPACT_DELAY).timeout
 	_show_game_over_options()
+
+
+func _play_impact_bounce() -> void:
+	var start_x := player.global_position.x
+	var bounce_tween := create_tween()
+	bounce_tween.tween_property(
+		player, "global_position:x", start_x - IMPACT_BOUNCE_DISTANCE,
+		IMPACT_BOUNCE_OUT_TIME
+	)
+	bounce_tween.tween_property(
+		player, "global_position:x", start_x, IMPACT_BOUNCE_BACK_TIME
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _show_game_over_options() -> void:
