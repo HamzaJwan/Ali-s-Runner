@@ -200,6 +200,10 @@ var _menu_fade_tween: Tween
 var _intro_focus_tween: Tween
 var _intro_ali_base_scale := Vector2.ONE
 var _intro_father_base_scale := Vector2.ONE
+var _idle_breath_tweens: Dictionary = {}
+var _idle_breath_bases: Dictionary = {}
+var _checkpoint_speaker_tween: Tween
+var _checkpoint_speaker_bases: Dictionary = {}
 
 
 func _ready() -> void:
@@ -484,12 +488,16 @@ func _setup_intro_scene() -> void:
 	father_npc.scale = Vector2.ONE
 	father_npc.visible = true
 	_intro_father_base_scale = father_npc.scale
+	_start_idle_breath(player_story_sprite)
+	_start_idle_breath(father_npc_sprite)
 
 
 func _teardown_intro_scene() -> void:
 	if _intro_focus_tween != null and _intro_focus_tween.is_valid():
 		_intro_focus_tween.kill()
 	_intro_focus_tween = null
+	_stop_idle_breath(player_story_sprite)
+	_stop_idle_breath(father_npc_sprite)
 	father_npc.visible = false
 	father_npc.modulate = Color.WHITE
 	father_npc.scale = Vector2.ONE
@@ -566,6 +574,99 @@ func _update_intro_speaker_focus(speaker_visual: String) -> void:
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_intro_focus_tween.tween_property(
 		father_npc, "modulate", father_modulate, INTRO_FOCUS_TWEEN_TIME
+	)
+
+
+func _start_idle_breath(sprite: Node2D) -> void:
+	if sprite == null:
+		return
+	_stop_idle_breath(sprite)
+	var base: Vector2 = sprite.position
+	_idle_breath_bases[sprite] = base
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(sprite, "position:y", base.y - IDLE_BREATH_BOB, IDLE_BREATH_TIME)
+	tween.tween_property(sprite, "position:y", base.y, IDLE_BREATH_TIME)
+	_idle_breath_tweens[sprite] = tween
+
+
+func _stop_idle_breath(sprite: Node2D) -> void:
+	if sprite == null:
+		return
+	var tween: Tween = _idle_breath_tweens.get(sprite)
+	if tween != null and tween.is_valid():
+		tween.kill()
+	_idle_breath_tweens.erase(sprite)
+	if _idle_breath_bases.has(sprite):
+		sprite.position = _idle_breath_bases[sprite]
+		_idle_breath_bases.erase(sprite)
+
+
+func _stop_all_idle_breaths() -> void:
+	for sprite in _idle_breath_tweens.keys().duplicate():
+		_stop_idle_breath(sprite)
+
+
+func _active_helper_sprite() -> Sprite2D:
+	match encounter_controller.character_id:
+		EncounterCharacter.FATIMA:
+			return fatima_npc_sprite
+		EncounterCharacter.ZAINAB:
+			return zainab_npc_sprite
+		EncounterCharacter.JOMANA:
+			return jomana_npc_sprite
+		EncounterCharacter.FATHER:
+			return father_npc_sprite
+	return null
+
+
+func _update_checkpoint_speaker_emphasis(role: int) -> void:
+	var helper_sprite := _active_helper_sprite()
+	if helper_sprite == null:
+		return
+	if not _checkpoint_speaker_bases.has(helper_sprite):
+		_checkpoint_speaker_bases[helper_sprite] = helper_sprite.scale
+	if not _checkpoint_speaker_bases.has(player_story_sprite):
+		_checkpoint_speaker_bases[player_story_sprite] = player_story_sprite.scale
+	var helper_base: Vector2 = _checkpoint_speaker_bases[helper_sprite]
+	var ali_base: Vector2 = _checkpoint_speaker_bases[player_story_sprite]
+	var is_father := encounter_controller.character_id == EncounterCharacter.FATHER
+
+	var helper_scale_mult := 1.0
+	var ali_scale_mult := 1.0
+	var helper_modulate := Color.WHITE
+	var ali_alpha := 1.0
+	match role:
+		DialogueRole.HELPER:
+			helper_scale_mult = INTRO_FOCUS_SCALE
+			helper_modulate = FATHER_SPEAKING_TINT if is_father else Color.WHITE
+			ali_alpha = INTRO_DIM_ALPHA
+		DialogueRole.ALI:
+			ali_scale_mult = INTRO_FOCUS_SCALE
+			var dim_alpha: float = (
+				FATHER_NON_SPEAKER_DIM_ALPHA if is_father else INTRO_DIM_ALPHA
+			)
+			helper_modulate = Color(1.0, 1.0, 1.0, dim_alpha)
+
+	if _checkpoint_speaker_tween != null and _checkpoint_speaker_tween.is_valid():
+		_checkpoint_speaker_tween.kill()
+	_checkpoint_speaker_tween = create_tween().set_parallel()
+	_checkpoint_speaker_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_checkpoint_speaker_tween.tween_property(
+		helper_sprite, "scale", helper_base * helper_scale_mult,
+		INTRO_FOCUS_TWEEN_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_checkpoint_speaker_tween.tween_property(
+		helper_sprite, "modulate", helper_modulate, INTRO_FOCUS_TWEEN_TIME
+	)
+	_checkpoint_speaker_tween.tween_property(
+		player_story_sprite, "scale", ali_base * ali_scale_mult,
+		INTRO_FOCUS_TWEEN_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_checkpoint_speaker_tween.tween_property(
+		player_story_sprite, "modulate:a", ali_alpha, INTRO_FOCUS_TWEEN_TIME
 	)
 
 
@@ -817,29 +918,32 @@ func _get_encounter_world_y(character: int) -> float:
 
 func _show_father_ending_family_group() -> void:
 	_position_family_companion(
-		fatima_npc, companion_fatima_joined, EncounterCharacter.FATIMA,
-		FAMILY_GROUP_FATIMA_X
+		fatima_npc, fatima_npc_sprite, companion_fatima_joined,
+		EncounterCharacter.FATIMA, FAMILY_GROUP_FATIMA_X
 	)
 	_position_family_companion(
-		zainab_npc, companion_zainab_joined, EncounterCharacter.ZAINAB,
-		FAMILY_GROUP_ZAINAB_X
+		zainab_npc, zainab_npc_sprite, companion_zainab_joined,
+		EncounterCharacter.ZAINAB, FAMILY_GROUP_ZAINAB_X
 	)
 	_position_family_companion(
-		jomana_npc, companion_jomana_joined, EncounterCharacter.JOMANA,
-		FAMILY_GROUP_JOMANA_X
+		jomana_npc, jomana_npc_sprite, companion_jomana_joined,
+		EncounterCharacter.JOMANA, FAMILY_GROUP_JOMANA_X
 	)
 
 
 func _position_family_companion(
-		npc: Node2D, joined: bool, character: int, group_x: float
+		npc: Node2D, npc_sprite: Node2D, joined: bool, character: int,
+		group_x: float
 ) -> void:
 	if not joined:
 		npc.visible = false
+		_stop_idle_breath(npc_sprite)
 		return
 	npc.position = Vector2(group_x, _get_encounter_world_y(character))
 	npc.scale = Vector2(FAMILY_GROUP_SCALE, FAMILY_GROUP_SCALE)
 	npc.modulate.a = 1.0
 	npc.visible = true
+	_start_idle_breath(npc_sprite)
 
 
 func _prepare_player_for_encounter() -> void:
@@ -864,6 +968,8 @@ func _open_checkpoint_cinematic() -> void:
 	audio_manager.duck_music()
 	if encounter_controller.character_id == EncounterCharacter.FATHER:
 		_show_father_ending_family_group()
+	_start_idle_breath(player_story_sprite)
+	_start_idle_breath(_active_helper_sprite())
 	_configure_checkpoint_panel()
 	_show_encounter_dialogue_step()
 	checkpoint_panel.visible = true
@@ -900,6 +1006,7 @@ func _show_encounter_dialogue_step() -> void:
 	var role: int = step["role"]
 	var text: String = step["text"]
 	_position_dialogue_bubble_for_speaker(role)
+	_update_checkpoint_speaker_emphasis(role)
 	checkpoint_speaker_name.text = _get_speaker_name(role)
 	match role:
 		DialogueRole.HELPER:
@@ -1131,6 +1238,17 @@ func _reset_checkpoint_encounter_state() -> void:
 	checkpoint_panel.modulate.a = 1.0
 	checkpoint_card.scale = Vector2.ONE
 	countdown_overlay.visible = false
+	_stop_all_idle_breaths()
+	if _checkpoint_speaker_tween != null and _checkpoint_speaker_tween.is_valid():
+		_checkpoint_speaker_tween.kill()
+	_checkpoint_speaker_tween = null
+	for speaker_sprite: Node2D in [
+		fatima_npc_sprite, zainab_npc_sprite, jomana_npc_sprite,
+		father_npc_sprite, player_story_sprite
+	]:
+		speaker_sprite.modulate = Color.WHITE
+		if _checkpoint_speaker_bases.has(speaker_sprite):
+			speaker_sprite.scale = _checkpoint_speaker_bases[speaker_sprite]
 
 
 func _update_companion_ribbon() -> void:
