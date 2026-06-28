@@ -27,6 +27,10 @@ const ENCOUNTER_CONTROLLER := preload("res://scripts/story/encounter_controller.
 const DIFFICULTY_MANAGER := preload("res://scripts/gameplay/difficulty_manager.gd")
 const OBSTACLE_SPAWNER := preload("res://scripts/gameplay/obstacle_spawner.gd")
 const DIALOGUE_BUBBLE_HELPER := preload("res://scripts/ui/dialogue_bubble_helper.gd")
+const BACKGROUND_MOTION := preload("res://scripts/visual/background_motion.gd")
+const BUILDINGS_PARALLAX_FACTOR := 0.05
+const FOREGROUND_PARALLAX_FACTOR := 0.15
+const GROUND_PARALLAX_FACTOR := 0.65
 const VIEW_W := 1152.0
 const VIEW_H := 648.0
 const CURB_TOP_Y := 470.0
@@ -132,6 +136,7 @@ var checkpoint_arriving := false
 var checkpoint_cinematic_active := false
 var active_encounter_node: Node2D
 var encounter_controller := ENCOUNTER_CONTROLLER.new()
+var background_motion := BACKGROUND_MOTION.new()
 var countdown_active := false
 var countdown_remaining := 0.0
 var countdown_number := 0
@@ -168,6 +173,7 @@ func _ready() -> void:
 	_apply_optional_backgrounds()
 	_apply_optional_story_textures()
 	_apply_optional_ali_focus_texture()
+	_setup_background_motion()
 	_show_start_screen()
 
 
@@ -184,6 +190,27 @@ func _process(delta: float) -> void:
 
 	if countdown_active:
 		_update_countdown(delta)
+
+	if _is_background_motion_active():
+		background_motion.update(delta, current_obstacle_speed)
+
+
+func _setup_background_motion() -> void:
+	background_motion.setup(VIEW_W)
+	background_motion.add_layer(buildings_sprite, BUILDINGS_PARALLAX_FACTOR)
+	background_motion.add_layer(foreground_sprite, FOREGROUND_PARALLAX_FACTOR)
+	background_motion.add_layer(ground_sprite, GROUND_PARALLAX_FACTOR)
+
+
+func _is_background_motion_active() -> bool:
+	return (
+		started
+		and not game_over
+		and not checkpoint_cinematic_active
+		and not checkpoint_encounter_started
+		and not countdown_active
+		and not intro_active
+	)
 
 
 func _input(event: InputEvent) -> void:

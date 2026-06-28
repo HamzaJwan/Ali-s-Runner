@@ -286,3 +286,41 @@ Status: NOT ATTEMPTED THIS SESSION (deliberate stop, not a crash/blocker)
 2. If everything feels right, merge `autopilot/v1-level1-20260628-1842` into `main` (or open the PR link GitHub printed when the branch was first pushed) and push to `main` — this autopilot session never touched `main` directly, by design.
 3. When ready to unblock audio, provide licensed CC0/CC-BY audio files per `docs/ASSET_SOURCING_PLAN.md` and `docs/AUDIO_DESIGN_PLAN.md`, with `docs/AUDIO_CREDITS.md` entries, to enable v0.95/96/97.
 4. When ready for web export, install Godot 4.7 export templates (Editor → Manage Export Templates) to unblock v1.4.
+
+---
+
+## v1.2A — Background Motion / Lightweight Parallax — 2026-06-28 (continued session)
+
+Status: COMPLETE
+
+Files changed: `scripts/main.gd`, new `scripts/visual/background_motion.gd`.
+
+Helper script added (Option A): `BackgroundMotion` (`RefCounted`, instantiated once in `main.gd` exactly like `encounter_controller`/other helpers — not a tree node, no scene wiring needed beyond the existing `@onready` sprite refs). `add_layer(sprite, speed_factor)` skips and logs once if the sprite has no texture (no crash); otherwise it duplicates the sprite (same texture/scale/centered/modulate/z_index) and places the duplicate exactly one viewport-width to the right in **global** coordinates — using `global_position` rather than local `position` makes the wrap math correct regardless of each sprite's parent offset (`BG` at world origin for buildings/foreground vs. `Ground` at world `(576, 545)` for the ground strip — confirmed by reading `_apply_scenery_layer`/`_apply_ground_texture` before writing this). `update(delta, obstacle_speed)` moves both sprites in a pair left by `obstacle_speed * speed_factor * delta`, then recycles whichever one has scrolled fully past world `x=0` by teleporting it to `other.global_position.x + view_width` — a self-correcting two-sprite loop with no extra state to drift out of sync.
+
+Wired into `main.gd`: `_setup_background_motion()` (called once in `_ready()`, after `_apply_optional_backgrounds()` so textures are already fitted) adds three layers — `buildings_sprite` (factor `0.05`), `foreground_sprite` (factor `0.15`), `ground_sprite` (factor `0.65`), per the suggested multipliers. Sky is left fully static (per the design direction — "mostly static"). `_process()` calls `background_motion.update(delta, current_obstacle_speed)` only when `_is_background_motion_active()` is true (`started && !game_over && !checkpoint_cinematic_active && !checkpoint_encounter_started && !countdown_active && !intro_active`) — motion fully stops (not just slows) during intro, checkpoint cinematics, countdown, and Game Over, satisfying "stop or become very slow." No `Camera2D`, no audio, no new image assets, no shaders, no changes to any physics/spawn/checkpoint/dialogue/retry/restart logic.
+
+Validation:
+
+* Headless boot (`--quit`) clean, exit 0. Log confirms all three layers initialized: `[parallax] layer BuildingsSprite ready, speed_factor=0.05`, `ForegroundSprite ... 0.15`, `GroundSprite ... 0.65` (all three background PNGs exist on disk via the `.png.png` fallback path, so this is real exercised motion, not a placeholder no-op).
+* Smoke test (deleted after running): confirmed `background_motion.has_layers()` true; confirmed buildings sprite does **not** move during the intro; confirmed ground **and** buildings sprites both move once gameplay starts, with the ground moving roughly 13x faster than buildings over the same 0.5s window (`-74.14px` vs `-5.70px`, matching the `0.65`/`0.05` ratio exactly: `225 * 0.65 * 0.5 ≈ 73.1`, `225 * 0.05 * 0.5 ≈ 5.6`); confirmed motion stops the instant the Fatima cinematic opens; confirmed motion resumes after the post-checkpoint countdown finishes; confirmed motion stops again after Game Over. **0 failed assertions.**
+* `git diff --stat`: only `scripts/main.gd` (27 insertions) plus the new `scripts/visual/` file — no unrelated files touched.
+
+Immutable benchmarks re-verified unchanged: gravity `1050.0`, jump `-440.0`, fall `700.0`, buffer `0.12`, road surface `510.0`, collision half-height `24.0`, spawn interval `2.25`, spawn X (`VIEW_W + SPAWN_MARGIN`), base/post-checkpoint speeds `225/240/255/270`, all four trigger scores `15/35/60/90`.
+
+Note found during this milestone (not part of v1.2A's own work, just observed): `docs/AUDIO_CREDITS.md` and `docs/AUDIO_ASSET_SOURCING_REPORT.md` now exist in the working tree (created by a separate agent/process, not this task). The sourcing report states **0 of 15 audio files were safely sourced** — every slot is `BLOCKED_BY_LICENSE_OR_ASSET` because automated sourcing couldn't verify license + emotional tone safely. **Audio remains blocked** — confirmed no real `.wav`/`.ogg` files exist anywhere in `assets/audio/`. This directly answers "v0.95 if Gemini has provided audio": it has not yet.
+
+Known visual risks (HUMAN_VISUAL_REVIEW_REQUIRED, cannot be judged headlessly):
+
+* Seam quality at the loop point for each of the three layers — `bg_buildings.png.png`/`bg_foreground.png.png`/`ground_mantarha.png.png` were not authored as seamlessly tileable textures, so a visible seam/repeat may be noticeable when two copies meet, especially for the ground strip (fastest-moving layer, most likely to show a seam).
+* Whether the three speed multipliers (`0.05`/`0.15`/`0.65`) actually read as "subtle" in motion, or whether the ground in particular feels too fast/slow at each difficulty speed (225 through 270).
+* Whether the buildings/foreground duplicate sprites' z-ordering still looks correct relative to the player/obstacles once two copies of each exist (each duplicate copies the original's `z_index`, so this should match, but only a visual pass can confirm there's no flicker/overlap artifact).
+
+Owner F6 test checklist (v1.2A):
+
+* Start the game and confirm the street background subtly scrolls while running (ground fastest, foreground a bit slower, buildings barely moving, sky still).
+* Watch one full loop cycle of the ground strip — confirm no jarring seam/flash at the wrap point.
+* Confirm the background freezes during: the opening intro, every checkpoint dialogue (Fatima/Zainab/Jomana/Father), the countdown, and the Game Over screen.
+* Confirm background motion resumes immediately after a countdown finishes or after Restart/Retry.
+* Confirm obstacles, Ali, and collision all still feel exactly as before — this task should be invisible to gameplay feel, only the backdrop should look more alive.
+
+Commit: `git add -A && git commit -m "autopilot: v1.2A background motion lightweight parallax" && git push` — see git log for the resulting hash.
