@@ -842,3 +842,20 @@ Validation:
 Immutable benchmarks unaffected — purely cosmetic geometry/color change to a non-collidable visual node.
 
 Commit: `autopilot: remove ali foot artifact and clean shadow`.
+
+## Level 1 Polish Autopilot — Milestone 3: Run Smoothness Polish — STATUS: COMPLETE
+
+Files changed: `scripts/player_visual.gd`.
+
+Reviewed the run-frame switching logic (`update_visual()`'s `while run_anim_time >= frame_duration` accumulator loop in `player_visual.gd`) before changing anything: it is already correct and jerk-free at the data level — the v1.34 fix already normalizes every run frame to the same visible height (`100px`) and the same `feet_y` (`24`), so there is no per-frame size/position pop. The only remaining lever for "run smoothness" without touching physics or adding frames is cadence: `RUN_ANIMATION_FPS` was `10.0`, giving a `400ms` full 4-frame cycle, which reads as a slow, choppy step rate for a runner.
+
+Raised `RUN_ANIMATION_FPS` from `10.0` to `13.0` (a `~308ms` cycle) — still the same 4 frames, same reset behavior (`_reset_run_animation()` still zeroes `run_anim_time`/`run_frame_index` on every pose change), same feet alignment, just a brisker, more natural-feeling step cadence.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running, `tmp_m3_smoke_test.gd` + its `.uid`): confirmed `RUN_ANIMATION_FPS >= 12`; confirmed the run frame index actually cycles at the new rate during a live run; confirmed visible height stays within `1px` and feet `Y` stays within `1px` across 40 sampled frames over 2 seconds (no size/position jerk introduced by the faster cadence). **0 failed assertions.**
+
+Immutable benchmarks unaffected — this is a pure animation-timing constant in the visual layer; `Player`'s physics (`_physics_process`, `GRAVITY`, `JUMP_VELOCITY`, etc.) was not touched.
+
+Commit: `autopilot: polish ali run smoothness`.

@@ -4,7 +4,7 @@ extends Sprite2D
 const ASSET_UTILS := preload("res://scripts/asset_utils.gd")
 const VISUAL_HEIGHT := 100.0
 const FEET_Y := 24.0
-const RUN_ANIMATION_FPS := 10.0
+const RUN_ANIMATION_FPS := 13.0
 
 const IDLE := &"idle"
 const RUN := &"run"
