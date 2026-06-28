@@ -216,3 +216,73 @@ Validation: headless boot clean. Two smoke tests:
 Immutable benchmarks re-verified unchanged (gravity/jump/fall/buffer, all four trigger scores 15/35/60/90).
 
 Remaining risk: `Dim`/overlay layering and Arabic text readability against the existing UI theme is HUMAN_TEST_REQUIRED (cannot be judged headlessly).
+
+---
+
+## v1.15 / v1.2 / v1.3 / v1.4 / v1.5 — 2026-06-28 20:30
+
+Status: NOT ATTEMPTED THIS SESSION (deliberate stop, not a crash/blocker)
+
+* **v1.15 (Camera2D focus moments):** the project's own docs (`docs/STORY_PLAN.md`, `docs/FUTURE_FEATURE_BACKLOG.md`) have repeatedly deferred real `Camera2D` zoom across many prior milestones specifically because of fixed-viewport-layout risk, and the "fake zoom" (dim overlay + focused dialogue) it would improve on is already implemented and just got two more layers built on top of it (v0.9 rewards, v1.1 intro). Attempting a real camera change now, at the end of an already-large session, was judged higher-risk-for-benefit than stopping here with a clean, fully-tested checkpoint. Not blocked by missing tools — a judgment call to stop scope here.
+* **v1.2/v1.3 (visual motion polish / animation expansion):** not attempted, same reasoning — lower priority than locking in a verified v1.0+v1.1 state.
+* **v1.4 (Web export):** checked — `%APPDATA%\Godot\export_templates\` exists but is **empty** (no version subfolder), and no `export_presets.cfg` exists in the project. **BLOCKED_BY_EXPORT_TEMPLATES.**
+* **v1.5 (Android preparation):** checked — `ANDROID_HOME`/`ANDROID_SDK_ROOT` are unset. **BLOCKED_BY_SDK.** Per the mission rules, no SDK/template installation was attempted (out of scope — that's an environment-setup action, not a Godot coding task).
+
+---
+
+## FINAL REPORT — 2026-06-28 20:32
+
+**1. Branch:** `autopilot/v1-level1-20260628-1842`
+**2. Latest commit:** `1b0f174` ("autopilot: v1.1 opening story scene / cinematic intro")
+**3. Push status:** all 5 commits pushed to `origin/autopilot/v1-level1-20260628-1842`; branch is even with origin (no destructive operations, `main` untouched, no force-push).
+**4. Highest milestone reached:** v1.1 — Opening Story Scene / Cinematic Intro (complete and regression-tested).
+
+**5. Completed milestones:**
+* Preflight safety (branch, backup, snapshot commit, push).
+* v0.8B-R (automated review, no defects found).
+* v0.8C (reviewed, no changes needed — values already within guidance).
+* v0.8D (Game Over Impact Moment — spawner stop+clear, hurt pose, bounce-back tween, 0.45s delay before Game Over UI).
+* v0.85 (reviewed — existing fallback/scaling already solid; asset quality itself remains owner's call, untouched).
+* v0.9A (Fatima +5 score bonus, baked into retry state).
+* v0.9B (Zainab one-hit shield, absorbs one hit then expires, carried through later checkpoints).
+* v0.9C (Jomana temporary 4-spawn safer-spacing window, chapter-4 obstacles suppressed temporarily).
+* v1.0 (full end-to-end stabilization pass — 0 failed assertions across the entire Start→Fatima→Zainab→Jomana→Father→Retry→Restart flow).
+* v1.1 (static 3-line Arabic intro with Next/Skip, shown once per session before first Play).
+
+**6. Partial milestones:** none — every attempted milestone reached a clean COMPLETE state with passing validation.
+
+**7. Blocked milestones and why:**
+* v0.95 / v0.96 / v0.97 (audio) — **BLOCKED_BY_ASSET**: no audio files exist anywhere in `assets/audio/`, no `docs/AUDIO_CREDITS.md`. Cannot implement without downloading/fabricating audio, which is forbidden.
+* v1.4 (Web export) — **BLOCKED_BY_EXPORT_TEMPLATES**: none installed.
+* v1.5 (Android) — **BLOCKED_BY_SDK**: no Android SDK configured.
+* v1.15/v1.2/v1.3 — not blocked, but deliberately not attempted this session (see judgment-call note above) to end on a verified, low-risk checkpoint rather than open new camera/animation-system risk late in a long session.
+
+**8. Files changed (cumulative, this mission only):** `scripts/main.gd`, `scripts/gameplay/obstacle_spawner.gd`, `scripts/story/encounter_data.gd`, `scenes/Main.tscn`, `docs/AUTOPILOT_PROGRESS.md`. No other scripts/scenes/assets/`project.godot` were touched. (All temporary `tmp_autopilot_smoke_test.gd` files were deleted after each use, per the mission's cleanup rule.)
+
+**9. Validation commands and results:** every milestone was validated with `--headless --path . --quit` (always exit 0, zero parser/runtime errors) plus a milestone-specific `-s tmp_autopilot_smoke_test.gd` scripted run driving real gameplay function calls and asserting outcomes. One false alarm occurred (a test-harness timing bug during the v1.0 comprehensive test, documented above) and was fixed in the test, not the game — full details logged in the v1.0 section above for future reference so it isn't mistaken for a regression.
+
+**10. Immutable benchmark results:** re-checked by `grep` after every single code-changing milestone — gravity `1050.0`, jump velocity `-440.0`, max fall speed `700.0`, jump buffer `0.12`, road surface `510.0`, collision half-height `24.0`, spawn interval `2.25`, spawn margin `140.0`, base/post-checkpoint speeds `225/240/255/270`, all four checkpoint trigger scores `15/35/60/90`. **None were ever changed.**
+
+**11. Human test checklist for the owner:**
+* Open `res://scenes/Main.tscn`, press F6.
+* Confirm the new intro (3 Arabic lines) appears once on first Play, with working Next/Skip buttons; confirm it does NOT reappear on Restart.
+* Test jump (tap/click/Space).
+* Reach Fatima (score 15) — confirm the joy bonus feels right (score jumps to 20).
+* Reach Zainab (35) — deliberately hit an obstacle once: confirm the shield-flash + brief pause + resume (no Game Over) feels good, not confusing.
+* Hit a second obstacle after the shield is used: confirm the new impact bounce + brief pause before Game Over feels right (not too fast/slow — currently 0.45s).
+* Reach Jomana (60): obstacles should feel slightly easier for a few seconds (no crates/signs) right after.
+* Reach Father (90): confirm "Play Again" restarts cleanly.
+* Test Retry from Last Checkpoint and Restart from Beginning from a Game Over screen.
+* Confirm Arabic text renders right-to-left and is readable throughout (intro, dialogue, Game Over messages).
+* Audio: none present yet — silence is expected and correct for now.
+
+**12. Known risks:**
+* All new visual/feel tuning (bounce distance, shield flash color/duration, intro overlay layering, run-cycle FPS) was verified functionally correct headlessly but never seen rendered — genuine HUMAN_TEST_REQUIRED items, not assumptions of success.
+* `fatima_helper.png` is still a real photo, not the documented transparent asset — unchanged, still owner's call (see `docs/ASSET_FOLDER_MAP.md`).
+* Zainab/Jomana/Father helper portraits are still missing (placeholders shown) — unchanged, owner needs to generate/provide them.
+
+**13. Exact next manual action for the owner:**
+1. Open the project in Godot, press F6, and run through the Human Test Checklist above.
+2. If everything feels right, merge `autopilot/v1-level1-20260628-1842` into `main` (or open the PR link GitHub printed when the branch was first pushed) and push to `main` — this autopilot session never touched `main` directly, by design.
+3. When ready to unblock audio, provide licensed CC0/CC-BY audio files per `docs/ASSET_SOURCING_PLAN.md` and `docs/AUDIO_DESIGN_PLAN.md`, with `docs/AUDIO_CREDITS.md` entries, to enable v0.95/96/97.
+4. When ready for web export, install Godot 4.7 export templates (Editor → Manage Export Templates) to unblock v1.4.
