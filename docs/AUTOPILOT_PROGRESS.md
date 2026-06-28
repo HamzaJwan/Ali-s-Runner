@@ -187,3 +187,32 @@ Quality gate checklist (code-verified items only; see "Human Test Checklist" in 
 * [x] No immutable constant changed (re-verified by grep after every code milestone in this log).
 * [ ] Visual feel (run-cycle FPS, bounce distance, shield flash, Arabic text rendering) — HUMAN_TEST_REQUIRED, cannot be verified headlessly.
 * [ ] Audio — BLOCKED_BY_ASSET (no licensed audio files exist yet).
+
+---
+
+## v1.1 — Opening Story Scene / Cinematic Intro — 2026-06-28 20:25
+
+Status: COMPLETE
+
+Files changed: `scripts/main.gd`, `scenes/Main.tscn`
+
+Implemented a simple static in-game opening scene using only the existing documented intro text (no new dialogue invented):
+
+* الراوي: "في شارع المنطرحة بزليتن… بدأ نور البيت يضعف."
+* الأب: "يا علي… لو تبي ترجع النور، اجمع فرحة فاطمة، وشجاعة زينب، وحكمة جمانة."
+* علي: "حاضر يا بابا… بنوصل للنهاية."
+
+Design choice (deliberately simpler than the checkpoint dialogue system, to minimize risk): rather than reusing the global click-anywhere `_input()` dialogue-advance pattern (which has a deliberate `is_final_step()` bypass so the Continue button can receive its own click — replicating that correctly for an always-available Skip button would have meant either touching the shared input path or adding fragile click-ownership logic), the intro uses two plain `Button` nodes with their own `pressed` signals: **النالي/Next** (advances one line, becomes **ابدأ/Start** on the final line) and **تخطي/Skip** (always available, finishes immediately). This avoids touching `_input()`/`_unhandled_input()` at all — zero risk to the existing checkpoint dialogue input handling.
+
+* New scene nodes under `UI/IntroOverlay` (`scenes/Main.tscn`): `Dim` (background), `IntroSpeaker`, `IntroLine`, `NextButton`, `SkipButton`.
+* New state: `intro_shown` (session-level — once true, never shows again), `intro_active`, `intro_step_index`.
+* `_on_play_pressed()`: first Play press shows the intro instead of starting gameplay; once `intro_shown` is `true` (intro finished or skipped), subsequent Play presses go straight to `_start_run()` as before. **Restart and Retry are completely unaffected** — they call `_start_run()`/`_begin_run()` directly and never pass through `_on_play_pressed()`, so the intro never re-appears mid-game or on restart, matching "must not break Start/Play" and avoiding repeat-narration annoyance.
+
+Validation: headless boot clean. Two smoke tests:
+
+1. Intro-specific: first Play → intro active, gameplay not started, start screen hidden → Next x2 walks through all 3 lines (button label correctly changes to "ابدأ / Start" on the last line) → final Next finishes the intro → gameplay starts at the normal baseline (`score=0`, `speed=225.0`) → Restart does **not** re-show the intro → a second fresh instance confirmed the Skip button also finishes the intro and starts gameplay correctly. All assertions passed.
+2. Full regression: re-ran the entire v1.0 end-to-end chain (Play → Skip intro → Fatima → Zainab shield-absorb → Jomana safety window → Father restart) — **0 failures**, confirming the intro addition didn't disturb any existing checkpoint/reward/retry behavior.
+
+Immutable benchmarks re-verified unchanged (gravity/jump/fall/buffer, all four trigger scores 15/35/60/90).
+
+Remaining risk: `Dim`/overlay layering and Arabic text readability against the existing UI theme is HUMAN_TEST_REQUIRED (cannot be judged headlessly).

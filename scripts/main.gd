@@ -47,6 +47,14 @@ const IMPACT_BOUNCE_DISTANCE := 10.0
 const IMPACT_BOUNCE_OUT_TIME := 0.08
 const IMPACT_BOUNCE_BACK_TIME := 0.18
 const JOMANA_SAFETY_WINDOW_SPAWNS := 4
+const INTRO_LINES := [
+	{"speaker": "الراوي", "text": "في شارع المنطرحة بزليتن… بدأ نور البيت يضعف."},
+	{
+		"speaker": "الأب",
+		"text": "يا علي… لو تبي ترجع النور، اجمع فرحة فاطمة، وشجاعة زينب، وحكمة جمانة.",
+	},
+	{"speaker": "علي", "text": "حاضر يا بابا… بنوصل للنهاية."},
+]
 const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION := Vector2(
 	PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
@@ -86,6 +94,11 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var restart_button: Button = $UI/RestartButton
 @onready var start_screen: Control = $UI/StartScreen
 @onready var play_button: Button = $UI/StartScreen/PlayButton
+@onready var intro_overlay: Control = $UI/IntroOverlay
+@onready var intro_speaker: Label = $UI/IntroOverlay/IntroSpeaker
+@onready var intro_line: Label = $UI/IntroOverlay/IntroLine
+@onready var intro_next_button: Button = $UI/IntroOverlay/NextButton
+@onready var intro_skip_button: Button = $UI/IntroOverlay/SkipButton
 @onready var checkpoint_panel: Control = $UI/CheckpointPanel
 @onready var checkpoint_card: Control = $UI/CheckpointPanel/Card
 @onready var fatima_texture: TextureRect = $UI/CheckpointPanel/Card/FatimaTexture
@@ -126,6 +139,9 @@ var player_runner_position := START_PLAYER_POSITION
 var fatima_reward_applied := false
 var zainab_shield_active := false
 var jomana_safety_window_pending := false
+var intro_shown := false
+var intro_active := false
+var intro_step_index := 0
 
 
 func _ready() -> void:
@@ -138,6 +154,10 @@ func _ready() -> void:
 		retry_button.pressed.connect(_on_retry_pressed)
 	if not continue_button.pressed.is_connected(_on_checkpoint_continue_pressed):
 		continue_button.pressed.connect(_on_checkpoint_continue_pressed)
+	if not intro_next_button.pressed.is_connected(_on_intro_next_pressed):
+		intro_next_button.pressed.connect(_on_intro_next_pressed)
+	if not intro_skip_button.pressed.is_connected(_on_intro_skip_pressed):
+		intro_skip_button.pressed.connect(_on_intro_skip_pressed)
 	start_screen.mouse_filter = Control.MOUSE_FILTER_STOP
 	play_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	checkpoint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -209,9 +229,54 @@ func _show_start_screen() -> void:
 
 
 func _on_play_pressed() -> void:
-	if started:
+	if started or intro_active:
 		return
 	print("Play button pressed")
+	if intro_shown:
+		_start_run()
+	else:
+		_start_intro()
+
+
+func _start_intro() -> void:
+	intro_active = true
+	intro_step_index = 0
+	start_screen.visible = false
+	intro_overlay.visible = true
+	_show_intro_step()
+
+
+func _show_intro_step() -> void:
+	var step: Dictionary = INTRO_LINES[intro_step_index]
+	intro_speaker.text = step["speaker"]
+	intro_line.text = step["text"]
+	intro_next_button.text = (
+		"ابدأ / Start"
+		if intro_step_index >= INTRO_LINES.size() - 1
+		else "التالي / Next"
+	)
+
+
+func _on_intro_next_pressed() -> void:
+	if not intro_active:
+		return
+	intro_step_index += 1
+	if intro_step_index >= INTRO_LINES.size():
+		_finish_intro()
+		return
+	_show_intro_step()
+
+
+func _on_intro_skip_pressed() -> void:
+	if not intro_active:
+		return
+	_finish_intro()
+
+
+func _finish_intro() -> void:
+	intro_active = false
+	intro_shown = true
+	intro_overlay.visible = false
 	_start_run()
 
 
