@@ -686,3 +686,28 @@ Validation:
 Immutable benchmarks re-verified unchanged. No collision, no gameplay changes — purely a visual composition + defensive reset addition.
 
 Commit: `autopilot: v1.27 father family ending scene`.
+
+## v1.2B — Dust/Shadow Polish — STATUS: COMPLETE
+
+Files changed: `scripts/player.gd`.
+
+Implemented all four pieces using only procedural nodes (`Polygon2D`, `CPUParticles2D`) created at runtime in `_setup_ground_polish()` — no textures, no downloaded assets, no scene file changes:
+
+* **Grounded shadow:** a small flat dark `Polygon2D` ellipse-ish quad, anchored at `ali_sprite.FEET_Y` (reusing the existing constant rather than a new magic number), `z_index = -5` relative so it always draws behind Ali's sprite.
+* **Running dust:** a 6-particle `CPUParticles2D`, continuous (`one_shot = false`), toggled on/off every frame in `_update_visual_pose()` — emitting only while the `RUN` pose is actually showing (not during jump/fall/land, not while gameplay is inactive).
+* **Jump dust puff:** triggered at both points `jumped` is emitted (the immediate on-floor branch in `jump()` and the buffered branch in `_physics_process()`), via a shared `_play_impact_dust()` helper that calls `restart()` then sets `emitting = true` on a one-shot 10-particle burst.
+* **Landing dust puff:** the same `_play_impact_dust()` call added right where `landed` is already emitted (the airborne→grounded transition).
+* **Game Over impact dust:** the same call added to `kill()`.
+
+Reused one burst effect (`_impact_dust`) for jump/land/Game Over rather than three separate particle systems — kept this lightweight per the "no heavy particles" rule, and a single well-tuned burst reads fine for all three "something just happened at Ali's feet" moments.
+
+**Safety/cleanup additions:** `_run_dust.emitting` is explicitly forced `false` in `kill()` and `reset_player()` (with `null` guards in case either is ever called unusually early), so dust can't keep emitting after death or visibly linger across a Restart/Retry — this follows the same "don't leave a per-frame effect running past its owning state" discipline already applied to the menu tweens and intro focus tween earlier in this sprint.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running): confirmed all three new nodes exist after `_ready()`; confirmed jumping fires the impact-dust burst and stops the run-dust immediately; confirmed run-dust resumes once Ali lands and the land-pose window passes; confirmed a Game Over hit fires the impact-dust burst again and stops run-dust; confirmed Restart leaves run-dust stopped (not mid-emit) right away. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged — purely a visual addition, no physics/collision touched (the new nodes are plain `Polygon2D`/`CPUParticles2D`, neither of which participates in `CharacterBody2D` collision).
+
+Commit: `autopilot: v1.2B dust shadow polish`.
