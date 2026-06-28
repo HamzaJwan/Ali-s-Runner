@@ -667,3 +667,22 @@ Validation:
 Immutable benchmarks re-verified unchanged. No collision, physics, checkpoint-score, or reward-logic changes — this is UI/state only, exactly as scoped.
 
 Commit: `autopilot: v1.26 family companion journey UI`.
+
+## v1.27 — Father Ending Family Group Scene — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`.
+
+When the Father encounter's cinematic opens (`_open_checkpoint_cinematic()`, gated to `character_id == FATHER` only), `_show_father_ending_family_group()` now repositions and reveals the existing `fatima_npc`/`zainab_npc`/`jomana_npc` nodes as a small reunion cluster between Ali and Father — reusing the exact same nodes, sprites, and fallback placeholders each sister already uses for her own checkpoint, not new assets or a second NPC system. Each is only shown if `companion_fatima_joined`/`companion_zainab_joined`/`companion_jomana_joined` is true (in practice always true by the time score reaches 90, but checked defensively rather than assumed). Each sister keeps her own established Y-position role via the existing `_get_encounter_world_y()` — Fatima stays at curb level (never standing on the road, per her established newborn character rule), Zainab/Jomana stand at road level like Father — only the X position (`FAMILY_GROUP_FATIMA_X`/`_ZAINAB_X`/`_JOMANA_X` = 380/450/520, spaced between Ali at 300 and Father at 610) and a uniform `FAMILY_GROUP_SCALE` (0.65, shrinking them down so they read as a background/midground group rather than competing with Ali and Father for focus) are new.
+
+No new story dialogue was added — the existing Father ending lines (already fixed/documented) are unchanged; this is a visual composition change only.
+
+**Reset correctness (the same lesson from the v1.25A-P tween-leak and v1.25B intro work, applied again here):** `_reset_checkpoint_encounter_state()` — already the single place every gameplay-start path resets all four NPCs' visibility/alpha — now also resets `fatima_npc.scale`/`zainab_npc.scale`/`jomana_npc.scale` to `Vector2.ONE` (previously only `father_npc.scale` was reset, added during v1.25B). Without this, a sister's NPC would stay shrunk at `0.65` scale during her own next individual checkpoint encounter after a Father ending + "Play Again" restart — confirmed this exact regression doesn't happen via the smoke test below.
+
+Validation:
+
+* Headless boot clean, exit 0.
+* Smoke test (deleted after running): jumped straight to a near-Father state (`_begin_run(89, JOMANA, 270.0)`) with all three companions already joined (the realistic case, since reaching score 90 requires having passed all three checkpoints) → triggered the Father encounter → confirmed all three sisters become visible at the family-group scale, at distinct non-overlapping X positions, with Fatima specifically still at curb-level Y while Zainab/Jomana/Father share road-level Y → advanced dialogue to the end → pressed "Play Again" → confirmed the full restart hides all four NPCs again, resets all three sisters' scale back to `1.0` (not stuck at `0.65`), and clears all three companion flags → confirmed a fresh, independent Fatima encounter afterward renders her at full `1.0` scale again, not the family-group shrink. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged. No collision, no gameplay changes — purely a visual composition + defensive reset addition.
+
+Commit: `autopilot: v1.27 father family ending scene`.

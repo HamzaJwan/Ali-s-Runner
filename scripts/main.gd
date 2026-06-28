@@ -81,6 +81,10 @@ const INTRO_LINES := [
 const INTRO_FOCUS_TWEEN_TIME := 0.35
 const INTRO_DIM_ALPHA := 0.55
 const INTRO_FOCUS_SCALE := 1.08
+const FAMILY_GROUP_SCALE := 0.65
+const FAMILY_GROUP_FATIMA_X := 380.0
+const FAMILY_GROUP_ZAINAB_X := 450.0
+const FAMILY_GROUP_JOMANA_X := 520.0
 const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION := Vector2(
 	PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
@@ -796,6 +800,33 @@ func _get_encounter_world_y(character: int) -> float:
 	)
 
 
+func _show_father_ending_family_group() -> void:
+	_position_family_companion(
+		fatima_npc, companion_fatima_joined, EncounterCharacter.FATIMA,
+		FAMILY_GROUP_FATIMA_X
+	)
+	_position_family_companion(
+		zainab_npc, companion_zainab_joined, EncounterCharacter.ZAINAB,
+		FAMILY_GROUP_ZAINAB_X
+	)
+	_position_family_companion(
+		jomana_npc, companion_jomana_joined, EncounterCharacter.JOMANA,
+		FAMILY_GROUP_JOMANA_X
+	)
+
+
+func _position_family_companion(
+		npc: Node2D, joined: bool, character: int, group_x: float
+) -> void:
+	if not joined:
+		npc.visible = false
+		return
+	npc.position = Vector2(group_x, _get_encounter_world_y(character))
+	npc.scale = Vector2(FAMILY_GROUP_SCALE, FAMILY_GROUP_SCALE)
+	npc.modulate.a = 1.0
+	npc.visible = true
+
+
 func _prepare_player_for_encounter() -> void:
 	player.reset_player(Vector2(ALI_STORY_X, START_PLAYER_POSITION.y))
 	if player_story_sprite.texture != null:
@@ -815,6 +846,8 @@ func _open_checkpoint_cinematic() -> void:
 	checkpoint_active = true
 	checkpoint_cinematic_active = true
 	audio_manager.play_checkpoint()
+	if encounter_controller.character_id == EncounterCharacter.FATHER:
+		_show_father_ending_family_group()
 	_configure_checkpoint_panel()
 	_show_encounter_dialogue_step()
 	checkpoint_panel.visible = true
@@ -1073,6 +1106,9 @@ func _reset_checkpoint_encounter_state() -> void:
 	zainab_npc.modulate.a = 1.0
 	jomana_npc.modulate.a = 1.0
 	father_npc.modulate.a = 1.0
+	fatima_npc.scale = Vector2.ONE
+	zainab_npc.scale = Vector2.ONE
+	jomana_npc.scale = Vector2.ONE
 	father_npc.scale = Vector2.ONE
 	checkpoint_panel.visible = false
 	checkpoint_panel.modulate.a = 1.0
