@@ -816,6 +816,7 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 func _on_obstacle_passed() -> void:
 	score += 1
 	score_label.text = "النقاط: %d" % score
+	_pop_label(score_label)
 	var encounter_id := encounter_controller.get_pending_for_score(score)
 	if encounter_id != EncounterCharacter.NONE:
 		_start_checkpoint_encounter(encounter_id)
@@ -831,6 +832,7 @@ func _on_collectible_spawned(collectible: Node) -> void:
 func _on_collectible_collected() -> void:
 	collectible_count += 1
 	_update_light_shard_label()
+	_pop_label(light_shard_label)
 	audio_manager.play_shard_pickup()
 
 
@@ -1187,6 +1189,19 @@ func _pop_reward_text() -> void:
 	var reward_tween := create_tween()
 	reward_tween.tween_property(
 		checkpoint_reward_label, "scale", Vector2.ONE, 0.22
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## v1.38: a small, reusable "pop" for any HUD counter label (score, light
+## shards) - same pivot/scale-from-below/TRANS_BACK pattern already used
+## above for the reward text and the countdown number, just generalized to
+## take any Label so it isn't copy-pasted per counter.
+func _pop_label(label: Label) -> void:
+	label.pivot_offset = label.size / 2.0
+	label.scale = Vector2(0.85, 0.85)
+	var pop_tween := create_tween()
+	pop_tween.tween_property(
+		label, "scale", Vector2.ONE, 0.18
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 

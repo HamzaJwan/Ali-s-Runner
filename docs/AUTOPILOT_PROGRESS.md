@@ -1475,3 +1475,22 @@ The sparkle burst, scale/fade pop, and pickup SFX were already shipped in v1.37A
 Immutable benchmarks unaffected - this milestone only added a `Label` child and a tween inside `collectible.gd`'s already-existing pickup-effect function.
 
 Commit: `autopilot: v1.37C light shard pickup juice`.
+
+## v1.38 — Level 1 Juice Polish — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`.
+
+Added a single, reusable `_pop_label(label)` - the same pivot/scale-from-`0.85`/`TRANS_BACK` "pop in" pattern this project already used for the checkpoint reward text and the countdown number, generalized so it isn't copy-pasted per counter. Wired to `score_label` (in `_on_obstacle_passed()`) and `light_shard_label` (in `_on_collectible_collected()`, not inside `_update_light_shard_label()` itself - that function is also called on every reset/restart, and a pop there would fire on every menu-to-gameplay transition, which is not what was asked for).
+
+**Deliberately not done, and why:** a "near-obstacle pass sparkle" was explicitly optional ("only if trivial and non-distracting"); detecting a fair "near miss" (not just any obstacle passing) is its own small feature, not a one-line addition, so it was left out rather than rushed. No UI spacing or Game Over layout changes were made - nothing reviewed this pass looked broken enough to justify touching already-tuned positions.
+
+**Known, accepted minor edge case:** the pop tween is untracked (matching the existing reward/countdown pattern, not a new risk), so two pickups landing within ~`0.18s` of each other (possible at the upper end of a fast reward-line pass) could restart the tween mid-pop - a tiny visual stutter, never a crash or stuck state, not worth tracked-tween-kill complexity for a "small polish" milestone.
+
+### Validation
+
+* Headless boot clean, exit `0`.
+* Smoke test (deleted after running, `tmp_v138_smoke_test.gd` + its `.uid`): confirmed both labels are visibly mid-pop right after their trigger and settle back to exactly scale `1.0` once the pop finishes; confirmed score/collectible text and counts remain correct; confirmed Restart resets both counters to `0` with neither label left in a stuck non-`1.0` scale. **0 failed assertions.**
+
+Immutable benchmarks unaffected - this is a UI-only addition with no gameplay/physics involvement.
+
+Commit: `autopilot: v1.38 level 1 juice polish`.
