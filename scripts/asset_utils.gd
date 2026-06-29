@@ -1,6 +1,17 @@
 extends RefCounted
 
 
+## Shared with player.gd's own ground-shadow shape (same oval-from-points
+## approach) so any future caller gets the same cheap, soft, non-rectangular
+## contact shadow instead of reinventing a flat polygon.
+static func build_oval_polygon(radius: Vector2, point_count: int = 14) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in point_count:
+		var angle := TAU * float(i) / float(point_count)
+		points.append(Vector2(cos(angle) * radius.x, sin(angle) * radius.y))
+	return points
+
+
 static func load_texture_with_fallback(path: String) -> Texture2D:
 	var candidates: Array[String] = [path]
 	if path.ends_with(".png"):

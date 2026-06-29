@@ -14,6 +14,21 @@ const DEFAULT_DEFINITION := {
 	"collision_height": 50.0,
 }
 
+# Contact shadow: a small soft oval directly under the obstacle's own
+# footprint (scaled to its collision_width, so wider obstacles get a wider
+# shadow), the same cheap non-rectangular-Polygon2D approach already used
+# for Ali's own ground shadow. Visual-only - does not touch collision.
+const SHADOW_COLOR := Color(0.06, 0.05, 0.04, 0.34)
+const SHADOW_WIDTH_RATIO := 0.95
+const SHADOW_HEIGHT_RATIO := 0.26
+const SHADOW_OVAL_POINTS := 14
+
+# Tiny visual-only sink so the sprite reads as settled into the road
+# instead of floating just above it. Only ever shifts where the SPRITE is
+# drawn - collision_shape/collision_bottom_y (and therefore jump/hit
+# fairness) are completely untouched.
+const VISUAL_SINK_PX := 3.0
+
 @export var speed := DEFAULT_SPEED
 
 @onready var obstacle_sprite: Sprite2D = $ObstacleSprite
@@ -22,6 +37,7 @@ const DEFAULT_DEFINITION := {
 
 var _active := true
 var _definition: Dictionary = DEFAULT_DEFINITION.duplicate(true)
+var _shadow: Polygon2D
 
 
 func configure(definition: Dictionary, movement_speed: float) -> void:
@@ -67,6 +83,7 @@ func _apply_definition() -> void:
 		Vector2(-collision_width / 2.0, collision_height / 2.0),
 	])
 	placeholder_shape.color = _definition["placeholder_color"]
+	_apply_shadow(collision_width, collision_bottom_y)
 
 	if ASSET_UTILS.set_sprite_texture_if_exists(
 			obstacle_sprite, _definition["asset_path"]
@@ -76,11 +93,11 @@ func _apply_definition() -> void:
 			obstacle_sprite, _definition["visual_target_height"]
 		)
 		ASSET_UTILS.align_sprite_visible_bottom(
-			obstacle_sprite, collision_bottom_y
+			obstacle_sprite, collision_bottom_y + VISUAL_SINK_PX
 		)
 		print("[layout] Obstacle id=", _definition["id"],
 			" final_scale=", obstacle_sprite.scale,
-			" visible_bottom=", collision_bottom_y,
+			" visible_bottom=", collision_bottom_y + VISUAL_SINK_PX,
 			" collision_bottom=", collision_bottom_y)
 		placeholder_shape.visible = false
 	else:
@@ -88,3 +105,18 @@ func _apply_definition() -> void:
 		placeholder_shape.visible = true
 		print("[layout] Obstacle id=", _definition["id"],
 			" using placeholder size=", rectangle.size)
+
+
+func _apply_shadow(collision_width: float, collision_bottom_y: float) -> void:
+	if _shadow == null:
+		_shadow = Polygon2D.new()
+		_shadow.z_as_relative = true
+		_shadow.z_index = -1
+		add_child(_shadow)
+	var shadow_radius := Vector2(
+		collision_width * SHADOW_WIDTH_RATIO / 2.0,
+		collision_width * SHADOW_HEIGHT_RATIO / 2.0
+	)
+	_shadow.polygon = ASSET_UTILS.build_oval_polygon(shadow_radius, SHADOW_OVAL_POINTS)
+	_shadow.color = SHADOW_COLOR
+	_shadow.position = Vector2(0, collision_bottom_y)

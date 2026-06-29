@@ -1296,3 +1296,43 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 5. Confirm the zoom transition in/out still feels smooth.
 
 Commit: `autopilot: hotfix camera framing and road polish`.
+
+## v1.36E — Gameplay Framing, Obstacle Grounding, and Runner Lane Polish — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`, `scripts/obstacle.gd`, `scripts/asset_utils.gd`.
+
+### Task A — Slightly stronger gameplay zoom
+
+`GAMEPLAY_ZOOM_FACTOR`: `1.12 -> 1.15` (within the requested range, did not need to fall back to `1.13/1.14`). Re-verified the visible world rect with the new zoom stays fully inside the background sprites' coverage - `x=[15.65, 1017.39]`, `y=[75.22, 638.70]` against the `[0,1152]x[0,648]` bounds, confirmed live by the smoke test, so no margins were reintroduced. Reaction time at max speed (`270`): `(1017.39 - 220)/270 ≈ 2.95s` - still comfortably above the `2.6-2.8s` fairness floor from earlier tasks.
+
+### Task B — Obstacles grounded visually
+
+Two additive, visual-only changes in `scripts/obstacle.gd`, neither touching `CollisionShape2D`:
+
+1. **Contact shadow.** Added `_apply_shadow()`, building a small soft oval `Polygon2D` (`z_index=-1`, so it draws behind the obstacle sprite) sized to `95%`/`26%` of the obstacle's own `collision_width` (wider obstacles get a proportionally wider shadow) and positioned at the same `collision_bottom_y` the sprite already aligns to. The oval-point generator (`build_oval_polygon()`) was promoted into the shared `asset_utils.gd` (it's the same shape Ali's own ground shadow already uses in `player.gd`) so this didn't need a second hand-rolled copy.
+2. **Tiny visual sink.** `ASSET_UTILS.align_sprite_visible_bottom(obstacle_sprite, collision_bottom_y + VISUAL_SINK_PX)` with `VISUAL_SINK_PX = 3.0` - the sprite (only the sprite, never `collision_bottom_y` itself) is drawn `3px` lower than the actual hitbox bottom, reading as "settled into the road" rather than floating. Confirmed live in the boot log: `"visible_bottom=28.0 collision_bottom=25.0"` for the default block (a `3px` sink on top of an unchanged `25.0` collision bottom).
+
+### Task C — Runner lane readability
+
+`ROAD_SURFACE_Y` stays `510` exactly, as required - this was a camera-framing change only. Previously, `GAMEPLAY_CAMERA_POSITION`'s vertical solve pinned `ROAD_SURFACE_Y` to the *same* screen Y as the unzoomed view (`510`). That ratio (how close Ali's sprite/head reads to the curb line) is fixed by the art's own world-space proportions and cannot be changed by zoom or panning alone - but *panning* the vertical framing can still change how much visual "road" appears below Ali vs. how much "sidewalk/sky" looms above him, which is what was actually being asked for. Added `CAMERA_TARGET_SCREEN_Y := 500.0` (instead of implicitly `510`) and updated the position formula to solve against it - confirmed live that `ROAD_SURFACE_Y` now reads at screen Y `~500` instead of `510`, pushing the curb line up and giving the road more visible depth below Ali. `500` was chosen as close to the *safe maximum* pan at this zoom: any further down and the visible world's bottom edge would exceed `GroundBase`'s fixed coverage (`VIEW_H = 648`) and reintroduce a margin, exactly like the v1.36D-HOTFIX bug - confirmed by checking the resulting `visible_bottom (638.70)` stays under `648` with a small safety margin.
+
+### Task D — Preserved
+
+The v1.36D road/ground visual fixes (aspect-preserving ground fit, the reduced brown strip, the road-matched `GroundBase` color, the buildings/ground overlap) were not touched by this task at all - only the camera constants and `obstacle.gd` changed.
+
+### Validation
+
+* Headless boot clean, exit `0`.
+* Smoke test (deleted after running, `tmp_v136e_smoke_test.gd` + its `.uid`): confirmed gameplay zoom lands in `1.13-1.18`; confirmed the visible world rect stays fully inside `[0,1152]x[0,648]` (no margins) at the new, stronger zoom; confirmed the road surface now reads higher on screen (`~500`) than its old unzoomed position (`510`); confirmed reaction time at max speed stays above `2.6s`; confirmed `SPAWN_X` stays offscreen; confirmed Ali's screen X stays in the `220-260` band; confirmed a spawned obstacle has both its `CollisionShape2D` (shape assigned, untouched) and a second `Polygon2D` (the new shadow) as children; confirmed jump/fall/land still transition correctly; confirmed a real Fatima checkpoint still re-zooms gameplay correctly afterward and returns `player.global_position.y` to exactly `START_PLAYER_POSITION.y`; confirmed Game Over switches to default framing and Retry re-zooms. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, player collision half-height, spawn interval/X, all four speeds, all four checkpoint trigger scores, and every obstacle definition's own `collision_width`/`collision_height`). No collision shape, physics body, or obstacle spawn/movement logic was touched - every change here is either a camera constant or a sprite/shadow positioning call.
+
+### Owner F6 checklist
+
+1. Confirm gameplay now reads noticeably closer/more intense than the previous (`1.12x`) pass, without feeling unfair.
+2. Confirm obstacles no longer look like they're floating - the shadow and tiny sink should read as "resting on the road."
+3. Confirm Ali no longer feels pressed up against the curb/sidewalk line, and the road reads more like a usable lane.
+4. Confirm menu/intro/checkpoints/Father ending/Game Over still render fully framed with no margins (unchanged default framing).
+5. If the lane still feels too shallow, the safe pan budget at `1.15x` zoom is nearly exhausted (`~9px` of margin left before `CAMERA_TARGET_SCREEN_Y` would need to come back down) - the next lever would be revisiting `GROUND_VISUAL_HEIGHT`/ground texture coverage rather than panning further.
+
+Commit: `autopilot: gameplay framing and obstacle grounding polish`.

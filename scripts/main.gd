@@ -111,21 +111,30 @@ const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 # nominal 1152x648 view, the wider-than-expected visible world exposed bare
 # viewport clear color as dark/gray margins past their edges. Fixed by
 # assigning GAMEPLAY_ZOOM_FACTOR directly (no inversion).
-const GAMEPLAY_ZOOM_FACTOR := 1.12
+const GAMEPLAY_ZOOM_FACTOR := 1.15
 const GAMEPLAY_CAMERA_ZOOM := Vector2(GAMEPLAY_ZOOM_FACTOR, GAMEPLAY_ZOOM_FACTOR)
 const DEFAULT_CAMERA_ZOOM := Vector2.ONE
 const DEFAULT_CAMERA_POSITION := Vector2(VIEW_W / 2.0, VIEW_H / 2.0)
 # Solved so that, after zooming, Ali's world X (PLAYER_START_X) still lands
-# at roughly screen X 235 (inside the requested 220-250 band) and
-# ROAD_SURFACE_Y still lands at the same screen Y as the unzoomed view -
-# the zoom reads as "everything got closer," not as a pan/crop. Godot's
+# at roughly screen X 235 (inside the requested 220-250 band). Godot's
 # screen-to-world mapping is screen = (world - camera) * zoom + view/2, so
-# solving for camera divides by zoom (not multiplies, now that zoom holds
-# the real >1 magnification value rather than its inverse).
+# solving for camera divides by zoom (not multiplies, since zoom holds the
+# real >1 magnification value, not its inverse).
 const CAMERA_TARGET_SCREEN_X := 235.0
+# v1.36E: CAMERA_TARGET_SCREEN_Y is deliberately NOT ROAD_SURFACE_Y (510)
+# anymore. Pinning the road surface to its own unzoomed screen position
+# left Ali's head/sprite reading as right up against the curb line, since
+# that ratio is fixed by the art's own world-space proportions and zoom
+# alone can't change it - only *panning* the vertical framing can give the
+# road more visual depth below Ali and push the curb further up-screen.
+# 500 is the largest safe downward pan at this zoom: any further and the
+# visible world bottom would exceed GroundBase's fixed coverage (VIEW_H)
+# and re-expose a margin, exactly like the v1.36D-HOTFIX bug. Re-verified
+# by the v1.36E smoke test.
+const CAMERA_TARGET_SCREEN_Y := 500.0
 const GAMEPLAY_CAMERA_POSITION := Vector2(
 	PLAYER_START_X - (CAMERA_TARGET_SCREEN_X - VIEW_W / 2.0) / GAMEPLAY_CAMERA_ZOOM.x,
-	ROAD_SURFACE_Y - (ROAD_SURFACE_Y - VIEW_H / 2.0) / GAMEPLAY_CAMERA_ZOOM.y
+	ROAD_SURFACE_Y - (CAMERA_TARGET_SCREEN_Y - VIEW_H / 2.0) / GAMEPLAY_CAMERA_ZOOM.y
 )
 const CAMERA_TRANSITION_TIME := 0.35
 const START_PLAYER_POSITION := Vector2(
