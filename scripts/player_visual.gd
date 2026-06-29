@@ -6,6 +6,17 @@ const VISUAL_HEIGHT := 100.0
 const FEET_Y := 24.0
 const RUN_ANIMATION_FPS := 13.0
 
+# ali_land.png's visible art is nearly square (measured ~239x241px) while
+# every other pose is tall/thin (idle ~189x474, run frames ~385-426x513).
+# Normalizing purely by height (like every other pose) forces LAND's width
+# to balloon out to roughly its own height, reading as an oversized, "messed
+# up" crouch. This is a per-pose override, not a per-run-frame one - the
+# run-cycle pulsing bug fixed earlier was caused by exactly that kind of
+# override on run frames, so this must never be applied to RUN_FRAME_PATHS.
+const POSE_SCALE_OVERRIDES := {
+	LAND: 0.33,
+}
+
 const IDLE := &"idle"
 const RUN := &"run"
 const JUMP := &"jump"
@@ -65,7 +76,7 @@ func show_pose(pose: StringName, force_refresh: bool = false) -> bool:
 		visible = false
 		return false
 
-	_apply_texture(texture)
+	_apply_texture(texture, POSE_SCALE_OVERRIDES.get(pose, -1.0))
 	return _native_pose_available.get(pose, false)
 
 
@@ -145,7 +156,7 @@ func _reset_run_animation() -> void:
 	run_frame_index = 0
 
 
-func _apply_texture(next_texture: Texture2D) -> void:
+func _apply_texture(next_texture: Texture2D, scale_override: float = -1.0) -> void:
 	texture = next_texture
 	if texture == null:
 		visible = false
@@ -154,19 +165,26 @@ func _apply_texture(next_texture: Texture2D) -> void:
 	visible = true
 	centered = true
 	if not _texture_layouts.has(texture):
-		_texture_layouts[texture] = _calculate_texture_layout(next_texture)
+		_texture_layouts[texture] = _calculate_texture_layout(next_texture, scale_override)
 	var layout: Dictionary = _texture_layouts[texture]
 	scale = layout["scale"]
 	position = layout["position"]
 
 
-func _calculate_texture_layout(next_texture: Texture2D) -> Dictionary:
+func _calculate_texture_layout(
+		next_texture: Texture2D, scale_override: float = -1.0
+) -> Dictionary:
 	var visible_rect := ASSET_UTILS.get_texture_visible_rect(next_texture)
 	if visible_rect.size.y <= 0.0:
 		return {"scale": Vector2.ONE, "position": Vector2.ZERO}
 	# Source images have different pixel dimensions; normalize their visible
 	# character bounds instead of forcing the same numeric scale on every frame.
-	var uniform_scale := VISUAL_HEIGHT / visible_rect.size.y
+	# A small set of poses (see POSE_SCALE_OVERRIDES) have a visible aspect
+	# ratio so different from the rest that pure height-normalization makes
+	# them look broken, so they get an explicit, measured scale instead.
+	var uniform_scale := (
+		scale_override if scale_override > 0.0 else VISUAL_HEIGHT / visible_rect.size.y
+	)
 	var next_scale := Vector2(uniform_scale, uniform_scale)
 	var texture_origin := next_texture.get_size() / 2.0
 	var visible_center_x := visible_rect.position.x + visible_rect.size.x / 2.0

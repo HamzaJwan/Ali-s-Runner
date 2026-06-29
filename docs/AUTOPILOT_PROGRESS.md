@@ -971,3 +971,31 @@ No temporary smoke-test scripts or `.gd.uid` files remain in the working tree fr
 * Check Arabic RTL rendering/readability and overall visual feel in a real F6 session — nothing in this sprint can substitute for an owner's eyes on the actual running game.
 
 Recommended next task: **v1.35 — Roadmap Refresh and Level 2 Planning**, once the owner has completed the human-only audio/visual review above.
+
+## Post-Sprint Hotfix: Ali Floating After Checkpoints + Oversized Land Pose
+
+Files changed: `scripts/main.gd`, `scripts/player_visual.gd`.
+
+The owner reported, with screenshots, that Ali visibly rose up off the road after meeting Fatima, and again after Zainab. Separately, the owner reported `ali_land.png`'s landing pose looked oversized and "messed up."
+
+### Root cause 1: leaked idle-breath tween after a checkpoint's Continue
+
+The idle-breath tween added in this same sprint (Milestone 4) is started on `player_story_sprite` when a checkpoint cinematic opens (`_open_checkpoint_cinematic()`), and its cleanup was only wired into `_reset_checkpoint_encounter_state()` — the function used by a full Retry/Restart. The normal "Continue → countdown → resume running" path (`_finish_encounter_and_countdown()`) never called it, so the tween kept running into live gameplay, periodically rewriting `player_story_sprite.position` from a stale story-scene baseline while `player.gd`'s own per-frame run-pose layout was simultaneously writing the correct gameplay-scene position to the same property — the two fought, and the visible symptom was Ali snapping to/from an incorrect vertical offset while running. This exactly matches the owner's own diagnostic observation: Retry "fixed" it because Retry happens to go through the one path that already stopped the tween; Continue did not.
+
+Fixed by extracting the existing cleanup block (`_stop_all_idle_breaths()`, killing `_checkpoint_speaker_tween`, resetting modulate/scale on every story sprite) out of `_reset_checkpoint_encounter_state()` into a new shared `_cleanup_checkpoint_speaker_state()`, and calling it from **both** `_reset_checkpoint_encounter_state()` and `_finish_encounter_and_countdown()` — the same "shared funnel" discipline this project has used for every other piece of cinematic state all sprint, applied correctly this time to cover the path that was missed.
+
+Validation: a smoke test drove a real Fatima checkpoint (`REVEAL` arrival) and a real Zainab checkpoint (`ENTER` arrival, which needs real travel time before its cinematic opens — the first test attempt under-waited and was corrected) end to end and read `player.global_position.y` (the actual world Y, not the sprite's local layout offset that an earlier, less precise test attempt was mistakenly checking) immediately after Continue and across several seconds of subsequent running. Result: `486.0` (= `START_PLAYER_POSITION.y`, the correct gameplay road height) every time, after both checkpoints. **0 failed assertions.**
+
+### Root cause 2: ali_land.png's aspect ratio breaks pure height-normalization
+
+Measured the actual current file with PIL: `ali_land.png`'s visible character art is `239x241px` — nearly square — while every other Ali pose is tall/thin (idle `189x474`, run frames `~385-426x513`). The shared height-only normalization formula (`VISUAL_HEIGHT / visible_rect.size.y`) scales every pose to the same `100px` height regardless of its native proportions; for a nearly-square source, that forces the on-screen width out to nearly `100px` too — about 30-35% wider than every running/idle frame — reading exactly as the reported "oversized, messed up" landing crouch.
+
+This is the same bug class v1.26A diagnosed and fixed earlier in the sprint (for the old `ali_land.png` and a run-frame issue) before v1.34 removed all overrides to fix a *different*, real bug (inconsistent numeric overrides forced onto run frames, causing a run-cycle size pulse). v1.34's fix was correct for the run-frames; removing the LAND override along with it was not, and the owner has since re-edited `ali_land.png`, so even if the old override value had been kept it would no longer have been correct for the new art.
+
+Re-added a minimal, single-entry `POSE_SCALE_OVERRIDES := {LAND: 0.33}` (freshly measured for the *current* file, not reused from before), threaded through `_apply_texture()`/`_calculate_texture_layout()`'s existing optional-override parameter (the same plumbing v1.26A originally added and v1.34 removed), applied **only** via `show_pose()` for named poses — explicitly not touched in the run-frame-cycling path in `update_visual()`, so the run-frame pulsing bug v1.34 fixed cannot regress.
+
+Validation: a smoke test forced `show_pose(LAND, true)`, confirmed the texture actually in use is the real LAND texture (not a fallback), and measured its final on-screen size directly: `w=78.87px, h=79.53px` — comfortably inside a 50-90px sanity band, no longer ballooning toward `100x100`. Confirmed via the same test that LAND's feet still align with idle's feet baseline (no new floating from this change).
+
+Immutable constants unaffected — both fixes are cinematic-tween cleanup and a per-pose visual scale constant; no physics/collision/spawn/speed/checkpoint value was touched. Reconfirmed via grep.
+
+Commit: `autopilot: fix ali floating after checkpoints and oversized land pose`.

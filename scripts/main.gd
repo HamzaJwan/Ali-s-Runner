@@ -1159,6 +1159,7 @@ func _finish_encounter_and_countdown() -> void:
 	checkpoint_panel.visible = false
 	if active_encounter_node != null:
 		active_encounter_node.visible = false
+	_cleanup_checkpoint_speaker_state()
 	player.reset_player(player_runner_position)
 	audio_manager.unduck_music()
 	_start_countdown()
@@ -1238,6 +1239,17 @@ func _reset_checkpoint_encounter_state() -> void:
 	checkpoint_panel.modulate.a = 1.0
 	checkpoint_card.scale = Vector2.ONE
 	countdown_overlay.visible = false
+	_cleanup_checkpoint_speaker_state()
+
+
+# Shared by every path that can leave a checkpoint cinematic - both a full
+# Retry/Restart (_reset_checkpoint_encounter_state) and the normal
+# Continue-and-resume-running path (_finish_encounter_and_countdown) must
+# stop the idle-breath/speaker-emphasis tweens here, or a leftover tween
+# keeps writing stale story-scene position/scale onto player_story_sprite
+# (the same node player.gd's run-pose layout writes to every frame) and
+# fights it, which reads as Ali floating/snapping above the road.
+func _cleanup_checkpoint_speaker_state() -> void:
 	_stop_all_idle_breaths()
 	if _checkpoint_speaker_tween != null and _checkpoint_speaker_tween.is_valid():
 		_checkpoint_speaker_tween.kill()
