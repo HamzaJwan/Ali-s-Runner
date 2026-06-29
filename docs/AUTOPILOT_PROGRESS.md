@@ -1437,3 +1437,24 @@ Immutable benchmarks re-verified unchanged via grep - the new constants (`ROAD_S
 3. Confirm landing still looks/feels right (no shadow pop or snap).
 
 Commit: `autopilot: keep ali shadow grounded during jump`.
+
+## v1.37B — Safe Light Shard Patterns — STATUS: COMPLETE
+
+Files changed: `scripts/gameplay/obstacle_spawner.gd`, `scripts/gameplay/collectible_spawner.gd`.
+
+Added `ObstacleSpawner.obstacle_spawned(definition, spawn_position)`, emitted right after a real obstacle is added (one new signal + one emit line; `obstacle_spawner.gd`'s spawn logic itself is otherwise untouched). `collectible_spawner.gd` connects to it in `setup()` and rolls, once per obstacle, into at most one of three patterns - never stacked, and kept deliberately rare (chances sum to well under half of all obstacle spawns) so they read as intentional accents, not a "dense coin tunnel":
+
+* **Arc above** (`15%`): `3` shards spread `26px` apart, positioned `20px` above *that specific obstacle's* own collision top (not a flat world Y) - reachable at this project's real jump apex (collision spans `~369.8-417.8`; clearing even the tallest obstacle, `collision_height=56`, lands the arc at `434`, comfortably inside that band).
+* **Reward line** (`12%`): `3` shards in a row starting `70px` past the obstacle, at a height (`ROAD_SURFACE_Y - 30`) reachable while just running - a calm reward right after clearing a hazard, no jump required.
+* **Raised near barrier** (`10%`): a single shard just past the obstacle at a modest height (`ROAD_SURFACE_Y - 60`).
+
+**No-overlap guarantee, by construction, not by a runtime check:** every shard in a pattern is spawned using that exact obstacle's own `spawn_position`/`current_speed` at the instant it's known, with only a fixed vertical or horizontal offset applied. Since both the shard and the obstacle then travel left at the identical speed, their relative offset never changes for the rest of either one's lifetime - a shard placed above or behind an obstacle at spawn time *cannot* drift into its hitbox later.
+
+### Validation
+
+* Headless boot clean, exit `0`.
+* Smoke test (deleted after running, `tmp_v137b_smoke_test.gd` + its `.uid`): drove `_on_obstacle_spawned()` directly across several trials with a fixed RNG seed and confirmed at least one pattern fires; for every "arc above" trial, checked every spawned shard's position against the obstacle's actual hitbox rectangle (`collision_width`/`collision_height` centered on its known position) and confirmed zero overlap; confirmed the v1.37A road-shard obstacle-proximity safety check still works; confirmed a real Fatima checkpoint still works end to end with the new signal wiring in place (no regression to the existing obstacle/checkpoint flow from adding the new signal). **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep across every touched script.
+
+Commit: `autopilot: v1.37B safe light shard patterns`.

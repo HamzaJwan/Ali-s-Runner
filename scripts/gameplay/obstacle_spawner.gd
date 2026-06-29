@@ -3,6 +3,10 @@ extends Node2D
 
 signal obstacle_passed
 signal obstacle_hit
+## v1.37B: fired right after a real obstacle is spawned, so the collectible
+## spawner can position a safe pattern relative to it without this spawner
+## needing to know anything about collectibles.
+signal obstacle_spawned(definition: Dictionary, spawn_position: Vector2)
 
 const OBSTACLE_SCENE := preload("res://scenes/Obstacle.tscn")
 const DIFFICULTY_MANAGER := preload("res://scripts/gameplay/difficulty_manager.gd")
@@ -116,6 +120,7 @@ func _spawn_obstacle() -> void:
 	obstacle.passed.connect(obstacle_passed.emit)
 	obstacle.hit.connect(obstacle_hit.emit)
 	add_child(obstacle)
+	obstacle_spawned.emit(definition, obstacle.position)
 	print("[spawn] id=", definition["id"], " chapter=", chapter,
 		" effective_chapter=", effective_chapter,
 		" obstacle_x=", SPAWN_X, " margin=", SPAWN_MARGIN)

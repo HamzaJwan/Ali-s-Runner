@@ -7,12 +7,18 @@ extends Node2D
 ## each spawned shard's `collected` signal - it never reaches into this
 ## spawner's internals, and this spawner never touches obstacle logic.
 ##
-## v1.37A scope (foundation only): a simple, independently-timed spawn of
+## v1.37A added the foundation: a simple, independently-timed spawn of
 ## either a road-level shard or a slightly elevated one that encourages a
-## small jump. Obstacle-relative patterns (an arc above an obstacle, a
-## reward line right after one, etc.) are intentionally deferred to v1.37B
-## - this milestone only guarantees a road-level shard never lands too
+## small jump, plus a safety check so a road-level shard never lands too
 ## close to a live obstacle (see _obstacle_too_close_to_spawn_x()).
+##
+## v1.37B adds safe obstacle-relative patterns on top of that baseline,
+## listening to ObstacleSpawner's `obstacle_spawned` signal: a short arc
+## above the obstacle, a reward line right after it, or a single raised
+## shard near it. Every shard in a pattern is spawned at that exact
+## obstacle's own spawn position/speed, so it keeps the same relative
+## offset to it for its whole lifetime - by construction, a pattern can
+## never end up positioned inside that obstacle's hitbox after the fact.
 
 signal collectible_spawned(collectible: Node)
 
@@ -49,6 +55,29 @@ const ELEVATED_SHARD_Y := ROAD_SURFACE_Y - 125.0
 # check - they sit well above any obstacle's collision top already.
 const ROAD_SHARD_OBSTACLE_SAFETY_X := 200.0
 
+# v1.37B obstacle-relative patterns. Kept deliberately rare (chances sum to
+# well under half of all obstacle spawns) and mutually exclusive per
+# obstacle, so a pattern never stacks with the independent baseline timer
+# closely enough to feel like a "dense coin tunnel."
+const ARC_ABOVE_CHANCE := 0.15
+const REWARD_LINE_CHANCE := 0.12
+const RAISED_NEAR_BARRIER_CHANCE := 0.1
+const ARC_SHARD_COUNT := 3
+const ARC_SPACING_X := 26.0
+# Clearance above the *specific* obstacle's own collision top (not a flat
+# world Y), so this is always reachable regardless of obstacle height: at
+# this project's real jump apex, the body's collision spans ~369.8-417.8 -
+# clearing the tallest obstacle (collision_height=56, top=454) by 20px
+# still lands at 434, comfortably inside that band, not at its edge.
+const ARC_CLEARANCE_ABOVE_OBSTACLE := 20.0
+const REWARD_LINE_COUNT := 3
+const REWARD_LINE_SPACING_X := 50.0
+const REWARD_LINE_START_OFFSET_X := 70.0
+# Reachable while just running (no jump) - same reasoning as ROAD_SHARD_Y.
+const REWARD_LINE_Y := ROAD_SURFACE_Y - 30.0
+const RAISED_NEAR_BARRIER_OFFSET_X := 40.0
+const RAISED_NEAR_BARRIER_Y := ROAD_SURFACE_Y - 60.0
+
 var current_speed := 225.0
 var _spawn_timer: Timer
 var _obstacle_spawner: Node
@@ -61,6 +90,8 @@ func setup(spawn_timer: Timer, obstacle_spawner: Node) -> void:
 	_obstacle_spawner = obstacle_spawner
 	if not _spawn_timer.timeout.is_connected(_on_base_timer_timeout):
 		_spawn_timer.timeout.connect(_on_base_timer_timeout)
+	if _obstacle_spawner != null and not _obstacle_spawner.obstacle_spawned.is_connected(_on_obstacle_spawned):
+		_obstacle_spawner.obstacle_spawned.connect(_on_obstacle_spawned)
 	_rng.randomize()
 
 
@@ -117,3 +148,46 @@ func _spawn_shard_at(x: float, y: float) -> Node:
 	add_child(shard)
 	collectible_spawned.emit(shard)
 	return shard
+
+
+## v1.37B: rolled once per real obstacle spawn. At most one pattern (or
+## none) ever attaches to a given obstacle - never stacked.
+func _on_obstacle_spawned(definition: Dictionary, obstacle_position: Vector2) -> void:
+	var collision_height: float = definition.get("collision_height", 50.0)
+	var collision_width: float = definition.get("collision_width", 30.0)
+	var roll := _rng.randf()
+	if roll < ARC_ABOVE_CHANCE:
+		_spawn_arc_above(obstacle_position, collision_height)
+	elif roll < ARC_ABOVE_CHANCE + REWARD_LINE_CHANCE:
+		_spawn_reward_line(obstacle_position)
+	elif roll < ARC_ABOVE_CHANCE + REWARD_LINE_CHANCE + RAISED_NEAR_BARRIER_CHANCE:
+		_spawn_raised_near_barrier(obstacle_position, collision_width)
+
+
+## A short arc of shards above the obstacle, cleared by
+## ARC_CLEARANCE_ABOVE_OBSTACLE so it can never overlap the obstacle's own
+## hitbox, and positioned within Ali's real jump-reachable height band -
+## a genuine but fair ask, never an impossible one.
+func _spawn_arc_above(obstacle_position: Vector2, collision_height: float) -> void:
+	var arc_y := (
+		obstacle_position.y - collision_height / 2.0 - ARC_CLEARANCE_ABOVE_OBSTACLE
+	)
+	var start_x := obstacle_position.x - ARC_SPACING_X
+	for i in ARC_SHARD_COUNT:
+		_spawn_shard_at(start_x + i * ARC_SPACING_X, arc_y)
+
+
+## A short, easy-to-grab line right after the obstacle (further along
+## Ali's approach, i.e. larger X), at a height reachable while still
+## running - no jump required, a calm reward right after clearing a hazard.
+func _spawn_reward_line(obstacle_position: Vector2) -> void:
+	for i in REWARD_LINE_COUNT:
+		var x := obstacle_position.x + REWARD_LINE_START_OFFSET_X + i * REWARD_LINE_SPACING_X
+		_spawn_shard_at(x, REWARD_LINE_Y)
+
+
+## A single, modestly raised shard just past the obstacle - a small, safe
+## variation on the reward line for thinner obstacles like a barrier.
+func _spawn_raised_near_barrier(obstacle_position: Vector2, collision_width: float) -> void:
+	var x := obstacle_position.x + collision_width / 2.0 + RAISED_NEAR_BARRIER_OFFSET_X
+	_spawn_shard_at(x, RAISED_NEAR_BARRIER_Y)
