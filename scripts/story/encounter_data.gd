@@ -125,6 +125,18 @@ const ENCOUNTERS := {
 }
 
 
+## Wraps a dialogue/story sentence with Unicode RLM (U+200F) marks so a
+## trailing/leading neutral character (a period, an em dash, the Arabic
+## ellipsis "…") is always anchored to a strong RTL context instead of being
+## placed by an ambiguous bidi guess. Only call this on full sentences meant
+## for direct display - never on score/number strings or short UI labels,
+## which do not have this problem and must stay exactly as typed.
+static func rtl_safe(text: String) -> String:
+	if text.is_empty():
+		return text
+	return "\u200f" + text + "\u200f"
+
+
 static func get_encounter(character_id: int) -> Dictionary:
 	return ENCOUNTERS.get(character_id, {}).duplicate(true)
 

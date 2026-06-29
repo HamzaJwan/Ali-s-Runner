@@ -329,7 +329,7 @@ func _show_start_screen() -> void:
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	_show_menu_hero_presentation()
-	audio_manager.start_music()
+	audio_manager.play_calm_music()
 
 
 func _show_menu_hero_presentation() -> void:
@@ -475,7 +475,7 @@ func _start_intro() -> void:
 	create_tween().tween_property(intro_overlay, "modulate:a", 1.0, INTRO_FADE_IN_TIME)
 	_setup_intro_scene()
 	_show_intro_step()
-	audio_manager.duck_music()
+	audio_manager.play_calm_music()
 
 
 func _setup_intro_scene() -> void:
@@ -508,7 +508,7 @@ func _teardown_intro_scene() -> void:
 func _show_intro_step() -> void:
 	var step: Dictionary = INTRO_LINES[intro_step_index]
 	intro_speaker.text = step["speaker"]
-	intro_line.text = step["text"]
+	intro_line.text = ENCOUNTER_DATA.rtl_safe(step["text"])
 	intro_next_button.text = (
 		"ابدأ"
 		if intro_step_index >= INTRO_LINES.size() - 1
@@ -702,7 +702,7 @@ func _start_run() -> void:
 
 func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> void:
 	_stop_menu_presentation()
-	audio_manager.unduck_music()
+	audio_manager.play_gameplay_music()
 	get_tree().paused = false
 	started = true
 	score = initial_score
@@ -780,7 +780,7 @@ func _end_run() -> void:
 
 	game_over = true
 	audio_manager.play_hit()
-	audio_manager.duck_music()
+	audio_manager.play_calm_music()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	player.kill()
@@ -809,11 +809,13 @@ func _show_game_over_options() -> void:
 
 	var checkpoint_config := ENCOUNTER_DATA.get_checkpoint(last_reached_checkpoint)
 	if checkpoint_config.is_empty():
-		game_over_message.text = ENCOUNTER_DATA.GAME_OVER_BEFORE_CHECKPOINT
+		game_over_message.text = ENCOUNTER_DATA.rtl_safe(
+			ENCOUNTER_DATA.GAME_OVER_BEFORE_CHECKPOINT
+		)
 		retry_button.visible = false
 		restart_button.grab_focus()
 	else:
-		game_over_message.text = checkpoint_config["game_over_line"]
+		game_over_message.text = ENCOUNTER_DATA.rtl_safe(checkpoint_config["game_over_line"])
 		retry_button.visible = true
 		retry_button.grab_focus()
 
@@ -965,7 +967,7 @@ func _open_checkpoint_cinematic() -> void:
 	checkpoint_active = true
 	checkpoint_cinematic_active = true
 	audio_manager.play_checkpoint()
-	audio_manager.duck_music()
+	audio_manager.play_calm_music()
 	if encounter_controller.character_id == EncounterCharacter.FATHER:
 		_show_father_ending_family_group()
 	_start_idle_breath(player_story_sprite)
@@ -1004,7 +1006,7 @@ func _show_encounter_dialogue_step() -> void:
 	if step.is_empty():
 		return
 	var role: int = step["role"]
-	var text: String = step["text"]
+	var text: String = ENCOUNTER_DATA.rtl_safe(step["text"])
 	_position_dialogue_bubble_for_speaker(role)
 	_update_checkpoint_speaker_emphasis(role)
 	checkpoint_speaker_name.text = _get_speaker_name(role)
@@ -1161,7 +1163,7 @@ func _finish_encounter_and_countdown() -> void:
 		active_encounter_node.visible = false
 	_cleanup_checkpoint_speaker_state()
 	player.reset_player(player_runner_position)
-	audio_manager.unduck_music()
+	audio_manager.play_calm_music()
 	_start_countdown()
 
 
@@ -1204,6 +1206,7 @@ func _finish_countdown() -> void:
 	encounter_controller.clear_active()
 	get_tree().paused = false
 	player.set_gameplay_active(true)
+	audio_manager.play_gameplay_music()
 	obstacle_spawner.start_spawning(current_obstacle_speed)
 	if jomana_safety_window_pending:
 		jomana_safety_window_pending = false

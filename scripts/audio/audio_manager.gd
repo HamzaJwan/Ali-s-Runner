@@ -39,15 +39,29 @@ const VOLUME_DB := {
 	"victory": -8.0,
 }
 
-const MUSIC_PATH := "res://assets/audio/music/main_theme_soft_loop.ogg"
+const MUSIC_CALM := "calm"
+const MUSIC_GAMEPLAY := "gameplay"
+
+# Only "calm" is wired to a real file. assets/audio/music/level1_exciting_loop.ogg
+# exists on disk but has no source/license entry in docs/AUDIO_CREDITS.md
+# (docs/AUDIO_DESIGN_PLAN.md explicitly flags it UNVERIFIED_AUDIO_CANDIDATE and
+# says not to integrate it until license-verified and owner-approved by ear).
+# BLOCKED_BY_AUDIO_DOCUMENTATION: do not add a "gameplay" entry here until that
+# documentation exists - play_gameplay_music() safely falls back to calm music
+# in the meantime, exactly like a missing-file fallback would.
+const MUSIC_TRACK_PATHS := {
+	MUSIC_CALM: "res://assets/audio/music/main_theme_soft_loop.ogg",
+}
 const MUSIC_VOLUME_DB := -22.0
 const MUSIC_DUCK_DB := -32.0
 const MUSIC_FADE_TIME := 0.6
+const MUSIC_CROSSFADE_HALF_TIME := 0.35
 
 var _players: Dictionary = {}
 var _missing_logged: Dictionary = {}
 var _music_player: AudioStreamPlayer
-var _music_loaded := false
+var _music_streams: Dictionary = {}
+var _current_music_key := ""
 var _music_volume_tween: Tween
 
 
@@ -100,50 +114,99 @@ func _log_missing_once(sound_name: String, path: String, reason: String) -> void
 
 
 func _load_music(parent_node: Node) -> void:
-	if not ResourceLoader.exists(MUSIC_PATH, &"AudioStream"):
-		_log_missing_once("music", MUSIC_PATH, "missing")
-		return
+	for key: String in MUSIC_TRACK_PATHS:
+		var path: String = MUSIC_TRACK_PATHS[key]
+		if not ResourceLoader.exists(path, &"AudioStream"):
+			_log_missing_once("music_" + key, path, "missing")
+			continue
 
-	var stream := load(MUSIC_PATH) as AudioStream
-	if stream == null:
-		_log_missing_once("music", MUSIC_PATH, "failed to load")
-		return
+		var stream := load(path) as AudioStream
+		if stream == null:
+			_log_missing_once("music_" + key, path, "failed to load")
+			continue
 
-	# HUMAN_AUDIO_REVIEW_REQUIRED: license verified (CC0 1.0, OpenGameArt
-	# "Icy Heights", see docs/AUDIO_CREDITS.md), but tone/loudness/fit have
-	# not been approved by ear yet. Keep this flagged until that review.
-	if stream is AudioStreamOggVorbis:
-		stream.loop = true
+		# HUMAN_AUDIO_REVIEW_REQUIRED: license verified (see docs/AUDIO_CREDITS.md),
+		# but tone/loudness/fit have not been approved by ear yet for any track.
+		if stream is AudioStreamOggVorbis:
+			stream.loop = true
+
+		_music_streams[key] = stream
+		print("[audio] music track loaded (HUMAN_AUDIO_REVIEW_REQUIRED): ", key,
+			" -> ", path, " loop=true")
+
+	if _music_streams.is_empty():
+		return
 
 	_music_player = AudioStreamPlayer.new()
-	_music_player.stream = stream
 	_music_player.volume_db = MUSIC_VOLUME_DB
 	_music_player.bus = "Master"
 	parent_node.add_child(_music_player)
-	_music_loaded = true
-	print("[audio] music loaded (HUMAN_AUDIO_REVIEW_REQUIRED): ", MUSIC_PATH,
-		" volume_db=", MUSIC_VOLUME_DB, " loop=true")
 
 
-func start_music() -> void:
-	if not _music_loaded or _music_player == null:
+## Calm state: main menu, intro, checkpoint/story dialogue, Game Over, Father
+## ending, any paused/non-running state.
+func play_calm_music() -> void:
+	_switch_music(MUSIC_CALM)
+
+
+## Active-gameplay state. Falls back to calm music if the "gameplay" track is
+## not registered (currently BLOCKED_BY_AUDIO_DOCUMENTATION) - this is
+## intentional graceful degradation, not a bug, and logged once.
+func play_gameplay_music() -> void:
+	if _music_streams.has(MUSIC_GAMEPLAY):
+		_switch_music(MUSIC_GAMEPLAY)
 		return
-	if _music_player.playing:
+	_log_missing_once(
+		"music_" + MUSIC_GAMEPLAY,
+		"res://assets/audio/music/level1_exciting_loop.ogg",
+		"BLOCKED_BY_AUDIO_DOCUMENTATION (no AUDIO_CREDITS.md entry); using calm music"
+	)
+	_switch_music(MUSIC_CALM)
+
+
+func _switch_music(key: String) -> void:
+	if _music_player == null:
 		return
+	var stream: AudioStream = _music_streams.get(key)
+	if stream == null:
+		return
+	if key == _current_music_key and _music_player.playing:
+		return
+
 	_kill_music_tween()
-	_music_player.volume_db = MUSIC_VOLUME_DB
-	_music_player.play()
+	if not _music_player.playing:
+		_music_player.stream = stream
+		_music_player.volume_db = MUSIC_VOLUME_DB
+		_music_player.play()
+		_current_music_key = key
+		return
+
+	# Already playing a different track: crossfade out, swap, fade back in.
+	var next_stream := stream
+	_music_volume_tween = _music_player.create_tween()
+	_music_volume_tween.tween_property(
+		_music_player, "volume_db", MUSIC_DUCK_DB, MUSIC_CROSSFADE_HALF_TIME
+	)
+	_music_volume_tween.tween_callback(func() -> void:
+		_music_player.stream = next_stream
+		_music_player.play()
+	)
+	_music_volume_tween.tween_property(
+		_music_player, "volume_db", MUSIC_VOLUME_DB, MUSIC_CROSSFADE_HALF_TIME
+	)
+	_current_music_key = key
 
 
 func stop_music() -> void:
-	if not _music_loaded or _music_player == null:
+	if _music_player == null:
 		return
 	_kill_music_tween()
 	_music_player.stop()
+	_current_music_key = ""
 
 
 func duck_music() -> void:
-	if not _music_loaded or _music_player == null or not _music_player.playing:
+	if _music_player == null or not _music_player.playing:
 		return
 	_kill_music_tween()
 	_music_volume_tween = _music_player.create_tween()
@@ -153,7 +216,7 @@ func duck_music() -> void:
 
 
 func unduck_music() -> void:
-	if not _music_loaded or _music_player == null or not _music_player.playing:
+	if _music_player == null or not _music_player.playing:
 		return
 	_kill_music_tween()
 	_music_volume_tween = _music_player.create_tween()

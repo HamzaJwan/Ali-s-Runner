@@ -2,7 +2,7 @@ class_name DialogueBubbleHelper
 extends RefCounted
 
 const ENCOUNTER_DATA := preload("res://scripts/story/encounter_data.gd")
-const BUBBLE_SIZE := Vector2(480.0, 160.0)
+const BUBBLE_SIZE := Vector2(480.0, 182.0)
 const VERTICAL_OFFSET := 32.0
 const VIEWPORT_MARGIN := 24.0
 const VIEW_SIZE := Vector2(1152.0, 648.0)

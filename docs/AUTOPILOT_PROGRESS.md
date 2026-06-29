@@ -999,3 +999,48 @@ Validation: a smoke test forced `show_pose(LAND, true)`, confirmed the texture a
 Immutable constants unaffected — both fixes are cinematic-tween cleanup and a per-pose visual scale constant; no physics/collision/spawn/speed/checkpoint value was touched. Reconfirmed via grep.
 
 Commit: `autopilot: fix ali floating after checkpoints and oversized land pose`.
+
+## v1.36A + v0.95C — Dynamic Music, Arabic Dialogue Layout, RTL Polish, Checkpoint Retest — STATUS: COMPLETE
+
+Files changed: `scripts/audio/audio_manager.gd`, `scripts/main.gd`, `scripts/ui/dialogue_bubble_helper.gd`, `scripts/story/encounter_data.gd`, `scenes/Main.tscn`.
+
+### Task A — Dynamic music state machine
+
+**`level1_exciting_loop.ogg` was NOT integrated — BLOCKED_BY_AUDIO_DOCUMENTATION.** Checked both `docs/AUDIO_CREDITS.md` and `docs/AUDIO_ASSET_SOURCING_REPORT.md` first, as instructed: neither has a source/license entry for it. `docs/AUDIO_DESIGN_PLAN.md` already explicitly flags it `UNVERIFIED_AUDIO_CANDIDATE` and says not to integrate until license-verified and owner-approved by ear. Per this task's own gate, the code does not load this file at all and logs `BLOCKED_BY_AUDIO_DOCUMENTATION` once if anything ever asks for it.
+
+`AudioManager` now owns a small named-track music state machine instead of one hardcoded path: `MUSIC_TRACK_PATHS := {"calm": main_theme_soft_loop.ogg}` (only `calm` registered, since `gameplay` is blocked). `main.gd` only calls high-level state methods, exactly as required: `play_calm_music()`, `play_gameplay_music()`, plus the existing `duck_music()`/`unduck_music()`/`stop_music()` kept available. `play_gameplay_music()` checks whether a `"gameplay"` track is registered; since it isn't, it logs the block once and falls back to `play_calm_music()` — the exact same missing-file-safety pattern already used for SFX, just applied to music tracks. The moment `level1_exciting_loop.ogg` is properly documented, integrating it is a one-line addition to `MUSIC_TRACK_PATHS` — no other code changes needed.
+
+`_switch_music(key)` is a single shared function: if the target track isn't already playing, it starts immediately at `MUSIC_VOLUME_DB`; if a different track is already playing, it crossfades (fade to `MUSIC_DUCK_DB` over `0.35s`, swap stream, fade back to `MUSIC_VOLUME_DB` over `0.35s`) using one tracked `_music_volume_tween` (killed/replaced every call, same discipline as every other tween in this project). There is still exactly one `AudioStreamPlayer` for music — switching tracks reassigns its `.stream`, never creates a second player.
+
+Call sites replaced in `main.gd` (one line each, no control-flow changes): `_show_start_screen()` (menu) and `_start_intro()` (intro) → `play_calm_music()`; `_open_checkpoint_cinematic()` (any checkpoint dialogue, including Father's) → `play_calm_music()`; `_finish_encounter_and_countdown()` (the 3-2-1 countdown itself, still not running) → `play_calm_music()`; `_finish_countdown()` (the exact moment `obstacle_spawner.start_spawning()` is called and the player actually starts running again) → new `play_gameplay_music()` call added; `_begin_run()` (the shared funnel for Restart/Retry/post-intro start, all of which resume running immediately with no countdown gate) → `play_gameplay_music()`; `_end_run()` (Game Over) → `play_calm_music()`.
+
+### Task B — Jomana dialogue overflow fixed
+
+Root cause: `checkpoint_card`'s actual runtime size/position is reassigned on every dialogue step by `_position_dialogue_bubble_for_speaker()` from `DialogueBubbleHelper.BUBBLE_SIZE` — the `.tscn`'s static `Card` offsets are cosmetic only and get overwritten before any text is ever shown. Separately, `CharacterLine` and `RewardLabel` (unlike `AliLine`) never had `autowrap_mode` set at all, so Jomana's unusually long HELPER line ("قريب وصلت يا علي… لكن لازم تختار الطريق الصح.") rendered as one un-wrapped line wider than the card.
+
+Fixed both: `BUBBLE_SIZE` in `dialogue_bubble_helper.gd` grew from `(480, 160)` to `(480, 182)` (the actual runtime-controlling value), and `CharacterLine`/`RewardLabel` gained `autowrap_mode = 2` (matching `AliLine`'s existing setting) plus `clip_text = true` on all three as a hard guarantee against any future overflow. `NextHint`/`ContinueButton` were shifted down to match the taller card. The static `.tscn` `Card` offsets were also bumped to match for editor-preview accuracy, even though they're not load-bearing at runtime.
+
+### Task C — RTL/BiDi punctuation fix
+
+Added `EncounterData.rtl_safe(text)`, wrapping a sentence in Unicode RLM marks (`‏`) so trailing/leading neutral characters (periods, em dashes, the already-correct Arabic ellipsis "…") are anchored to a strong RTL context instead of an ambiguous bidi guess — applied only at the four actual dialogue-display assignment points (`_show_encounter_dialogue_step()`'s `text` read, `_show_intro_step()`'s `intro_line.text`, both `game_over_message.text` assignments in `_show_game_over_options()`), never to the source dialogue data itself, never to `score_label`, speaker names, or button text. All dialogue strings already used the Arabic ellipsis "…" (no ASCII `"..."` anywhere) — nothing to change there.
+
+**Real bug found and fixed mid-task:** the first attempt used the literal RLM character directly in the GDScript string literal, which Godot's parser explicitly rejects as a Trojan-Source-style safety check ("Invisible text direction control character present in the string, escape it"). This broke every script that depends on `encounter_data.gd` (cascading parse failures across the whole project) — caught immediately by the required headless boot check, not shipped. Fixed by using the escaped `‏` form instead of the literal character.
+
+### Task D — Retested Ali land + post-checkpoint height
+
+Re-confirmed the previous hotfix is still solid, now also covering Jomana (the third checkpoint, not just Fatima/Zainab tested before): `ali_land`'s `POSE_SCALE_OVERRIDES` calibration is still active and renders at `~79x80px` (not the broken `~100x100`); `player.global_position.y` returns to exactly `START_PLAYER_POSITION.y` (`486.0`) after Jomana's checkpoint and stays stable across several seconds of subsequent running; the idle-breath/speaker-emphasis cleanup (`_cleanup_checkpoint_speaker_state()`) is confirmed still wired into both `_finish_encounter_and_countdown()` and `_reset_checkpoint_encounter_state()`. No regression found; no further lifecycle changes were needed.
+
+### Validation
+
+* Headless boot clean, exit `0`, no parser/runtime errors (after fixing the RLM literal-character parse error above).
+* One comprehensive smoke test (deleted after running, `tmp_v136a_smoke_test.gd` + its `.uid`) covering, in one continuous run: menu calm music; intro stays calm; gameplay-start correctly falls back to calm with the blocked-track log line printed; a real Jomana checkpoint (driven via `_on_obstacle_passed()`, not a direct internal call) opens with calm music, its dialogue text exactly matches the expected RLM-wrapped string, has `autowrap_mode` enabled, and its rendered label width fits inside the card width; `score_label` confirmed NOT RLM-wrapped; post-Jomana world Y returns to and stays at `486.0`; `ali_land` still renders at the calibrated small size; Game Over switches to calm with the single music player still playing (not stopped/duplicated); Retry correctly falls back to calm (since gameplay track is blocked); exactly one music-stream `AudioStreamPlayer` exists in the whole scene throughout. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, spawn interval/X, all four speeds, all four checkpoint trigger scores). Father's ending phrase, reward logic, retry/restart logic, obstacle behavior, and companion state rules are byte-for-byte unchanged in `encounter_data.gd` (confirmed via diff — the only change to that file is the addition of the `rtl_safe()` helper itself).
+
+### Remaining human review items (unchanged)
+
+* Listen to and approve/remap/reject every integrated SFX and `main_theme_soft_loop.ogg` (still `HUMAN_AUDIO_REVIEW_REQUIRED`).
+* `level1_exciting_loop.ogg` remains `BLOCKED_BY_AUDIO_DOCUMENTATION` — needs a source/license entry in `docs/AUDIO_CREDITS.md` before it can even be considered for `play_gameplay_music()`.
+* F6 visual check of the wider checkpoint card and the RTL punctuation fix is still recommended, even though both are validated structurally/mechanically here.
+
+Commit: `autopilot: v1.36A dialogue RTL polish and v0.95C dynamic music`.
