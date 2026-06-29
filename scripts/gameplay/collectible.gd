@@ -47,8 +47,17 @@ const PICKUP_SPARKLE_LIFETIME := 0.35
 const PICKUP_POP_SCALE := 1.6
 const PICKUP_POP_TIME := 0.22
 
+# v1.37C: a small "+1" pop that floats up and fades - a numeral, not an
+# English word, so it needs no Arabic/RTL handling of its own (unlike the
+# "النور: N" label main.gd already owns, which does).
+const PICKUP_LABEL_TEXT := "+1"
+const PICKUP_LABEL_FONT_SIZE := 16
+const PICKUP_LABEL_RISE := 22.0
+const PICKUP_LABEL_TIME := 0.3
+
 const GOLDEN_COLOR := Color(1.0, 0.82, 0.25, 1.0)
 const GOLDEN_SPARKLE_COLOR := Color(1.0, 0.92, 0.55, 0.85)
+const PICKUP_LABEL_COLOR := Color(1.0, 0.92, 0.55, 1.0)
 
 @export var speed := DEFAULT_SPEED
 
@@ -168,5 +177,26 @@ func _play_pickup_effect() -> void:
 	pop_tween.tween_property(
 		_visual_node, "modulate:a", 0.0, PICKUP_POP_TIME
 	)
+	_spawn_pickup_label()
 	await get_tree().create_timer(PICKUP_SPARKLE_LIFETIME).timeout
 	queue_free()
+
+
+## A tiny floating "+1" - the shard itself already froze in place
+## (_active=false), so this just needs to rise/fade alongside the sparkle,
+## not track any further movement.
+func _spawn_pickup_label() -> void:
+	var label := Label.new()
+	label.text = PICKUP_LABEL_TEXT
+	label.add_theme_font_size_override("font_size", PICKUP_LABEL_FONT_SIZE)
+	label.add_theme_color_override("font_color", PICKUP_LABEL_COLOR)
+	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.6))
+	label.position = Vector2(-10.0, -28.0)
+	add_child(label)
+
+	var label_tween := create_tween().set_parallel()
+	label_tween.tween_property(
+		label, "position:y", label.position.y - PICKUP_LABEL_RISE, PICKUP_LABEL_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	label_tween.tween_property(label, "modulate:a", 0.0, PICKUP_LABEL_TIME)

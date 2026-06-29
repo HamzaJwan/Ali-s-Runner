@@ -1458,3 +1458,20 @@ Added `ObstacleSpawner.obstacle_spawned(definition, spawn_position)`, emitted ri
 Immutable benchmarks re-verified unchanged via grep across every touched script.
 
 Commit: `autopilot: v1.37B safe light shard patterns`.
+
+## v1.37C — Light Shard Pickup Juice — STATUS: COMPLETE
+
+Files changed: `scripts/gameplay/collectible.gd`.
+
+The sparkle burst, scale/fade pop, and pickup SFX were already shipped in v1.37A (the real `shard_pickup.wav` arrived mid-implementation, so it was integrated then rather than artificially delayed to this milestone - see that entry). The one missing piece was the **"+1" floating text**, added now: a plain `Label` (`"+1"`, gold, with a thin dark outline for readability against any background) spawned as a child of the already-frozen shard, rising `22px` and fading over `0.3s` - intentionally shorter than the shard's own `0.35s` total lifetime so the label always finishes its animation before the node frees, never getting cut off mid-fade. `"+1"` is a numeral, not an English word, so no Arabic/RTL handling applies to it (unlike the `النور: N` UI label, which already is RTL-correct).
+
+**Audio status confirmed, not re-derived:** `shard_pickup.wav` remains `HUMAN_AUDIO_REVIEW_REQUIRED` (license verified, tone not yet owner-approved) - same status as every other SFX in this project. No combo/pitch-variation system was added: this task's own acceptance criteria treat that as optional only "if obviously safe," and stacking a pitch-variance feature on top of an SFX that hasn't even had its base tone approved yet is not something to add speculatively.
+
+### Validation
+
+* Headless boot clean, exit `0`.
+* Smoke test (deleted after running, `tmp_v137c_smoke_test.gd` + its `.uid`): confirmed a real pickup spawns the `"+1"` label and starts the sparkle emitting; confirmed `collectible_count` still increments correctly alongside the new visual; confirmed the collected shard fully frees itself shortly after (no leftover frozen node blocking the lane). **0 failed assertions.**
+
+Immutable benchmarks unaffected - this milestone only added a `Label` child and a tween inside `collectible.gd`'s already-existing pickup-effect function.
+
+Commit: `autopilot: v1.37C light shard pickup juice`.
