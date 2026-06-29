@@ -1087,3 +1087,110 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 4. If/when `ali_run_5.png`..`ali_run_8.png` are produced: use the **same canvas size and feet-baseline convention** as the current 4 frames (see the comments added in `player_visual.gd`) so they drop in with zero code changes.
 
 Commit: `autopilot: v1.36B smooth Ali run animation system`.
+
+## Roadmap Sync + Owner-Authorized Exciting Music — 2026-06-29
+
+Roadmap/documentation status was synchronized with the completed Level 1 polish sprint, v1.36A, and v1.36B. Level 1 remains `AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED`, not Final Gold.
+
+Documented as `IMPLEMENTED / OWNER F6 RETEST REQUIRED`:
+
+* Fatima scale `72`, Father height `215` and heroic emphasis.
+* Soft oval shadow cleanup.
+* Current `14 FPS` run smoothing and 1-8 frame readiness.
+* Living story-character idle motion and cleanup.
+* Intro `التالي` layout fix.
+* Enlarged companion ribbon.
+* Safe documented jump/hit replacement paths.
+* v1.36A Jomana wrapping and RTL punctuation handling.
+* LAND calibration and post-checkpoint-height cleanup.
+
+Owner decision recorded: `OWNER_DECISION_KEEP_CURRENT_FATHER_LINE`.
+
+### Exciting music authorization and activation
+
+The owner explicitly approved using `res://assets/audio/music/level1_exciting_loop.ogg` in the project. Added it as the `gameplay` entry in `AudioManager.MUSIC_TRACK_PATHS`; all existing state call sites remain unchanged. Calm music owns menu/story/checkpoint/Game Over/countdown states, while the exciting track now owns active running gameplay. Missing/failed gameplay-track loading still falls back to calm music.
+
+Godot 4.7 headless boot exited successfully and logged both tracks as loaded:
+
+* `calm -> res://assets/audio/music/main_theme_soft_loop.ogg`
+* `gameplay -> res://assets/audio/music/level1_exciting_loop.ogg`
+
+No parser/runtime loading error occurred. Abrupt headless shutdown printed the existing audio-resource cleanup warnings; these do not indicate a failed load.
+
+Review status:
+
+* `HUMAN_AUDIO_REVIEW_REQUIRED` for both tracks and their crossfade/volume/mood.
+* `OWNER_AUTHORIZED_LOCAL_USE / LICENSE_VERIFICATION_REQUIRED_BEFORE_PUBLIC_RELEASE` for `level1_exciting_loop.ogg`, because its exact external source/license is still not recorded.
+* No gameplay, physics, collision, scene, checkpoint, obstacle, reward, or story-text behavior changed.
+
+## v1.36C — Diagnose and Fix Ali 8-Frame Run Jitter — STATUS: COMPLETE
+
+Files changed: `scripts/player_visual.gd`.
+
+The owner added real `ali_run_1`(as `ali_run1.png`)..`ali_run_8.png` art since v1.36B. All 8 are now detected and used. This task measured the *actual* runtime numbers (not a guess) to find the real cause of the reported shake.
+
+### Task A — Measured diagnostics (Godot-side, via a temporary diagnostic script, deleted after use)
+
+| frame | canvas | visible bbox (x,y,w,h) | scale | base pos.x | base pos.y | feet world Y |
+|---|---|---|---:|---:|---:|---:|
+| 1 | 289x451 | 15,12,252,420 | 0.2381 | +0.83 | -25.17 | 24.0000 |
+| 2 | 238x411 | 27,6,203,402 | 0.2488 | -2.36 | -26.37 | 24.0000 |
+| 3 | 255x411 | 4,2,248,403 | 0.2481 | -0.12 | -25.50 | 24.0000 |
+| 4 | 275x414 | 11,8,248,400 | 0.2500 | +0.62 | -26.25 | 24.0000 |
+| 5 | 281x432 | 10,10,261,411 | 0.2433 | +0.00 | -25.88 | 24.0000 |
+| 6 | 222x423 | 26,41,183,379 | 0.2639 | -1.72 | -31.01 | 24.0000 |
+| 7 | 234x436 | 21,31,213,392 | 0.2551 | -2.68 | -28.30 | 24.0000 |
+| 8 | 208x425 | 3,10,197,398 | 0.2513 | +0.63 | -25.12 | 24.0000 |
+
+**Answers to the required diagnostic questions:**
+
+1. **All 8 frames detected?** Yes, confirmed live in the boot log (`"using 8 cached run frames at 14.0 FPS"`).
+2. **Consistent canvas size?** No — ranges from `208x425` to `289x451`. Already known/expected (every pose in this project has a different native canvas) and exactly what the height-normalization system was built to handle.
+3. **Consistent visible feet baseline?** Yes, mathematically — `_calculate_texture_layout()`'s feet-pinning formula lands every single frame's feet at exactly `FEET_Y = 24.0`, verified to 4 decimal places for all 8 frames. Feet/vertical alignment was **not** the source of the shake.
+4. **Different scale per run frame?** Yes — `0.2381` to `0.2639` (~10.8% spread). This is the intended, correct behavior of per-frame height normalization, not a bug.
+5. **Is the fake Y bob causing/amplifying jitter?** **Yes - confirmed, and this was a real bug.** `RUN_FRAME_Y_OFFSETS` (`{0:0, 1:-1.5, 2:0, 3:-1.5}`) was written for the old 4-frame cycle and kept applying to frame indices 0-3 of the *new* 8-frame cycle (since nothing in v1.36B gated it by frame count), while indices 4-7 got no offset at all (default `0.0`). That produced an asymmetric, art-uncorrelated bob pattern stacked on top of an already-perfectly-pinned feet baseline.
+6. **Any frame visually too high/low/wide/narrow vs the rest?** **Yes — frame 6 is a clear outlier.** Its visible height (`379px`) is the smallest of all 8 (others range `392-421`), its top-crop margin (`41px`) is far larger than any other frame (others range `2-31px`), and its width-to-height ratio (`0.483`) is noticeably narrower than its neighbors (frame 5: `0.635`, frame 7: `0.544`).
+
+**The real, measured, separate cause of horizontal shake:** each frame's *own* alpha-bbox horizontal center (`base pos.x` column above) varies by up to **3.31px** frame-to-frame. At `14 FPS` that's a visible left-right alternation every ~70ms — the classic feel of "shaking," independent of the Y-bob bug.
+
+### Task B — Fixes applied (code only, no asset edits)
+
+1. **Y-bob gated off for 8-frame mode.** Added `RUN_FRAME_Y_OFFSET_MAX_FRAME_COUNT = 4` and `_run_frame_y_offset(frame_index)`: returns `0.0` whenever `run_frame_textures.size() > 4`. The legacy 4-frame fallback keeps its bob unchanged; the real 8-frame cycle now relies entirely on the already-correct feet-pinning math.
+2. **Horizontal jitter fixed with a shared X anchor.** Added `_compute_run_frame_x_anchor()`, called once after all run frames load: averages every frame's own natural `position.x` (via the existing, unmodified `_calculate_texture_layout()`) into one `_run_frame_x_anchor`. `_apply_run_frame()` now sets `position.x` to this single anchor for every run frame instead of each frame recomputing its own noisy bbox-center `x`. Vertical/feet math is untouched.
+3. Confirmed (no change needed): the run-frame timer/index still does not reset during continuous grounded running, and jump/fall/land still reset it cleanly only on an actual pose change.
+4. `ali_land`'s `POSE_SCALE_OVERRIDES` calibration is separate code and was not touched.
+
+### Task C — Visual size: OWNER_VISUAL_DECISION_REQUIRED
+
+`VISUAL_HEIGHT` (`100px`) was left unchanged — "does Ali feel too small" is a subjective readability call only the owner can make by eye, and this task explicitly allows deferring it. Testing `105-110px` later is a single-constant change in `player_visual.gd`; it does not touch collision or the feet-pinning math.
+
+### Task D — Debug isolation: which factor was actually responsible
+
+* **Asset frame alignment:** Yes, contributing — frame 6 is a measured outlier, and all 8 frames' bbox centers vary enough to need the X-anchor fix.
+* **Code Y offsets:** Yes, confirmed as a real bug — fixed (Task B.1).
+* **Scale recalculation:** Working as designed — per-frame scale variation is intended height-normalization; feet land at exactly `24.0` regardless.
+* **Dust/shadow illusion:** Ruled out — `_run_dust`/`_ground_shadow` are anchored to `Player`'s local origin, independent of the run sprite's per-frame transform.
+* **FPS/cadence:** Not the root cause, only a multiplier of how perceptible the positional noise is; left at `14 FPS` since the real fix is removing the noise (Task B), not slowing its display.
+* **Visual size in scene:** No evidence connecting `100px` to the shake; deferred separately (Task C).
+
+### Task E — Asset guidance
+
+**ASSET_REWORK_RECOMMENDED: `ali_run_6.png`** — its visible height (`379px`) and top-crop margin (`41px`) are clear outliers vs. its 7 siblings; recrop/regenerate with the same top-margin convention as the other frames.
+
+General note for any future regeneration: `ali_run_1..8` should ideally share the same canvas size, the same transparent padding, and the same horizontal torso placement within their canvas (not just the same feet baseline) — the code-side X-anchor fix compensates for today's inconsistency, but a torso-centered source crop would remove the need for that compensation entirely.
+
+### Validation
+
+* Headless boot clean, exit `0`. Boot log confirms `"using 8 cached run frames at 14.0 FPS x_anchor=-0.599"`.
+* Smoke test (deleted after running, `tmp_v136c_smoke_test.gd` + its `.uid`): confirmed 8 frames detected; confirmed all 8 frame indices are actually visited during continuous running with the player never leaving the floor; confirmed feet Y stays within `1px` across 40 sampled frames; confirmed horizontal position stays within `0.5px` across the same 40 samples (the actual jitter fix, directly verified); confirmed the Y-offset helper returns exactly `0.0` for every index now that 8 frames are active; confirmed jump/fall/land still transition correctly; confirmed `ali_land` still renders at its calibrated small size; confirmed a real Fatima checkpoint still returns `player.global_position.y` to exactly `START_PLAYER_POSITION.y`. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, player collision half-height, spawn interval/X, all four speeds, all four checkpoint trigger scores). `scripts/player.gd` was not touched at all this task.
+
+### Owner F6 checklist
+
+1. Watch a sustained run and confirm the left-right "shake" is gone or much less noticeable.
+2. Confirm there's no new visible vertical bounce now that the 4-frame bob is off for the 8-frame cycle.
+3. If frame 6 still looks like a visible "blip" in the cycle, that's the flagged `ASSET_REWORK_RECOMMENDED` item.
+4. Decide whether `100px` gameplay height still feels right, or test `105-110px` (`OWNER_VISUAL_DECISION_REQUIRED`).
+
+Commit: `autopilot: v1.36C fix Ali 8-frame run jitter`.

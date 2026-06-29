@@ -20,17 +20,25 @@ const RUN_ANIMATION_FPS := 14.0
 const RUN_FRAME_COUNT_MAX := 8
 
 # Subtle per-frame vertical bob layered on top of the normal feet-aligned
-# position, purely to fake a touch of inter-frame motion a low frame-count
-# cycle can't otherwise convey. Keyed by frame index, defaults to 0.0 for
-# any index without an explicit entry (safe for 5-8 once those exist).
-# Deliberately tiny (<=2px) so it reads as "alive," not as a bounce, and
-# never large enough to make feet look like they leave the ground.
+# position, meant to fake a touch of inter-frame motion a low frame-count
+# cycle can't otherwise convey. ONLY used in the legacy 4-frame fallback
+# (run_frame_textures.size() <= RUN_FRAME_Y_OFFSET_MAX_FRAME_COUNT) - see
+# _run_frame_y_offset(). Measured diagnostics on the real 8-frame set (see
+# docs/AUTOPILOT_PROGRESS.md, v1.36C) showed the existing feet-pinning math
+# in _calculate_texture_layout() already lands every frame's feet at
+# exactly FEET_Y on its own; this dict only ever existed to compensate for
+# the OLD 4-frame art having no body bob of its own. Applying it unevenly
+# on top of 8 real frames (which already carry their own natural body-
+# height variation from the artist's own poses) was a real, measured
+# contributor to the reported run jitter, so it is gated off once enough
+# real frames exist.
 const RUN_FRAME_Y_OFFSETS := {
 	0: 0.0,
 	1: -1.5,
 	2: 0.0,
 	3: -1.5,
 }
+const RUN_FRAME_Y_OFFSET_MAX_FRAME_COUNT := 4
 
 # Optional tiny per-frame lean, in radians. Left at 0.0 for every frame for
 # now: rotating the sprite would pivot around its center, not its feet, so
@@ -91,6 +99,7 @@ var _pose_textures: Dictionary = {}
 var _native_pose_available: Dictionary = {}
 var _texture_layouts: Dictionary = {}
 var _single_run_texture: Texture2D
+var _run_frame_x_anchor := 0.0
 
 
 func _ready() -> void:
@@ -140,7 +149,8 @@ func update_visual(delta: float, requested_pose: StringName) -> bool:
 ## differing per frame/pose, not by a tiny position nudge).
 func _apply_run_frame(frame_index: int) -> void:
 	_apply_texture(run_frame_textures[frame_index])
-	position.y += RUN_FRAME_Y_OFFSETS.get(frame_index, 0.0)
+	position.x = _run_frame_x_anchor
+	position.y += _run_frame_y_offset(frame_index)
 	rotation = RUN_FRAME_ROTATION.get(frame_index, 0.0)
 
 
@@ -200,14 +210,46 @@ func _load_run_frames() -> void:
 
 	if not run_frame_textures.is_empty():
 		_native_pose_available[RUN] = true
+		_compute_run_frame_x_anchor()
 		print("[ali_run] using ", run_frame_textures.size(),
-			" cached run frames at ", RUN_ANIMATION_FPS, " FPS")
+			" cached run frames at ", RUN_ANIMATION_FPS, " FPS",
+			" x_anchor=", _run_frame_x_anchor)
 	elif _single_run_texture != null:
 		print("[ali_run] run frames missing; using ali_run.png")
 	elif _pose_textures[IDLE] != null:
 		print("[ali_run] run frames and ali_run.png missing; using idle fallback")
 	else:
 		print("[ali_run] no run or idle images; using blue placeholder")
+
+
+## Measured diagnostics (docs/AUTOPILOT_PROGRESS.md, v1.36C) on the real
+## 8-frame set showed each frame's own alpha-bbox horizontal center swings
+## by up to ~3px frame-to-frame, because the source art's limb extension
+## isn't symmetric about a fixed torso line in every pose. Centering each
+## frame independently (the original approach) therefore reads as the
+## whole sprite sliding left/right every frame - real, measured jitter.
+## Averaging every loaded frame's own natural horizontal position once,
+## here, and reusing that single anchor for all of them removes that
+## frame-to-frame noise while leaving the per-frame vertical/feet math
+## (which is already correct and frame-specific by design) untouched.
+func _compute_run_frame_x_anchor() -> void:
+	if run_frame_textures.is_empty():
+		_run_frame_x_anchor = 0.0
+		return
+	var total_x := 0.0
+	for frame_texture in run_frame_textures:
+		var layout: Dictionary = _calculate_texture_layout(frame_texture)
+		total_x += (layout["position"] as Vector2).x
+	_run_frame_x_anchor = total_x / run_frame_textures.size()
+
+
+## See RUN_FRAME_Y_OFFSETS' comment: only used while still on the legacy
+## 4-frame (or fewer) fallback. A real 8-frame cycle already carries its
+## own natural body bob and does not need (or want) this on top.
+func _run_frame_y_offset(frame_index: int) -> float:
+	if run_frame_textures.size() > RUN_FRAME_Y_OFFSET_MAX_FRAME_COUNT:
+		return 0.0
+	return RUN_FRAME_Y_OFFSETS.get(frame_index, 0.0)
 
 
 func _reset_run_animation() -> void:
