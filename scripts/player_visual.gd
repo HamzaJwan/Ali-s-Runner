@@ -4,7 +4,50 @@ extends Sprite2D
 const ASSET_UTILS := preload("res://scripts/asset_utils.gd")
 const VISUAL_HEIGHT := 100.0
 const FEET_Y := 24.0
-const RUN_ANIMATION_FPS := 13.0
+const RUN_ANIMATION_FPS := 14.0
+
+# --- Run cycle frame count ---
+# A 4-frame run (today's actual asset set) is fully supported and is what
+# every owner playtest so far has seen. An 8-frame run is the PREFERRED
+# target for the final, smoothest feel - the loader below already scans up
+# to RUN_FRAME_COUNT_MAX and will pick up frames 5-8 automatically the
+# moment they exist on disk, with zero further code changes. When those
+# frames are produced, they should share the same canvas size and the same
+# feet baseline (same alpha-trim bottom-edge convention) as frames 1-4, so
+# every frame normalizes to the same on-screen height/feet position the way
+# ali_idle/ali_run_1..4 already do - that consistency is what the existing
+# visible-bbox normalization in _calculate_texture_layout() depends on.
+const RUN_FRAME_COUNT_MAX := 8
+
+# Subtle per-frame vertical bob layered on top of the normal feet-aligned
+# position, purely to fake a touch of inter-frame motion a low frame-count
+# cycle can't otherwise convey. Keyed by frame index, defaults to 0.0 for
+# any index without an explicit entry (safe for 5-8 once those exist).
+# Deliberately tiny (<=2px) so it reads as "alive," not as a bounce, and
+# never large enough to make feet look like they leave the ground.
+const RUN_FRAME_Y_OFFSETS := {
+	0: 0.0,
+	1: -1.5,
+	2: 0.0,
+	3: -1.5,
+}
+
+# Optional tiny per-frame lean, in radians. Left at 0.0 for every frame for
+# now: rotating the sprite would pivot around its center, not its feet, so
+# any non-zero value needs an owner-reviewed visual pass to confirm feet
+# don't appear to lift/slide before it's turned on. The plumbing exists so
+# that pass is a data-only change, not a new code change.
+const RUN_FRAME_ROTATION := {}
+
+# Per-stride ground-contact frames, used only for the dust accent in
+# player.gd. A real running stride has exactly two ground-contact events
+# (left foot down, right foot down) no matter how many in-between frames
+# represent the cycle, so contact frames are always frame 0 and the
+# half-cycle frame - [0, 2] for today's 4 frames, [0, 4] once 8 exist.
+static func contact_frame_indices(frame_count: int) -> Array:
+	if frame_count <= 0:
+		return []
+	return [0, frame_count / 2]
 
 # ali_land.png's visible art is nearly square (measured ~239x241px) while
 # every other pose is tall/thin (idle ~189x474, run frames ~385-426x513).
@@ -36,12 +79,7 @@ const POSE_PATHS := {
 	HURT: "res://assets/characters/ali/ali_hurt.png",
 	VICTORY: "res://assets/characters/ali/ali_victory.png",
 }
-const RUN_FRAME_PATHS := [
-	"res://assets/characters/ali/ali_run_1.png",
-	"res://assets/characters/ali/ali_run_2.png",
-	"res://assets/characters/ali/ali_run_3.png",
-	"res://assets/characters/ali/ali_run_4.png",
-]
+const RUN_FRAME_PATH_TEMPLATE := "res://assets/characters/ali/ali_run_%d.png"
 const RUN_FRAME_1_COMPATIBILITY_PATH := \
 	"res://assets/characters/ali/ali_run1.png"
 
@@ -68,7 +106,7 @@ func show_pose(pose: StringName, force_refresh: bool = false) -> bool:
 		return _native_pose_available.get(pose, false)
 	current_pose = pose
 	if pose == RUN and not run_frame_textures.is_empty():
-		_apply_texture(run_frame_textures[0])
+		_apply_run_frame(0)
 		return true
 
 	texture = _pose_textures.get(pose)
@@ -90,8 +128,20 @@ func update_visual(delta: float, requested_pose: StringName) -> bool:
 	while run_anim_time >= frame_duration:
 		run_anim_time -= frame_duration
 		run_frame_index = (run_frame_index + 1) % run_frame_textures.size()
-		_apply_texture(run_frame_textures[run_frame_index])
+		_apply_run_frame(run_frame_index)
 	return true
+
+
+## Applies a run-cycle frame plus its tiny optional bob/lean. The base
+## scale/position still comes entirely from _apply_texture()'s normal
+## feet-aligned layout - this only ever adds a small, fixed per-frame
+## offset on top, so it can never reintroduce the size-pulse or
+## feet-baseline bugs fixed earlier (those were caused by the *scale*
+## differing per frame/pose, not by a tiny position nudge).
+func _apply_run_frame(frame_index: int) -> void:
+	_apply_texture(run_frame_textures[frame_index])
+	position.y += RUN_FRAME_Y_OFFSETS.get(frame_index, 0.0)
+	rotation = RUN_FRAME_ROTATION.get(frame_index, 0.0)
 
 
 func has_texture() -> bool:
@@ -123,8 +173,16 @@ func _load_pose_slots() -> void:
 
 
 func _load_run_frames() -> void:
-	for frame_index in RUN_FRAME_PATHS.size():
-		var frame_path: String = RUN_FRAME_PATHS[frame_index]
+	# Frames are a contiguous sequence starting at ali_run_1.png. A 4-frame
+	# set (today's actual art) is fully supported; an 8-frame set (preferred
+	# for the smoothest final feel) is picked up automatically the moment
+	# ali_run_5.png..ali_run_8.png exist, with no further code changes. A
+	# gap stops the scan rather than skipping it, so the cycle never plays
+	# frames out of their intended order. This loads once, here, at _ready()
+	# - never per-frame during gameplay.
+	for frame_number in range(1, RUN_FRAME_COUNT_MAX + 1):
+		var frame_index := frame_number - 1
+		var frame_path := RUN_FRAME_PATH_TEMPLATE % frame_number
 		var loaded_path := frame_path
 		var frame_texture := ASSET_UTILS.load_texture_with_fallback(frame_path)
 		if frame_texture == null and frame_index == 0:
@@ -134,10 +192,11 @@ func _load_run_frames() -> void:
 			if frame_texture != null:
 				loaded_path = RUN_FRAME_1_COMPATIBILITY_PATH
 		if frame_texture == null:
-			print("[ali_run] frame ", frame_index + 1, " missing; skipped")
-			continue
+			print("[ali_run] frame ", frame_number, " missing; using ",
+				run_frame_textures.size(), " frame(s) for the run cycle")
+			break
 		run_frame_textures.append(frame_texture)
-		print("[ali_run] frame ", frame_index + 1, " loaded: ", loaded_path)
+		print("[ali_run] frame ", frame_number, " loaded: ", loaded_path)
 
 	if not run_frame_textures.is_empty():
 		_native_pose_available[RUN] = true

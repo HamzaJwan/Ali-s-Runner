@@ -31,6 +31,7 @@ var _jump_buffer_remaining := 0.0
 var _ground_shadow: Polygon2D
 var _run_dust: CPUParticles2D
 var _impact_dust: CPUParticles2D
+var _last_run_contact_frame := -1
 
 
 func _ready() -> void:
@@ -103,6 +104,24 @@ func _play_impact_dust() -> void:
 		return
 	_impact_dust.restart()
 	_impact_dust.emitting = true
+
+
+## Adds a tiny extra dust accent right on the run cycle's ground-contact
+## frames, on top of the existing continuous _run_dust trail (not a
+## replacement for it - keeps the already-shipped/validated v1.2B dust look
+## intact while adding the requested per-step emphasis). Reuses the same
+## one-shot _impact_dust burst as jump/land/Game Over, so this adds no new
+## particle system and no extra draw calls.
+func _play_run_contact_dust() -> void:
+	var frame_index: int = ali_sprite.run_frame_index
+	if frame_index == _last_run_contact_frame:
+		return
+	_last_run_contact_frame = frame_index
+	var contact_frames: Array = ALI_VISUAL.contact_frame_indices(
+		ali_sprite.run_frame_textures.size()
+	)
+	if frame_index in contact_frames:
+		_play_impact_dust()
 
 
 func _physics_process(delta: float) -> void:
@@ -181,6 +200,7 @@ func _update_visual_pose(delta: float) -> void:
 		_was_airborne = true
 		_land_pose_remaining = 0.0
 		_run_dust.emitting = false
+		_last_run_contact_frame = -1
 		_update_visual(
 			delta,
 			ALI_VISUAL.JUMP if velocity.y < 0.0 else ALI_VISUAL.FALL
@@ -195,10 +215,12 @@ func _update_visual_pose(delta: float) -> void:
 	if _land_pose_remaining > 0.0:
 		_land_pose_remaining = maxf(_land_pose_remaining - delta, 0.0)
 		_run_dust.emitting = false
+		_last_run_contact_frame = -1
 		_update_visual(delta, ALI_VISUAL.LAND)
 	else:
 		_run_dust.emitting = true
 		_update_visual(delta, ALI_VISUAL.RUN)
+		_play_run_contact_dust()
 
 
 func _set_visual_pose(pose: StringName, force_refresh: bool = false) -> void:

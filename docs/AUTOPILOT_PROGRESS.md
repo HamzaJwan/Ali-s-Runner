@@ -1044,3 +1044,46 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 * F6 visual check of the wider checkpoint card and the RTL punctuation fix is still recommended, even though both are validated structurally/mechanically here.
 
 Commit: `autopilot: v1.36A dialogue RTL polish and v0.95C dynamic music`.
+
+## v1.36B — Smooth Ali Run Animation System and 8-Frame Prep — STATUS: COMPLETE
+
+Files changed: `scripts/player_visual.gd`, `scripts/player.gd`.
+
+### Task A — Inspection findings
+
+`RUN_ANIMATION_FPS` was `13.0`. Run frames were discovered via a **fixed 4-entry array** (`RUN_FRAME_PATHS`, exactly `ali_run_1.png`..`ali_run_4.png`, with a legacy `ali_run1.png`-no-underscore fallback for frame 1 only), loaded once in `_load_run_frames()` at `_ready()` — no per-frame loading. Texture layout (scale + position) is computed once per unique `Texture2D` and cached in `_texture_layouts`, normalizing every pose to the same visible-bbox height (`VISUAL_HEIGHT = 100`) with feet pinned to a fixed local `FEET_Y = 24`, plus an optional per-pose `scale_override` (used today only for `LAND`). The system could **not** already support 6 or 8 frames — the array length was hardcoded at 4.
+
+### Task B — Variable frame count (1-8) with safe fallback
+
+Replaced the fixed array with `RUN_FRAME_PATH_TEMPLATE` + `RUN_FRAME_COUNT_MAX = 8`. `_load_run_frames()` now scans `ali_run_1.png` upward; the very first missing index **stops** the scan (one log line, not a skip-and-continue), so `4` frames today yields exactly `4` in order, and adding `ali_run_5..8.png` later is picked up automatically with zero code changes. Still loaded exactly once at `_ready()`. The existing fallback chain beneath the numbered frames (`ali_run.png` → `ali_idle.png` → blue placeholder) was already correct and untouched.
+
+### Task C — Smoothing the current 4-frame run
+
+* `RUN_ANIMATION_FPS`: `13.0 -> 14.0` (top of the suggested 12-14 range).
+* Confirmed (did not need to change) that the frame timer/index already does **not** reset during continuous grounded running: `show_pose()` only calls `_reset_run_animation()` when the *requested* pose is not `RUN`, and while continuously running every `show_pose(RUN)` call hits the `pose == current_pose` early-return before reaching any frame-changing code. The timer only resets while airborne/landing (every frame, since those poses aren't `RUN`), so the run cycle always restarts cleanly at frame 0 after a jump/land — confirmed this is the appropriate behavior, not a bug, and left it alone.
+* Added `RUN_FRAME_Y_OFFSETS` (currently `{0: 0.0, 1: -1.5, 2: 0.0, 3: -1.5}`px) — a tiny per-frame vertical bob applied as an *additive* nudge on top of `_apply_texture()`'s normal feet-aligned `scale`/`position`, via a new `_apply_run_frame(frame_index)` helper now used by both the run-entry path and the per-frame cycling loop. Because this only ever adds a small fixed offset to an already-correct base position - never touches `scale` - it cannot reintroduce the size-pulse or feet-baseline bugs fixed earlier (those were caused by *scale* varying per frame/pose, not a position nudge).
+* Added `RUN_FRAME_ROTATION` (empty dict, all frames default to `0.0`) - the plumbing exists, but no frame was given a non-zero lean: rotating a centered sprite pivots around its center, not its feet, so turning this on needs an owner-reviewed visual pass first to confirm feet don't appear to lift/slide. Left at the safe default rather than guessing.
+
+### Task D — 8-frame readiness
+
+Code-ready: `RUN_FRAME_COUNT_MAX = 8`, the scan loop, and `RUN_FRAME_Y_OFFSETS`/`RUN_FRAME_ROTATION`'s `.get(frame_index, default)` lookups all already generalize past frame 4 with no further changes. Added explicit comments in `player_visual.gd` stating: 4-frame run is fully supported today; 8-frame run is the preferred target for the smoothest final feel; any new frames must share the same canvas size and feet-baseline (alpha-trim bottom-edge) convention as the existing four, since that consistency is exactly what the visible-bbox normalization in `_calculate_texture_layout()` depends on.
+
+### Task E — Dust contact timing
+
+Added `AliPlayerVisual.contact_frame_indices(frame_count)` (static): a real running stride has exactly two ground-contact events per cycle regardless of frame count, so this always returns `[0, frame_count/2]` — `[0, 2]` for today's 4 frames, `[0, 4]` once 8 exist. `player.gd` gained `_play_run_contact_dust()`, called once per frame-index-change while running, which fires the existing one-shot `_impact_dust` burst (already used for jump/land/Game Over - no new particle system) only when the new frame index is a contact frame. This is **additive** on top of the existing continuous `_run_dust` trail from v1.2B, not a replacement, so the already-shipped/validated dust look is unchanged; it just gets a small extra accent on footfall. `_last_run_contact_frame` resets to `-1` whenever airborne/landing so a stale frame-index comparison can never carry over incorrectly between runs.
+
+### Validation
+
+* Headless boot clean, exit `0`. Boot log confirms the new scan behavior precisely: frames 1-4 load, frame 5 is reported missing exactly once (`"frame 5 missing; using 4 frame(s) for the run cycle"`), then `"using 4 cached run frames at 14.0 FPS"` — no per-frame spam.
+* Smoke test (deleted after running, `tmp_v136b_smoke_test.gd` + its `.uid`): confirmed exactly 4 frames detected; confirmed the run-frame index advances past 0 during continuous running and the player never leaves the floor while doing so (no spurious reset/airborne flicker); confirmed feet Y stays within 4px across 20 sampled run frames despite the new bob offsets (i.e. the bob is additive and bounded, not destabilizing); confirmed jump/fall/land still transition correctly; confirmed `ali_land` still renders at the calibrated small size (not the old oversized ~100x100); confirmed a real Zainab checkpoint still returns `player.global_position.y` to exactly `START_PLAYER_POSITION.y` and holds it across several seconds of subsequent running (no floating regression). **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, player collision half-height, spawn interval/X, all four speeds, all four checkpoint trigger scores). `Player`'s `CharacterBody2D` position/collision shape was never touched - only the child `AliSprite`'s cosmetic `position.y`/`rotation` gained the new tiny per-frame nudges.
+
+### Owner F6 visual checklist
+
+1. Watch a sustained run (no jumping) and judge whether the 14 FPS + 2px bob reads as noticeably smoother than before, or still choppy enough to prioritize commissioning real 8th-frame art.
+2. Confirm the small extra dust puffs on footfall read as a nice accent, not as "too much" dust.
+3. Confirm landing still looks correct (small crouch, not oversized) immediately after a jump.
+4. If/when `ali_run_5.png`..`ali_run_8.png` are produced: use the **same canvas size and feet-baseline convention** as the current 4 frames (see the comments added in `player_visual.gd`) so they drop in with zero code changes.
+
+Commit: `autopilot: v1.36B smooth Ali run animation system`.
