@@ -100,18 +100,32 @@ const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 # encounter/story X positions, etc. are all still real, untouched world
 # coordinates). UI stays unaffected for free: CanvasLayer nodes always
 # render in raw screen space and ignore the active Camera2D's transform.
+#
+# v1.36D-HOTFIX: Camera2D.zoom is a direct magnification multiplier in Godot
+# (zoom = Vector2(2,2) makes everything twice as big/zoomed IN; zoom < 1
+# zooms OUT, showing MORE world squeezed into the same viewport). v1.36D
+# assigned Vector2.ONE / GAMEPLAY_ZOOM_FACTOR (~0.893) directly to
+# Camera2D.zoom, which is the *inverse* convention (correct for a camera
+# FOV/ortho-size value, wrong for Godot's zoom) - that zoomed OUT instead of
+# in, and because the background sprites are only sized to cover the
+# nominal 1152x648 view, the wider-than-expected visible world exposed bare
+# viewport clear color as dark/gray margins past their edges. Fixed by
+# assigning GAMEPLAY_ZOOM_FACTOR directly (no inversion).
 const GAMEPLAY_ZOOM_FACTOR := 1.12
-const GAMEPLAY_CAMERA_ZOOM := Vector2.ONE / GAMEPLAY_ZOOM_FACTOR
+const GAMEPLAY_CAMERA_ZOOM := Vector2(GAMEPLAY_ZOOM_FACTOR, GAMEPLAY_ZOOM_FACTOR)
 const DEFAULT_CAMERA_ZOOM := Vector2.ONE
 const DEFAULT_CAMERA_POSITION := Vector2(VIEW_W / 2.0, VIEW_H / 2.0)
 # Solved so that, after zooming, Ali's world X (PLAYER_START_X) still lands
 # at roughly screen X 235 (inside the requested 220-250 band) and
 # ROAD_SURFACE_Y still lands at the same screen Y as the unzoomed view -
-# the zoom reads as "everything got closer," not as a pan/crop.
+# the zoom reads as "everything got closer," not as a pan/crop. Godot's
+# screen-to-world mapping is screen = (world - camera) * zoom + view/2, so
+# solving for camera divides by zoom (not multiplies, now that zoom holds
+# the real >1 magnification value rather than its inverse).
 const CAMERA_TARGET_SCREEN_X := 235.0
 const GAMEPLAY_CAMERA_POSITION := Vector2(
-	PLAYER_START_X - (CAMERA_TARGET_SCREEN_X - VIEW_W / 2.0) * GAMEPLAY_CAMERA_ZOOM.x,
-	ROAD_SURFACE_Y - (ROAD_SURFACE_Y - VIEW_H / 2.0) * GAMEPLAY_CAMERA_ZOOM.y
+	PLAYER_START_X - (CAMERA_TARGET_SCREEN_X - VIEW_W / 2.0) / GAMEPLAY_CAMERA_ZOOM.x,
+	ROAD_SURFACE_Y - (ROAD_SURFACE_Y - VIEW_H / 2.0) / GAMEPLAY_CAMERA_ZOOM.y
 )
 const CAMERA_TRANSITION_TIME := 0.35
 const START_PLAYER_POSITION := Vector2(

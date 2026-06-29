@@ -1251,3 +1251,48 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 5. Confirm the zoom-in/zoom-out transitions feel smooth, not jarring or jittery.
 
 Commit: `autopilot: v1.36D scene framing road fill and gameplay zoom polish`.
+
+## v1.36D-HOTFIX — Fix Camera Zoom Direction, Remove Margins — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`.
+
+### Task A — Root cause (confirmed exactly as hypothesized)
+
+Godot's `Camera2D.zoom` is a **direct magnification multiplier**, not an inverse field-of-view value: `zoom = Vector2(2,2)` makes everything twice as big (zoomed **in**); `zoom < 1` zooms **out**, showing *more* world squeezed into the same viewport. v1.36D's `GAMEPLAY_CAMERA_ZOOM` was `Vector2.ONE / GAMEPLAY_ZOOM_FACTOR` ≈ `(0.893, 0.893)` - the inverse convention, correct for an orthographic "size" value but backwards for Godot's actual `zoom` property. Assigning `0.893` directly to `Camera2D.zoom` zoomed **out**, and because the background sprites (sky/buildings/foreground/ground) are only sized to cover the nominal `1152x648` view, the now-larger visible world area exposed bare viewport clear color beyond their edges - the dark/gray margins the owner saw. Confirmed: the camera *position* formula was incidentally still correct throughout (multiplying by the inverse value is algebraically the same as dividing by the real value), so only the zoom *value itself* needed correcting, not the framing concept.
+
+### Task B — Fix applied
+
+`GAMEPLAY_CAMERA_ZOOM` now assigns `GAMEPLAY_ZOOM_FACTOR` (`1.12`) **directly**, with no inversion - this is a real `Camera2D.zoom` of `1.12`, a genuine zoom-in. The position-solving formula (`GAMEPLAY_CAMERA_POSITION`) was updated to **divide** by the zoom value instead of multiplying by it, since Godot's real mapping is `screen = (world - camera) * zoom + view/2` (solving for camera divides by zoom). The resulting camera position is numerically unchanged (`≈(524.46, 343.93)`) from v1.36D, since multiplying by the old inverse value and dividing by the new real value are algebraically identical - only the literal `Camera2D.zoom` assignment was the actual bug. Camera2D remains enabled; it did not need to be disabled.
+
+### Task C — Road fixes: all preserved, none contributed to the bug
+
+The aspect-preserving ground fit, the reduced brown strip, the road-matched `GroundBase` color, and the `10px` buildings/ground overlap from v1.36D are **untouched** - none of them caused or contributed to the margin bug (that was purely the `Camera2D.zoom` value). Re-verified live: ground fit `final_scale=(0.530387, 0.530387)` and buildings/foreground `visible_bottom=480.0`, identical to v1.36D.
+
+### Task D — Framing state rules (re-verified, unchanged design)
+
+* **Menu/Start:** default `zoom=1.0` framing - always safe, untouched by this hotfix.
+* **Intro/Checkpoints/Father Ending:** default framing (same as menu) - re-confirmed via a real Fatima checkpoint in the smoke test.
+* **Active gameplay:** now a real, correct `1.12x` zoom-in.
+* **Game Over:** default framing, re-confirmed.
+* **Retry/Restart:** both re-confirmed to correctly re-zoom for gameplay with no stuck camera state.
+
+### Task E — Fairness recomputed with the corrected zoom
+
+With the real `zoom=1.12`, the visible world rect (using Godot's actual `size = viewport / zoom` relationship, not the inverted formula v1.36D's own validation accidentally used) is `x=[10.18, 1038.75]`, `y=[54.64, 633.21]` - **fully inside** what the background sprites cover (`[0,1152] x [0,648]`), confirmed live by this hotfix's smoke test: zero exposed margin. `SPAWN_X=1292` stays well offscreen (`1292 > 1038.75`). Visible distance ahead of Ali: `1038.75 - 220 = 818.75px`. Reaction time at speed `270`: `818.75/270 ≈ 3.03s` - comfortably above the `2.6-2.8s` floor, and numerically identical to what v1.36D reported (confirmed mathematically: v1.36D's flawed fairness-check formula and the corrected zoom value happen to produce the same visible-width number, since `0.893 ≈ 1/1.12` - the *intended* design was sound all along; only the literal engine property assignment was wrong).
+
+### Validation
+
+* Headless boot clean, exit `0`.
+* Smoke test (deleted after running, `tmp_v136d_hotfix_smoke_test.gd` + its `.uid`): confirmed gameplay zoom is `>1.0` and `<=1.15`; confirmed the visible world rect stays fully within `[0,1152]x[0,648]` (no margins) using the correct Godot zoom-to-visible-size formula; confirmed Ali's screen X stays in the requested band; confirmed `SPAWN_X` stays offscreen and reaction time at max speed stays at `3.03s`; confirmed default framing at menu, intro, a real Fatima checkpoint, and Game Over; confirmed Retry and Restart both correctly re-zoom with no stuck state; confirmed player Y stays aligned to `START_PLAYER_POSITION.y` after Restart. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, player collision half-height, spawn interval/X, all four speeds, all four checkpoint trigger scores). No physics, collision, obstacle logic, or road collision was touched - this hotfix is contained entirely to two `Vector2` constant definitions in `scripts/main.gd`.
+
+### Owner F6 checklist
+
+1. Confirm gameplay now looks zoomed **in** (closer, Ali/obstacles slightly bigger), not zoomed out.
+2. Confirm there are no dark/gray margins anywhere during gameplay.
+3. Confirm the bottom brown strip and buildings/road seam fixes from v1.36D are still in effect (this hotfix did not touch them).
+4. Confirm menu/intro/checkpoints/Father ending/Game Over still render fully framed with no margins (they use the unchanged default framing).
+5. Confirm the zoom transition in/out still feels smooth.
+
+Commit: `autopilot: hotfix camera framing and road polish`.
