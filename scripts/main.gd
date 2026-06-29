@@ -26,6 +26,7 @@ const ENCOUNTER_DATA := preload("res://scripts/story/encounter_data.gd")
 const ENCOUNTER_CONTROLLER := preload("res://scripts/story/encounter_controller.gd")
 const DIFFICULTY_MANAGER := preload("res://scripts/gameplay/difficulty_manager.gd")
 const OBSTACLE_SPAWNER := preload("res://scripts/gameplay/obstacle_spawner.gd")
+const COLLECTIBLE_SPAWNER := preload("res://scripts/gameplay/collectible_spawner.gd")
 const DIALOGUE_BUBBLE_HELPER := preload("res://scripts/ui/dialogue_bubble_helper.gd")
 const BACKGROUND_MOTION := preload("res://scripts/visual/background_motion.gd")
 const AUDIO_MANAGER := preload("res://scripts/audio/audio_manager.gd")
@@ -150,6 +151,8 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var player_story_sprite: Sprite2D = $Player/AliSprite
 @onready var obstacle_spawner: Node2D = $Obstacles
 @onready var spawn_timer: Timer = $SpawnTimer
+@onready var collectible_spawner: Node2D = $Collectibles
+@onready var collectible_spawn_timer: Timer = $CollectibleSpawnTimer
 @onready var fatima_npc: Node2D = $FatimaEncounter
 @onready var fatima_npc_sprite: Sprite2D = $FatimaEncounter/FatimaSprite
 @onready var fatima_npc_placeholder: CanvasItem = $FatimaEncounter/FatimaPlaceholder
@@ -170,6 +173,7 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var ground_base: Polygon2D = $Ground/GroundBase
 @onready var ground_placeholder: Polygon2D = $Ground/Polygon2D
 @onready var score_label: Label = $UI/ScoreLabel
+@onready var light_shard_label: Label = $UI/LightShardLabel
 @onready var companion_ribbon: Control = $UI/CompanionRibbon
 @onready var fatima_companion_texture: TextureRect = $UI/CompanionRibbon/FatimaCompanionTexture
 @onready var fatima_companion_placeholder: Control = $UI/CompanionRibbon/FatimaCompanionPlaceholder
@@ -237,6 +241,13 @@ var jomana_safety_window_pending := false
 var companion_fatima_joined := false
 var companion_zainab_joined := false
 var companion_jomana_joined := false
+## Separate from `score` and from story checkpoint progress on purpose -
+## "شظايا نور" never affect difficulty, checkpoints, or reward logic.
+var collectible_count := 0
+## Snapshot of collectible_count taken the moment a checkpoint locks in
+## (_apply_checkpoint_state()), restored on Retry from that checkpoint;
+## reset to 0 alongside every fresh/Restart/Father-replay start.
+var collectible_count_checkpoint_snapshot := 0
 var intro_shown := false
 var intro_active := false
 var intro_step_index := 0
@@ -276,6 +287,8 @@ func _ready() -> void:
 	obstacle_spawner.setup(spawn_timer)
 	obstacle_spawner.obstacle_passed.connect(_on_obstacle_passed)
 	obstacle_spawner.obstacle_hit.connect(_on_obstacle_hit)
+	collectible_spawner.setup(collectible_spawn_timer, obstacle_spawner)
+	collectible_spawner.collectible_spawned.connect(_on_collectible_spawned)
 	if not player.landed.is_connected(_on_player_landed):
 		player.landed.connect(_on_player_landed)
 	if not player.jumped.is_connected(_on_player_jumped):
@@ -370,12 +383,15 @@ func _show_start_screen() -> void:
 	_update_companion_ribbon()
 	start_screen.visible = true
 	score_label.visible = false
+	light_shard_label.visible = false
 	game_over_label.visible = false
 	game_over_message.visible = false
 	retry_button.visible = false
 	restart_button.visible = false
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
+	collectible_spawner.stop_spawning()
+	collectible_spawner.clear_collectibles()
 	_show_menu_hero_presentation()
 	audio_manager.play_calm_music()
 	_apply_default_framing()
@@ -775,6 +791,7 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	start_screen.visible = false
 	score_label.visible = true
 	score_label.text = "النقاط: %d" % score
+	light_shard_label.visible = true
 	game_over_label.visible = false
 	game_over_message.visible = false
 	retry_button.visible = false
@@ -784,6 +801,14 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	obstacle_spawner.clear_obstacles()
 	obstacle_spawner.start_spawning(current_obstacle_speed)
 	obstacle_spawner.clear_safety_window()
+	if checkpoint == StoryCheckpoint.NONE:
+		collectible_count = 0
+		collectible_count_checkpoint_snapshot = 0
+	else:
+		collectible_count = collectible_count_checkpoint_snapshot
+	_update_light_shard_label()
+	collectible_spawner.clear_collectibles()
+	collectible_spawner.start_spawning(current_obstacle_speed)
 	if checkpoint >= StoryCheckpoint.JOMANA:
 		obstacle_spawner.grant_safety_window(JOMANA_SAFETY_WINDOW_SPAWNS)
 
@@ -794,6 +819,23 @@ func _on_obstacle_passed() -> void:
 	var encounter_id := encounter_controller.get_pending_for_score(score)
 	if encounter_id != EncounterCharacter.NONE:
 		_start_checkpoint_encounter(encounter_id)
+
+
+func _on_collectible_spawned(collectible: Node) -> void:
+	if not collectible.collected.is_connected(_on_collectible_collected):
+		collectible.collected.connect(_on_collectible_collected)
+
+
+## "شظايا نور" are intentionally separate from `score`: they never affect
+## checkpoints, difficulty, or obstacle speed - only their own counter/UI.
+func _on_collectible_collected() -> void:
+	collectible_count += 1
+	_update_light_shard_label()
+	audio_manager.play_shard_pickup()
+
+
+func _update_light_shard_label() -> void:
+	light_shard_label.text = "النور: %d" % collectible_count
 
 
 func _on_obstacle_hit() -> void:
@@ -811,6 +853,8 @@ func _consume_zainab_shield() -> void:
 	audio_manager.play_hit()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
+	collectible_spawner.stop_spawning()
+	collectible_spawner.clear_collectibles()
 	player.set_gameplay_active(false)
 	_play_shield_flash()
 	_start_countdown()
@@ -835,6 +879,8 @@ func _end_run() -> void:
 	_apply_default_framing()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
+	collectible_spawner.stop_spawning()
+	collectible_spawner.clear_collectibles()
 	player.kill()
 	_play_impact_bounce()
 	await get_tree().create_timer(GAME_OVER_IMPACT_DELAY).timeout
@@ -910,6 +956,8 @@ func _start_checkpoint_encounter(character: int) -> void:
 	checkpoint_encounter_started = true
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
+	collectible_spawner.stop_spawning()
+	collectible_spawner.clear_collectibles()
 	player_runner_position = Vector2(
 		player.global_position.x, START_PLAYER_POSITION.y
 	)
@@ -1203,6 +1251,7 @@ func _apply_checkpoint_state(character: int) -> bool:
 	current_obstacle_speed = DIFFICULTY_MANAGER.get_speed_for_checkpoint(
 		last_reached_checkpoint
 	)
+	collectible_count_checkpoint_snapshot = collectible_count
 	if character == EncounterCharacter.JOMANA:
 		jomana_safety_window_pending = true
 	return true
@@ -1263,6 +1312,7 @@ func _finish_countdown() -> void:
 	audio_manager.play_gameplay_music()
 	_apply_gameplay_framing()
 	obstacle_spawner.start_spawning(current_obstacle_speed)
+	collectible_spawner.start_spawning(current_obstacle_speed)
 	if jomana_safety_window_pending:
 		jomana_safety_window_pending = false
 		obstacle_spawner.grant_safety_window(JOMANA_SAFETY_WINDOW_SPAWNS)

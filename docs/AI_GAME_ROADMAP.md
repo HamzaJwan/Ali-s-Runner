@@ -18,9 +18,11 @@ This project is a personal family game inspired by Zliten, especially Al-Mantara
 
 Current milestone:
 
-**v0.8B — Ali 4-Frame Run Cycle (complete, per Codex report). Next: v0.8B-R (owner F6 review), then v0.8C — Ali Pose Polish Pass.**
+**Level 1: AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED.**
 
-Ali now cycles through four run frames while grounded/running, using the existing `Sprite2D` texture-swap architecture (no `AnimationPlayer`, no `AnimatedSprite2D`, no sprite-sheet slicing). The run cycle is cached and runs at 10 FPS. Run animation stops the moment Ali jumps, falls, lands, is hurt, idles, or enters a story checkpoint state. The existing fallback system (frames → `ali_run.png` → `ali_idle.png` → placeholder) is preserved.
+The latest Level 1 polish sprint and follow-up hotfixes are implemented with automated passes. This includes character scale/presentation, the oval shadow cleanup, story idle motion, intro layout, companion ribbon readability, documented jump/hit replacements, Arabic dialogue layout/RTL handling, music-state infrastructure, LAND calibration, checkpoint-height cleanup, and the v1.36B run-smoothing/8-frame-ready system. Level 1 is **not Final Gold** until the owner completes the listed F6 visual and audio gates.
+
+The current four-frame run is cached and runs at `14 FPS` after v1.36B (the earlier polish slice first moved it to `13 FPS`). Physics, collision, road alignment, checkpoint scores, obstacle speeds, and story logic remain unchanged.
 
 Tuned gameplay values (from v0.6):
 
@@ -110,6 +112,29 @@ Working features:
   * Road/ground at gameplay layer
   * Player and obstacles above ground
   * UI above everything
+
+---
+
+## Latest Level 1 Polish Status — 2026-06-29
+
+The following slices are **IMPLEMENTED / OWNER F6 RETEST REQUIRED**. Automated completion does not equal final visual or audio approval.
+
+* **Fatima scale:** encounter visual height is `72`, still the smallest character.
+* **Father heroic presentation:** Father visual height is `215`, with stronger intro/ending focus and warm emphasis.
+* **Shadow cleanup:** the black rectangle under Ali was replaced by a soft oval shadow.
+* **Run smoothness:** first tuned to `13 FPS`, then advanced by v1.36B to `14 FPS` with bounded visual bob, variable 1-8 frame support, and contact-dust timing.
+* **Living idle motion:** subtle tracked breathing/bob motion is implemented for story characters; cleanup hotfixes prevent it leaking into gameplay.
+* **Intro layout:** `التالي` was moved clear of Father.
+* **Companion ribbon:** top-right label and portrait slots were enlarged while remaining inside the viewport.
+* **Audio replacement readiness:** documented jump/hit candidates are active with safe fallbacks; calm/gameplay music switching is active after explicit owner approval; all active audio remains `HUMAN_AUDIO_REVIEW_REQUIRED`.
+
+Latest owner-review gates:
+
+* Retest LAND size and feet alignment in F6.
+* Retest Ali's height after Fatima and Zainab Continue/countdown paths.
+* Retest Jomana wrapping/card containment and Arabic terminal punctuation after v1.36A.
+* Listen to and approve/reject active SFX and calm music.
+* Keep the current Father ending phrase unchanged: `OWNER_DECISION_KEEP_CURRENT_FATHER_LINE`.
 
 ---
 
@@ -1159,18 +1184,18 @@ Important:
 
 ---
 
-### v0.95B — Audio Asset Improvement: Better Hit Sound + Music/Ambience Sourcing
+### v0.95B — Audio Asset Improvement: Better Hit Sound + Music/Ambience Sourcing — STATUS: PARTIAL_COMPLETE / HUMAN_AUDIO_REVIEW_REQUIRED
 
 Goal:
-Improve on v0.95A's placeholder SFX based on direct owner listening feedback, and continue sourcing the still-missing music/ambience loops. Planning only — not implemented yet.
+Improve on v0.95A's placeholder SFX based on direct owner listening feedback and continue sourcing music/ambience. Documented jump/hit replacements and calm music are integrated; ambience and final owner approval remain open.
 
 Owner feedback (2026-06-28, after testing the v0.95A audio integration):
 
 * **Collision/hit sound** currently feels like a weak "tick." Wants something more dramatic and emotionally clear, while staying strictly child-friendly: no violence, no explosion, no blood/injury feeling — soft but meaningful. Suggested future asset: `res://assets/audio/gameplay/hit_soft_impact.wav`, or replace `hit.wav` directly only if a better licensed CC0 candidate is found. Do not replace it with anything until a real candidate exists.
-* **Background music**: none exists yet. Wants a soft adventure/suspense loop — warm, light adventure, slight suspense, not horror, not battle music, not sad, family-friendly, low volume, fitting Al-Mantarah/Zliten's atmosphere. Target path: `res://assets/audio/music/main_theme_soft_loop.ogg`.
+* **Background music**: calm and active-running tracks are now integrated. The desired warm, child-friendly tone still requires owner listening approval.
 * **Ambience** (optional, desired later): soft city ambience, birds, light wind. Paths: `res://assets/audio/ambience/city_soft_loop.ogg`, `res://assets/audio/ambience/birds_soft_loop.ogg`, `res://assets/audio/ambience/wind_soft_loop.ogg`.
 
-Current status: music and all three ambience loops remain **BLOCKED_BY_AUDIO_ASSET** — no safe licensed candidate has been sourced yet for any of the four loop files. Do not fabricate or download blindly; only integrate once a real CC0/CC-BY (with documented attribution) file exists and is logged in `docs/AUDIO_CREDITS.md`, per `docs/ASSET_SOURCING_PLAN.md`.
+Current status: calm/gameplay music switching is implemented; ambience remains **BLOCKED_BY_AUDIO_ASSET**. The exciting track is owner-authorized for project use and remains license-gated before public release.
 
 **Status update (parallel documentation pass, 2026-06-28):** three candidate files now exist on disk — `assets/audio/gameplay/hit_soft_impact.wav`, `assets/audio/music/main_theme_soft_loop.ogg`, and a newly-appeared `assets/audio/music/level1_exciting_loop.ogg`. **`main_theme_soft_loop.ogg`'s license is now verified** (OpenGameArt "Icy Heights," author Écrivain, CC0 1.0 Universal — logged in `docs/AUDIO_CREDITS.md`); the other two still have no credits entry and remain **UNVERIFIED_AUDIO_CANDIDATE**. None of the three are integrated in code yet (confirmed via `scripts/audio/audio_manager.gd`) — see `docs/AUDIO_DESIGN_PLAN.md` for the up-to-date status table. This moves `main_theme_soft_loop.ogg` from "blocked, no candidate" to "candidate license-verified, integration + human tone-approval still pending" — it does not mean v0.95B is unblocked/complete.
 
@@ -1187,6 +1212,27 @@ Do not add:
 * Procedural audio generation.
 
 See `docs/AUDIO_DESIGN_PLAN.md` for the updated tone/licensing guidance and `docs/AUTOPILOT_PROGRESS.md` (the "v0.95A" entry) for exactly what's already integrated and working today.
+
+---
+
+### v0.95C — Dynamic Music State Switching — STATUS: IMPLEMENTED / OWNER F6 AUDIO REVIEW REQUIRED
+
+Goal:
+Use calm music for menu/story/non-running states and exciting Level 1 music only during active running gameplay.
+
+Implemented infrastructure:
+
+* Calm-state calls cover menu, intro, checkpoints, dialogue/rewards, Game Over, Father ending, and countdown/non-running states.
+* Gameplay-state calls occur when active running begins or resumes.
+* One tracked music player owns idempotent switching and safe crossfade behavior.
+* If gameplay music is unavailable, active running falls back to calm music without errors or duplicate players.
+
+Owner-authorized integration:
+
+* On 2026-06-29 the owner explicitly approved using `level1_exciting_loop.ogg` in the project, and it is now registered as the active-running gameplay track.
+* Headless boot confirms both `calm` and `gameplay` tracks load successfully.
+* Source/license metadata is still incomplete. Status: `OWNER_AUTHORIZED_LOCAL_USE / LICENSE_VERIFICATION_REQUIRED_BEFORE_PUBLIC_RELEASE`.
+* Both tracks remain `HUMAN_AUDIO_REVIEW_REQUIRED` for tone, loudness, transition feel, and suitability.
 
 ---
 
@@ -1274,7 +1320,7 @@ Do not affect gameplay collision. Add one effect at a time and keep performance 
 
 ---
 
-### v1.2B — Dust/Shadow Polish — STATUS: PLANNED
+### v1.2B — Dust/Shadow Polish — STATUS: IMPLEMENTED / OWNER F6 RETEST REQUIRED
 
 Goal:
 Carve out and implement the two specific cosmetic details already scoped (but not yet built) inside v1.2's broader list above — a grounded drop shadow and feet-level dust — as their own small, testable step, separate from the parallax/clouds/birds work that v1.2A already delivered.
@@ -1291,7 +1337,7 @@ Do not add:
 * Shaders, unless a simple sway/shadow effect turns out to need one and it's proven safe in isolation.
 * Any change to collision, physics, or obstacle/player hitboxes — purely cosmetic.
 
-This milestone is planned, not implemented. See `docs/ANIMATION_AND_ASSET_PLAN.md` ("Future polish reminder") for the original dust/shadow note this carves out of.
+Implementation and regression tests are complete. The black rectangular shadow reported by the owner was subsequently replaced with a soft oval; final appearance remains an owner F6 gate.
 
 ---
 
@@ -1323,10 +1369,10 @@ See `docs/AUTOPILOT_PROGRESS.md` (the "v1.2A-FIX + v1.25A" entry) for the curren
 
 ---
 
-### v1.25B — Cinematic Intro Story Presentation
+### v1.25B — Cinematic Intro Story Presentation — STATUS: IMPLEMENTED / OWNER F6 RETEST REQUIRED
 
 Goal:
-Replace the current flat, centered-text "الراوي" narration intro with an in-world cinematic dialogue scene, matching the same "Visual Novel Lite / In-world Cinematic Dialogue" style already used for the checkpoint encounters (v0.73). Planning only — not implemented yet.
+Present the intro as an in-world cinematic dialogue scene matching the checkpoint encounters. The implementation, Father emphasis, living idle motion, and corrected `التالي` placement are automated-tested.
 
 Owner feedback (2026-06-28): the current intro (static centered text, generic "الراوي" narrator label) doesn't feel alive or cinematic. Wants the opening to reuse the same in-world presentation already proven for Fatima/Zainab/Jomana/Father:
 
@@ -1353,7 +1399,7 @@ See `docs/STORY_PLAN.md` ("Cinematic Checkpoint Presentation") for the existing 
 
 ---
 
-### v1.26A — Ali Visual Calibration — STATUS: PLANNED
+### v1.26A — Ali Visual Calibration — STATUS: IMPLEMENTED / OWNER F6 RETEST REQUIRED
 
 Goal:
 Fix a real, already-discovered visual defect: Ali's size visibly pulses during the run cycle and during landing, because the underlying pose PNGs were not cropped to a consistent visible-rect height.
@@ -1379,11 +1425,11 @@ Acceptance criteria:
 * Ali's visual height stays consistent (no visible pulsing) across all four run frames and through a jump→fall→land→run cycle.
 * No regression to the existing fallback behavior or feet-baseline alignment.
 
-This milestone is planned, not implemented. See `docs/ANIMATION_AND_ASSET_PLAN.md` for the asset-side cropping guidance this complements, and `docs/AUTOPILOT_PROGRESS.md` (the "v1.25A-P + v0.95A-FIX" entry) for the original discovery writeup.
+Run normalization, LAND-specific calibration, and post-checkpoint-height cleanup are implemented and automated-tested. LAND appearance and Fatima/Zainab gameplay return still require owner F6 retest.
 
 ---
 
-### v1.26 — Family Companion Journey UI — STATUS: PLANNED
+### v1.26 — Family Companion Journey UI — STATUS: IMPLEMENTED / OWNER F6 RETEST REQUIRED
 
 Goal:
 Show that each sister symbolically joins Ali after her checkpoint, so Level 1 reads as Ali gathering the light of the family rather than collecting rewards alone.
@@ -1414,13 +1460,13 @@ Important:
 
 * Stage 1 is UI only. Do not create world-following characters yet.
 * Fatima is a newborn and must remain a seated portrait/icon representation, never a running follower.
-* This milestone is planned and must not be marked complete until implemented and tested.
+* Implementation/state-reset tests are complete; the enlarged top-right presentation remains an owner readability gate.
 
 See `docs/STORY_PLAN.md` ("Family Companion Journey") for the narrative meaning and state rules.
 
 ---
 
-### v1.27 — Father Ending Family Group Scene — STATUS: PLANNED
+### v1.27 — Father Ending Family Group Scene — STATUS: IMPLEMENTED / OWNER F6 RETEST REQUIRED
 
 Goal:
 Upgrade the Father ending so Ali arrives with the sisters he gathered, making the restored نور البيت a visible family reunion.
@@ -1441,7 +1487,7 @@ Acceptance criteria:
 * No checkpoint, reward, retry, collision, or gameplay-physics changes.
 * Existing Father ending dialogue remains unchanged unless a separately approved dialogue task replaces it.
 
-This milestone is planned, not implemented.
+Implementation and family-state reset tests are complete. Preserve `OWNER_DECISION_KEEP_CURRENT_FATHER_LINE`.
 
 ---
 
@@ -1472,7 +1518,7 @@ Do not add:
 * Any Level 2 content or code (that's `v2.0` and beyond, and explicitly waits for this milestone).
 * New gameplay mechanics — this is a stabilization/review milestone, not a feature milestone.
 
-This milestone is planned, not implemented/declared yet. See `docs/LEVEL_1_GOLD_CHECKLIST.md` for the full checklist.
+The automated Gold-candidate pass is complete, but owner visual/audio gates remain open. See `docs/LEVEL_1_GOLD_CHECKLIST.md`; do not declare Final Gold yet.
 
 ---
 
@@ -1488,7 +1534,27 @@ Scope:
 * Begin Level 2 / Part 2 planning (see `docs/FUTURE_FEATURE_BACKLOG.md` "Dream Backlog" and the new `docs/LEVEL_2_PLAN.md`) only after Level 1 is confirmed stable end-to-end via v1.34.
 * Hand off to **v2.0 — Level 2 Design Plan** (see below) once this refresh is done.
 
+Current boundary: v1.35 remains roadmap refresh and planning only. v2.0 remains a design plan only. Do not start Level 2 implementation while Level 1 owner visual/audio gates remain open.
+
 Do not implement yet.
+
+---
+
+### v1.36A — Arabic Dialogue Layout and RTL Polish — STATUS: IMPLEMENTED / OWNER F6 RETEST REQUIRED
+
+Implemented scope:
+
+* Jomana's dialogue card gained RTL-aware wrapping/clipping and a taller bounded runtime layout.
+* Arabic dialogue display uses centralized RTL-safe formatting for terminal punctuation.
+* Dialogue, speaker names, score text, and controls remain separated so LTR/RTL content does not contaminate unrelated labels.
+* Automated tests confirmed the Jomana line fits inside the card at `1152x648`.
+
+Owner gates:
+
+* Confirm Jomana text never escapes the card in F6.
+* Confirm periods/terminal punctuation appear on the correct visual side.
+* Confirm the taller card remains readable and does not harm character composition.
+* Preserve `OWNER_DECISION_KEEP_CURRENT_FATHER_LINE`; this milestone does not rewrite the Father ending phrase.
 
 ---
 
@@ -1566,6 +1632,16 @@ This milestone is planned only. See `docs/LEVEL_2_PLAN.md` for the full write-up
 
 ## Future — Coins / Collectibles Risk-Reward
 
+**STATUS UPDATE (v1.37A, 2026-06-29): foundation implemented.** Checkpoints
+were already stable, as this section required. Implemented as **"شظايا
+نور" (light shards)** — explicitly *not* generic coins, per the owner's own
+theming direction — using a real sourced/documented animated sprite sheet
+(`assets/collectibles/light_shard/light_shard_sheet.png`, CC0, see
+`docs/ASSET_CREDITS.md`). See `docs/AUTOPILOT_PROGRESS.md`'s "v1.37A"
+entry for the full implementation writeup. Still ahead, deferred to
+v1.37B/C: obstacle-relative placement patterns and pickup audio (no
+documented pickup SFX exists yet).
+
 Goal:
 Add coins or light fragments to tempt the player and create interesting decisions.
 
@@ -1583,7 +1659,7 @@ Design:
 * Coins should support the story idea of collecting light/hope.
 * Collectibles should come after checkpoints (v0.61/v0.65/v0.66/v0.67/v0.70/v0.71/v0.72) are stable.
 
-This is not yet scheduled as a numbered milestone. See `docs/FUTURE_FEATURE_BACKLOG.md` ("Medium-Risk Features") for tracking.
+This is no longer purely speculative — see the v1.37A status note above. See `docs/FUTURE_FEATURE_BACKLOG.md` ("Medium-Risk Features") for ongoing tracking of the still-deferred parts.
 
 ---
 

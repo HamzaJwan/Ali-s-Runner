@@ -1336,3 +1336,69 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 5. If the lane still feels too shallow, the safe pan budget at `1.15x` zoom is nearly exhausted (`~9px` of margin left before `CAMERA_TARGET_SCREEN_Y` would need to come back down) - the next lever would be revisiting `GROUND_VISUAL_HEIGHT`/ground texture coverage rather than panning further.
 
 Commit: `autopilot: gameplay framing and obstacle grounding polish`.
+
+
+## v1.37A — Animated Light Shards Collectible Assets Sourced — 2026-06-29
+
+Status: ASSETS_SOURCED
+
+Added `light_shard_sheet.png` to `assets/collectibles/light_shard/` (CC0 animated star/shard sprite sheet with 6 frames) to unblock the Sonnet coder.
+
+## v1.37A — Animated Light Shards Collectibles Foundation (Implementation) — STATUS: IMPLEMENTED / OWNER F6 REVIEW REQUIRED
+
+Files added: `scenes/Collectible.tscn`, `scripts/gameplay/collectible.gd`, `scripts/gameplay/collectible_spawner.gd`. Files changed: `scripts/main.gd`, `scenes/Main.tscn`.
+
+**Asset used:** the just-sourced `res://assets/collectibles/light_shard/light_shard_sheet.png` (Eiyeron, CC0 1.0, OpenGameArt "Spinning heart and star trinkets", `HUMAN_VISUAL_REVIEW_REQUIRED` per `docs/ASSET_CREDITS.md`). **Measured it directly with PIL before writing any code** rather than trusting the "6 horizontal frames" description: the sheet is actually `64x96px`, and slicing it as 6 frames stacked **vertically** (each `64x16`) produces clean, consistent per-frame bounding boxes; slicing it horizontally (`64/6 ≈ 10.67px` per frame) does not divide evenly and would be wrong. `Sprite2D.vframes = 6` (not `hframes`) is used accordingly, with the frame's real `64x16` size driving the scale-to-`VISUAL_HEIGHT(28px)` calculation directly (no alpha-trim needed for a small, already-tight sprite sheet frame).
+
+### Architecture (kept separated, as required)
+
+* `collectible.gd` (`Area2D`) owns its own movement (`-speed*delta`, matching whatever `current_speed` the spawner gives it), animation (sheet frame-cycling, or a gentle pulse/rotation fallback if the sheet is missing), pickup detection (`body_entered` on the Player), and pickup visuals (sparkle + scale/fade pop, then `queue_free()`).
+* `collectible_spawner.gd` (`Node2D`) owns spawn timing/placement only - mirrors `obstacle_spawner.gd`'s exact public shape (`setup`/`start_spawning`/`stop_spawning`/`clear_collectibles`) so `main.gd` calls both spawners identically, side by side, at every relevant lifecycle point.
+* `main.gd` only orchestrates: connects each spawned shard's `collected` signal, owns the `collectible_count` state + `النور: 0` label text, and saves/restores the checkpoint snapshot. It does not touch obstacle logic, and `obstacle_spawner.gd` was not modified.
+
+### Fallback chain (asset-safe, never crashes)
+
+1. The real sheet (above) - animates by cycling `frame` through all 6 at `8 FPS`.
+2. A static image at `light_shard.png` or `light_shard_1.png`, if the sheet itself is ever missing - same pulse as the placeholder, since a single static image has no frames of its own to cycle.
+3. A procedural 5-point golden star `Polygon2D`, built once from plain trigonometry (`Color(1.0, 0.82, 0.25)`) - never a texture, so it can never fail to load, and the only path that also gets the code-side rotation (the sheet/static paths either already animate via frames or are real art that doesn't need a synthetic spin).
+
+All three paths share the same gentle scale "pulse" (`0.92x` to `1.1x` over `0.9s`) so the shard always reads as "alive" regardless of which asset path is active. Missing-asset logging follows the existing `asset_utils.gd` `load_texture_with_fallback()` pattern already used everywhere else in this project (logs once, never crashes, never spams).
+
+### Spawn behavior (v1.37A scope: simple and safe, no obstacle-relative patterns yet)
+
+A single dedicated `Timer` (`CollectibleSpawnTimer`, separate from the obstacle `SpawnTimer`) fires at a randomized `3.0-5.0s` interval - deliberately wider and decoupled from the fixed `2.25s` obstacle cadence so shards never feel mechanically tied to obstacles. Each cycle spawns exactly one shard, at `SPAWN_X` (same offscreen spawn point obstacles use), at one of two heights:
+
+* **Road shard** (`ROAD_SURFACE_Y - 50 = 460`): grabbable just by running - Ali's grounded collision spans world Y `462-510`, so this overlaps it by a forgiving `~12-14px` margin depending on the shard's own radius.
+* **Elevated/"jump" shard** (`ROAD_SURFACE_Y - 125 = 385`): chosen from this project's **actual jump-arc math**, not a guess - max rise = `JUMP_VELOCITY² / (2·GRAVITY) = 440² / (2·1050) ≈ 92.19px`, so the body's `48px`-tall collision (centered on the body origin) spans world Y `~369.8-417.8` at the exact apex. `385` sits comfortably inside that band rather than at its razor edge, so it's reachable across a real slice of the jump arc, not only at a frame-perfect instant - deliberately forgiving for a first, child-friendly pass.
+
+**No-overlap safety:** before placing a road-level shard, `_obstacle_too_close_to_spawn_x()` checks every live obstacle's actual `global_position.x`; if one is within `200px` of the spawn point, an elevated shard is used instead that cycle (elevated shards never need this check at all - they sit well above every obstacle's own collision top regardless of horizontal proximity). Obstacle-relative *patterns* (an arc above a specific obstacle, a reward line right after one) are intentionally deferred to v1.37B, exactly as scoped - this milestone only guarantees shards never land inside or directly behind a live obstacle.
+
+### UI
+
+Added `LightShardLabel` (`scenes/Main.tscn`, under `UI`), positioned at `(16,48)-(200,72)` - directly under `ScoreLabel` (`(16,14)-(200,44)`), same left margin, smaller font (`18` vs `24`) and a warm gold font color to visually distinguish it from the score without competing with it. Confirmed clear of `CompanionRibbon` (top-right) and every dialogue/menu element. Shown/hidden in lockstep with `score_label` (visible during gameplay, hidden at the menu).
+
+### State rules (all verified by the smoke test)
+
+* Fresh start / Restart / Father-replay (`_begin_run(..., checkpoint=NONE, ...)`): `collectible_count` and its checkpoint snapshot both reset to `0`.
+* Checkpoint reached (`_apply_checkpoint_state()`, the same moment `last_reached_checkpoint` is locked in): `collectible_count_checkpoint_snapshot = collectible_count`.
+* Retry from a checkpoint (`_begin_run(..., checkpoint=<not NONE>, ...)`): `collectible_count` is restored from that snapshot - reusing the exact same `checkpoint` parameter already used to derive the companion-ribbon flags, for the same reason.
+* Father ending: no special-casing needed - the label is never hidden during any checkpoint cinematic (mirrors `score_label`'s own behavior), so the count stays visibly intact through the ending.
+* `collectible_spawner.start_spawning()`/`stop_spawning()`/`clear_collectibles()` are called at every single point `obstacle_spawner`'s equivalents are: menu, a fresh run, every checkpoint encounter trigger, the Zainab-shield countdown, and Game Over - so collectibles always pause/clear in lockstep with obstacles, never mid-checkpoint or mid-Game-Over.
+
+### Validation
+
+* Headless boot clean, exit `0`. Boot log confirms the sheet loads at its real measured size (`size=(64.0, 96.0)`).
+* Smoke test (deleted after running, `tmp_v137a_smoke_test.gd` + its `.uid`): confirmed the label's default text; confirmed `collectible_count` starts at `0`; confirmed a shard spawns within the max baseline interval, its sheet frame actually advances, and it moves left; confirmed a real pickup (Area2D overlap, not a direct state edit) increments the count and updates the label text exactly; confirmed Restart resets the count to `0`; confirmed a real Fatima checkpoint snapshots the count and Retry from that checkpoint restores it exactly, including the label text. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, player collision half-height, spawn interval/X, all four checkpoint trigger scores). `obstacle_spawner.gd`'s only change this milestone was reverted entirely (a draft `obstacle_spawned` signal, removed once v1.37B's obstacle-relative patterns were deferred) - it ships unmodified from before this milestone.
+
+### Remaining owner F6 review items
+
+1. Listen/look: confirm the shard's spin/shimmer animation and pulse read as intended at gameplay zoom `1.15` (asset status is `HUMAN_VISUAL_REVIEW_REQUIRED`).
+2. Confirm the road-level and elevated shard heights feel right by eye, not just by the jump-arc math above.
+3. Confirm `النور` label placement/readability under the score.
+4. **Pickup audio integrated ahead of schedule.** A dedicated `res://assets/audio/gameplay/shard_pickup.wav` (Kenney UI Audio `switch2.wav`, CC0 1.0, `docs/AUDIO_CREDITS.md` → "Collectibles" section, `HUMAN_AUDIO_REVIEW_REQUIRED`) arrived from the asset-sourcing pass while this exact wiring was in progress. Verified the file exists and is documented before touching anything, then added it through the **existing** `audio_manager.gd` system only - one `SOUND_PATHS`/`VOLUME_DB` entry plus a `play_shard_pickup()` wrapper around the already-shared `_play()` helper, exactly like every other SFX (no second `AudioStreamPlayer`, no node-local playback, missing-file-safe via the same `_resolve_sound_path()` path). Called from `main.gd`'s `_on_collectible_collected()` (the signal handler each shard's `collected` already triggers) - fires exactly once per real pickup, never on spawn, and `reward_star.wav`/jump/hit/music behavior is untouched.
+
+Recommended next task: **v1.37B — Safe Collectible Patterns** (obstacle-relative arc/reward-line patterns).
+
+Commit: `autopilot: v1.37A light shards collectibles foundation`.

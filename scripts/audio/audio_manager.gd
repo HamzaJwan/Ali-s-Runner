@@ -13,6 +13,7 @@ const SOUND_PATHS := {
 	"reward_key": "res://assets/audio/story/reward_key.wav",
 	"game_over": "res://assets/audio/story/game_over.wav",
 	"victory": "res://assets/audio/story/victory.wav",
+	"shard_pickup": "res://assets/audio/gameplay/shard_pickup.wav",
 }
 
 # Drop-in-replacement safety net: if a preferred SOUND_PATHS candidate is ever
@@ -37,20 +38,18 @@ const VOLUME_DB := {
 	"reward_key": -8.0,
 	"game_over": -10.0,
 	"victory": -8.0,
+	"shard_pickup": -9.0,
 }
 
 const MUSIC_CALM := "calm"
 const MUSIC_GAMEPLAY := "gameplay"
+const MUSIC_GAMEPLAY_PATH := "res://assets/audio/music/level1_exciting_loop.ogg"
 
-# Only "calm" is wired to a real file. assets/audio/music/level1_exciting_loop.ogg
-# exists on disk but has no source/license entry in docs/AUDIO_CREDITS.md
-# (docs/AUDIO_DESIGN_PLAN.md explicitly flags it UNVERIFIED_AUDIO_CANDIDATE and
-# says not to integrate it until license-verified and owner-approved by ear).
-# BLOCKED_BY_AUDIO_DOCUMENTATION: do not add a "gameplay" entry here until that
-# documentation exists - play_gameplay_music() safely falls back to calm music
-# in the meantime, exactly like a missing-file fallback would.
+# The owner explicitly approved the exciting track for in-project use on
+# 2026-06-29. Its source/license still needs verification before public release.
 const MUSIC_TRACK_PATHS := {
 	MUSIC_CALM: "res://assets/audio/music/main_theme_soft_loop.ogg",
+	MUSIC_GAMEPLAY: MUSIC_GAMEPLAY_PATH,
 }
 const MUSIC_VOLUME_DB := -22.0
 const MUSIC_DUCK_DB := -32.0
@@ -125,8 +124,8 @@ func _load_music(parent_node: Node) -> void:
 			_log_missing_once("music_" + key, path, "failed to load")
 			continue
 
-		# HUMAN_AUDIO_REVIEW_REQUIRED: license verified (see docs/AUDIO_CREDITS.md),
-		# but tone/loudness/fit have not been approved by ear yet for any track.
+		# HUMAN_AUDIO_REVIEW_REQUIRED for every track. The gameplay track also
+		# remains LICENSE_VERIFICATION_REQUIRED_BEFORE_RELEASE.
 		if stream is AudioStreamOggVorbis:
 			stream.loop = true
 
@@ -149,17 +148,16 @@ func play_calm_music() -> void:
 	_switch_music(MUSIC_CALM)
 
 
-## Active-gameplay state. Falls back to calm music if the "gameplay" track is
-## not registered (currently BLOCKED_BY_AUDIO_DOCUMENTATION) - this is
-## intentional graceful degradation, not a bug, and logged once.
+## Active-gameplay state. Falls back to calm music if the gameplay track is
+## missing or fails to load.
 func play_gameplay_music() -> void:
 	if _music_streams.has(MUSIC_GAMEPLAY):
 		_switch_music(MUSIC_GAMEPLAY)
 		return
 	_log_missing_once(
 		"music_" + MUSIC_GAMEPLAY,
-		"res://assets/audio/music/level1_exciting_loop.ogg",
-		"BLOCKED_BY_AUDIO_DOCUMENTATION (no AUDIO_CREDITS.md entry); using calm music"
+		MUSIC_GAMEPLAY_PATH,
+		"gameplay track unavailable; using calm music"
 	)
 	_switch_music(MUSIC_CALM)
 
@@ -280,3 +278,7 @@ func play_game_over() -> void:
 
 func play_victory() -> void:
 	_play("victory")
+
+
+func play_shard_pickup() -> void:
+	_play("shard_pickup")
