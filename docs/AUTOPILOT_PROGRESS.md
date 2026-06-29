@@ -1194,3 +1194,60 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 4. Decide whether `100px` gameplay height still feels right, or test `105-110px` (`OWNER_VISUAL_DECISION_REQUIRED`).
 
 Commit: `autopilot: v1.36C fix Ali 8-frame run jitter`.
+
+## v1.36D — Scene Framing, Road Fill, and Gameplay Zoom Polish — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`, `scenes/Main.tscn`.
+
+### Task A — Diagnosis (measured, not guessed)
+
+* **Ground/road visual Y range:** `ground_sprite` only drew from `y=470` (`CURB_TOP_Y`) to `y=550` (`470 + GROUND_VISUAL_HEIGHT`, which was `80.0`).
+* **Bottom gap:** `y=550` to `y=648` (`VIEW_H`) - a full **98px**, ~15% of the screen height, was uncovered by any sprite.
+* **Forced to a short height?** Yes, confirmed: `_apply_ground_texture()` called `ASSET_UTILS.fit_sprite_visible_to_size(ground_sprite, VIEW_W, GROUND_VISUAL_HEIGHT)`, which independently forces *both* width and height.
+* **Aspect ratio preserved?** No. Measured the actual texture (`ground_mantarha.png.png`): canvas `2172x334`, visible bbox height `293px` → native aspect ≈ `7.41:1`. Forced into `1152x80` gives ≈ `14.4:1` - roughly **2x vertically squashed** versus its native proportions.
+* **Cause of the flat brown strip:** `Ground/GroundBase` (a `Polygon2D`, `z_index=-1`, color `Color(0.42,0.36,0.28,1)`) spans the *entire* lower area (`y=470` to `y=648`, matching the invisible collision extent) as a permanent fallback fill. It was never the problem on its own - it only became visible as a giant flat block because `ground_sprite` covered just the top `80px` of that same area, leaving the rest of `GroundBase`'s flat color exposed.
+* **Cause of the buildings/road seam:** `buildings_sprite`/`foreground_sprite` and `ground_sprite` both align their edges to exactly `CURB_TOP_Y=470` (one bottom-aligned, one top-aligned) - mathematically touching with zero overlap. At that kind of razor-thin meeting line, alpha-edge antialiasing on either texture reads as a thin visible seam/gap rather than a clean join.
+
+### Task B — Road/ground visual fill (fixed)
+
+Switched `_apply_ground_texture()` from `fit_sprite_visible_to_size()` (forced, aspect-distorting) to `fit_sprite_visible_to_width(ground_sprite, VIEW_W)` - the same aspect-preserving call already used for `buildings_sprite`/`foreground_sprite`. At `VIEW_W=1152`, this now naturally renders the road at `~155px` tall (confirmed live in the boot log: `final_scale=(0.530387, 0.530387)`, visible height `293*0.530387≈155.4px`) instead of the forced `80px` - **nearly double**, without any distortion. `GROUND_VISUAL_HEIGHT` was updated `80.0 -> 155.0` to match (it now only sizes the no-texture placeholder polygon and the log line; the real sprite derives its own height from the texture). `ROAD_SURFACE_Y`, the collision `RectangleShape2D`, and `GROUND_COLLISION_HEIGHT` were **not touched** - this is purely the visible sprite's drawn height. The remaining ~23px gap between the new road bottom (~625) and the screen edge (648) is covered by `GroundBase`'s existing brown fill, whose color was nudged from `(0.42,0.36,0.28)` to `(0.49,0.36,0.25)` to match the road texture's own measured bottom-edge average color (`(0.49,0.36,0.23)`, sampled directly from the PNG) - so what remains reads as an intentional dirt/road-shoulder color continuation, not a mismatched flat block.
+
+### Task C — Buildings/road gap (fixed)
+
+Added `BG_GROUND_OVERLAP := 10.0`. `_apply_scenery_layer()` now aligns `buildings_sprite`/`foreground_sprite`'s visible bottom to `CURB_TOP_Y + BG_GROUND_OVERLAP` (`480` instead of `470`) - confirmed live in the boot log (`"BuildingsSprite visible_bottom=480.0"`). Since `ground_sprite` starts drawing at `y=470` with a higher z-index (`0`) than the background layers (`-20`/`-10`), the top `10px` of the now-lower-extending background layers tuck cleanly underneath the top of the road sprite instead of meeting it at an exposed seam. Parallax motion (`background_motion.gd`) reads each sprite's `position`/`region`, not this alignment constant, so scrolling is unaffected.
+
+### Task D — Light gameplay zoom/framing
+
+**Camera2D was used** (not a manual world-scale workaround) - it turned out to be the *safest* option, not a risky one: a `Camera2D` only changes which slice of the already-correct world coordinates gets rendered; it never touches `Player`'s `CharacterBody2D`, `move_and_slide()`, the obstacle spawner, or any world-space constant (`ROAD_SURFACE_Y`, `SPAWN_X`, `ENCOUNTER_TARGET_X`, etc. all remain real, unchanged world coordinates). UI needed zero special handling: `CanvasLayer` nodes (the entire `UI` tree) always render in raw screen space and structurally ignore the active `Camera2D`'s transform - confirmed by the smoke test (`score_label` etc. unaffected).
+
+Added a single `GameplayCamera` node (`scenes/Main.tscn`, child of `Main`), positioned at `(576, 324)` with `zoom=(1,1)` by default - this is *exactly* the same view Godot's implicit default camera already produced with no `Camera2D` at all (a `1152x648` viewport with its top-left at world origin has its center at `(576,324)`), so the "default/non-gameplay" framing is mathematically identical to what every existing cinematic/menu scene was already built and tested against.
+
+`GAMEPLAY_ZOOM_FACTOR := 1.12` (within the requested `1.12-1.15` range, kept at the conservative end). `GAMEPLAY_CAMERA_ZOOM := Vector2.ONE / 1.12 ≈ (0.893, 0.893)` (Camera2D's own zoom semantics are inverted - smaller `zoom` values mean *more* magnification, so `1/1.12` is what actually produces a `1.12x` zoom-in). `GAMEPLAY_CAMERA_POSITION` is solved algebraically (not guessed) from the screen-mapping formula `screen = (world - camera) / zoom + view/2`, so that after zooming: Ali's world X (`PLAYER_START_X=220`) still lands at screen X `≈235` (inside the requested `220-250` band), and `ROAD_SURFACE_Y` still lands at the same screen Y as the unzoomed view - confirmed exactly by the smoke test (`ali_screen_x` computed live, found inside the band).
+
+State wiring mirrors the already-validated music state machine exactly (same call sites, same reasoning): `_apply_default_framing()` is called from `_show_start_screen()`, `_start_intro()`, `_open_checkpoint_cinematic()` (covers every checkpoint dialogue, the Father ending, and Game Over via `_end_run()`), and the post-checkpoint countdown (`_finish_encounter_and_countdown()`, still not running yet); `_apply_gameplay_framing()` is called from `_begin_run()` (Restart/Retry/post-intro start - all resume running immediately) and `_finish_countdown()` (the exact moment a post-checkpoint countdown finishes and real running resumes). Both framing functions tween `position`/`zoom` over `CAMERA_TRANSITION_TIME = 0.35s` (`TRANS_SINE`/`EASE_OUT`, smooth not instant) via a single tracked `_camera_tween` (killed/replaced every call, same discipline as every other tween in this project) with `TWEEN_PAUSE_PROCESS` set, since checkpoint dialogue pauses the tree partway through the transition.
+
+### Task E — Obstacle visibility/fairness (measured)
+
+With the `1.12x` zoom, the visible world right edge moves from `1152` (unzoomed) to **`1038.75`** - confirmed live via the smoke test. `OBSTACLE_SPAWNER.SPAWN_X = 1292` stays well beyond that (`1292 > 1038.75`), so obstacles are still fully offscreen when they spawn - actually *more* offscreen-margin than before, not less. Visible distance ahead of Ali (`1038.75 - PLAYER_START_X(220) = 818.75px`) gives:
+
+* Reaction time at speed `225`: `818.75 / 225 ≈ 3.64s` (previously `932/225 ≈ 4.14s`).
+* Reaction time at speed `270` (max/post-Jomana): `818.75 / 270 ≈ 3.03s` (previously `932/270 ≈ 3.45s`).
+
+Both are comfortably above the `2.6-2.8s` fairness floor this task set, while still measurably reducing the lead time per the owner's "too much advance warning" complaint - roughly a `12%` cut at every speed, matching the `1.12x` zoom factor exactly (as expected, since zoom uniformly scales the visible distance).
+
+### Validation
+
+* Headless boot clean, exit `0`. Boot log confirms both the new ground fit (`final_scale=(0.530387, 0.530387)`) and the new buildings/foreground overlap (`visible_bottom=480.0`).
+* Smoke test (deleted after running, `tmp_v136d_smoke_test.gd` + its `.uid`): confirmed ground/road nodes exist; confirmed menu/intro use default (unzoomed) framing and `score_label` stays in the UI tree throughout; confirmed gameplay framing engages after Skip Intro; confirmed Ali's computed screen X lands inside `220-250`; confirmed the zoomed visible right edge keeps `SPAWN_X` offscreen and reaction time at max speed stays above the `2.6s` floor (matching the hand-calculated `3.03s` exactly); confirmed no obstacle ever spawns inside the zoomed visible area at runtime; confirmed a real Fatima checkpoint opens with default framing and gameplay re-zooms after its countdown; confirmed Game Over switches to default framing; confirmed Retry and Restart both correctly re-zoom for gameplay. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max fall speed, jump buffer, road surface Y, player collision half-height, spawn interval/X, all four speeds, all four checkpoint trigger scores). No player physics, collision shape, obstacle spawn logic, story/checkpoint score, reward logic, retry/restart logic, or audio logic was touched - every change here is either a sprite-fitting call, a `.tscn` color/offset tweak, or the new camera framing, none of which touch a single world-space gameplay coordinate.
+
+### Owner F6 checklist
+
+1. Confirm the bottom brown strip is gone or much less noticeable, and that it now reads as an intentional road-edge/dirt-shoulder color rather than an empty block.
+2. Confirm the buildings/sidewalk now visually connects to the road with no seam/gap.
+3. Confirm gameplay feels "closer"/more focused, and that obstacles feel like they give a bit less advance warning while still being fair to react to.
+4. Confirm menu, intro, every checkpoint dialogue, the Father ending, and Game Over all still look fully framed (nothing cropped) - they're using the exact same framing as before this task, so this should be unchanged, but worth a quick look since it's now camera-driven rather than implicit.
+5. Confirm the zoom-in/zoom-out transitions feel smooth, not jarring or jittery.
+
+Commit: `autopilot: v1.36D scene framing road fill and gameplay zoom polish`.

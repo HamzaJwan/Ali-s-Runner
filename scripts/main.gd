@@ -36,8 +36,9 @@ const VIEW_W := 1152.0
 const VIEW_H := 648.0
 const CURB_TOP_Y := 470.0
 const ROAD_SURFACE_Y := 510.0
-const GROUND_VISUAL_HEIGHT := 80.0
+const GROUND_VISUAL_HEIGHT := 155.0
 const GROUND_COLLISION_HEIGHT := 70.0
+const BG_GROUND_OVERLAP := 10.0
 const PLAYER_START_X := 220.0
 const PLAYER_COLLISION_HALF_HEIGHT := 24.0
 const ALI_TEXTURE_PATH := "res://assets/characters/ali/ali_idle.png"
@@ -91,6 +92,28 @@ const FAMILY_GROUP_FATIMA_X := 380.0
 const FAMILY_GROUP_ZAINAB_X := 450.0
 const FAMILY_GROUP_JOMANA_X := 520.0
 const GROUND_CENTER_Y := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
+
+# --- Gameplay framing (visual-only; never touches world/physics coordinates) ---
+# A real Camera2D only changes what fraction of the world is rendered to the
+# screen - it does not move/rescale Player's CharacterBody2D, the obstacle
+# spawner, or any world-space constant below (ROAD_SURFACE_Y, SPAWN_X, the
+# encounter/story X positions, etc. are all still real, untouched world
+# coordinates). UI stays unaffected for free: CanvasLayer nodes always
+# render in raw screen space and ignore the active Camera2D's transform.
+const GAMEPLAY_ZOOM_FACTOR := 1.12
+const GAMEPLAY_CAMERA_ZOOM := Vector2.ONE / GAMEPLAY_ZOOM_FACTOR
+const DEFAULT_CAMERA_ZOOM := Vector2.ONE
+const DEFAULT_CAMERA_POSITION := Vector2(VIEW_W / 2.0, VIEW_H / 2.0)
+# Solved so that, after zooming, Ali's world X (PLAYER_START_X) still lands
+# at roughly screen X 235 (inside the requested 220-250 band) and
+# ROAD_SURFACE_Y still lands at the same screen Y as the unzoomed view -
+# the zoom reads as "everything got closer," not as a pan/crop.
+const CAMERA_TARGET_SCREEN_X := 235.0
+const GAMEPLAY_CAMERA_POSITION := Vector2(
+	PLAYER_START_X - (CAMERA_TARGET_SCREEN_X - VIEW_W / 2.0) * GAMEPLAY_CAMERA_ZOOM.x,
+	ROAD_SURFACE_Y - (ROAD_SURFACE_Y - VIEW_H / 2.0) * GAMEPLAY_CAMERA_ZOOM.y
+)
+const CAMERA_TRANSITION_TIME := 0.35
 const START_PLAYER_POSITION := Vector2(
 	PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
 )
@@ -99,6 +122,7 @@ const BUILDINGS_TEXTURE_PATH := "res://assets/backgrounds/mantarha/bg_buildings.
 const FOREGROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/bg_foreground.png"
 const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.png"
 
+@onready var gameplay_camera: Camera2D = $GameplayCamera
 @onready var player: Player = $Player
 @onready var player_story_sprite: Sprite2D = $Player/AliSprite
 @onready var obstacle_spawner: Node2D = $Obstacles
@@ -204,6 +228,7 @@ var _idle_breath_tweens: Dictionary = {}
 var _idle_breath_bases: Dictionary = {}
 var _checkpoint_speaker_tween: Tween
 var _checkpoint_speaker_bases: Dictionary = {}
+var _camera_tween: Tween
 
 
 func _ready() -> void:
@@ -330,6 +355,7 @@ func _show_start_screen() -> void:
 	obstacle_spawner.clear_obstacles()
 	_show_menu_hero_presentation()
 	audio_manager.play_calm_music()
+	_apply_default_framing()
 
 
 func _show_menu_hero_presentation() -> void:
@@ -476,6 +502,7 @@ func _start_intro() -> void:
 	_setup_intro_scene()
 	_show_intro_step()
 	audio_manager.play_calm_music()
+	_apply_default_framing()
 
 
 func _setup_intro_scene() -> void:
@@ -703,6 +730,7 @@ func _start_run() -> void:
 func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> void:
 	_stop_menu_presentation()
 	audio_manager.play_gameplay_music()
+	_apply_gameplay_framing()
 	get_tree().paused = false
 	started = true
 	score = initial_score
@@ -781,6 +809,7 @@ func _end_run() -> void:
 	game_over = true
 	audio_manager.play_hit()
 	audio_manager.play_calm_music()
+	_apply_default_framing()
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	player.kill()
@@ -968,6 +997,7 @@ func _open_checkpoint_cinematic() -> void:
 	checkpoint_cinematic_active = true
 	audio_manager.play_checkpoint()
 	audio_manager.play_calm_music()
+	_apply_default_framing()
 	if encounter_controller.character_id == EncounterCharacter.FATHER:
 		_show_father_ending_family_group()
 	_start_idle_breath(player_story_sprite)
@@ -1164,6 +1194,7 @@ func _finish_encounter_and_countdown() -> void:
 	_cleanup_checkpoint_speaker_state()
 	player.reset_player(player_runner_position)
 	audio_manager.play_calm_music()
+	_apply_default_framing()
 	_start_countdown()
 
 
@@ -1207,6 +1238,7 @@ func _finish_countdown() -> void:
 	get_tree().paused = false
 	player.set_gameplay_active(true)
 	audio_manager.play_gameplay_music()
+	_apply_gameplay_framing()
 	obstacle_spawner.start_spawning(current_obstacle_speed)
 	if jomana_safety_window_pending:
 		jomana_safety_window_pending = false
@@ -1333,6 +1365,43 @@ func _apply_optional_ali_focus_texture() -> void:
 		ali_focus_placeholder.visible = true
 
 
+## Active running only. Tweens the camera to a light zoom-in framed so Ali
+## stays near the requested screen X band and ROAD_SURFACE_Y stays at the
+## same screen Y - reads as "everything got closer," not a pan/crop. Called
+## from exactly the same state-transition points as the music state machine
+## (_finish_countdown(), _begin_run()) for the same reason: those are the
+## only places real running actually resumes.
+func _apply_gameplay_framing() -> void:
+	_set_camera_framing(GAMEPLAY_CAMERA_POSITION, GAMEPLAY_CAMERA_ZOOM)
+
+
+## Every non-running state (menu, intro, checkpoint/story dialogue, Game
+## Over, Father ending, paused/story states) uses this - the camera sits
+## exactly where Godot's implicit default camera would (center of a
+## top-left-at-origin 1152x648 view at zoom 1), so it is guaranteed not to
+## crop anything that was already correctly framed before this task.
+func _apply_default_framing() -> void:
+	_set_camera_framing(DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_ZOOM)
+
+
+func _set_camera_framing(target_position: Vector2, target_zoom: Vector2) -> void:
+	if (
+		gameplay_camera.position.is_equal_approx(target_position)
+		and gameplay_camera.zoom.is_equal_approx(target_zoom)
+	):
+		return
+	if _camera_tween != null and _camera_tween.is_valid():
+		_camera_tween.kill()
+	_camera_tween = create_tween().set_parallel()
+	_camera_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_camera_tween.tween_property(
+		gameplay_camera, "position", target_position, CAMERA_TRANSITION_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_camera_tween.tween_property(
+		gameplay_camera, "zoom", target_zoom, CAMERA_TRANSITION_TIME
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
 func _apply_optional_backgrounds() -> void:
 	_apply_sky_texture()
 	_apply_scenery_layer(buildings_sprite, BUILDINGS_TEXTURE_PATH, 1.0)
@@ -1376,20 +1445,32 @@ func _apply_scenery_layer(
 	if ASSET_UTILS.set_sprite_texture_if_exists(sprite, texture_path):
 		sprite.centered = false
 		ASSET_UTILS.fit_sprite_visible_to_width(sprite, VIEW_W)
+		# Extend BG_GROUND_OVERLAP past CURB_TOP_Y so this layer's bottom
+		# edge tucks slightly under the ground sprite (which starts drawing
+		# at CURB_TOP_Y too, at a higher z-index) instead of meeting it at a
+		# razor-thin seam - that seam is what read as a visible gap between
+		# the sidewalk/buildings and the road.
 		ASSET_UTILS.align_sprite_visible_left_bottom(
-			sprite, 0.0, CURB_TOP_Y
+			sprite, 0.0, CURB_TOP_Y + BG_GROUND_OVERLAP
 		)
 		sprite.modulate.a = opacity
-		print("[layout] ", sprite.name, " visible_bottom=", CURB_TOP_Y,
-			" opacity=", opacity)
+		print("[layout] ", sprite.name, " visible_bottom=",
+			CURB_TOP_Y + BG_GROUND_OVERLAP, " opacity=", opacity)
 
 
 func _apply_ground_texture() -> void:
 	if ASSET_UTILS.set_sprite_texture_if_exists(ground_sprite, GROUND_TEXTURE_PATH):
 		ground_sprite.centered = false
-		ASSET_UTILS.fit_sprite_visible_to_size(
-			ground_sprite, VIEW_W, GROUND_VISUAL_HEIGHT
-		)
+		# Preserve the texture's own aspect ratio (fit by width only) instead
+		# of force-stretching it into a fixed, short GROUND_VISUAL_HEIGHT box.
+		# That forced stretch both distorted the road texture and left most
+		# of the screen below it uncovered, exposing GroundBase's flat brown
+		# fallback fill as a wide, clearly-empty strip. Fitting by width
+		# alone makes the road extend much closer to the bottom of the
+		# viewport on its own, looking like a natural road/earth continuation
+		# instead of an abrupt cutoff. ROAD_SURFACE_Y/collision are untouched
+		# - this only changes how tall the visible sprite is drawn.
+		ASSET_UTILS.fit_sprite_visible_to_width(ground_sprite, VIEW_W)
 		ASSET_UTILS.align_sprite_visible_top_left(
 			ground_sprite,
 			Vector2(-ground.position.x, CURB_TOP_Y - ground.position.y)
