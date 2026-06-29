@@ -20,6 +20,27 @@ const SHADOW_OVAL_POINTS := 16
 const DUST_COLOR := Color(0.82, 0.74, 0.6, 0.5)
 const IMPACT_DUST_COLOR := Color(0.78, 0.7, 0.58, 0.6)
 
+# Shadow ground-projection (v1.37-HOTFIX). _ground_shadow/_soft_shadow are
+# children of this CharacterBody2D, so their *local* Y must be recomputed
+# every physics frame to cancel out however far the body has actually
+# risen - otherwise a fixed local offset (the previous behavior) rises and
+# falls with Ali's own jump arc, which read as the shadow "jumping with
+# him." ROAD_SURFACE_Y/PLAYER_COLLISION_HALF_HEIGHT mirror the same
+# immutable values main.gd already defines (32x48 collision, road Y 510) -
+# duplicated here, not imported, matching this project's existing
+# per-script constant convention (see obstacle_spawner.gd's own
+# ROAD_SURFACE_Y for the same pattern).
+const ROAD_SURFACE_Y := 510.0
+const PLAYER_COLLISION_HALF_HEIGHT := 24.0
+const GROUNDED_BODY_Y := ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_HEIGHT
+# Real jump-apex rise for this project's actual gravity/jump velocity
+# (JUMP_VELOCITY^2 / (2*GRAVITY) ~= 92.19px), used only to scale how far
+# "airborne" the shadow's shrink/fade should read - never used for any
+# gameplay/physics decision.
+const MAX_AIR_RISE := JUMP_VELOCITY * JUMP_VELOCITY / (2.0 * GRAVITY)
+const SHADOW_AIRBORNE_MIN_SCALE := 0.7
+const SHADOW_AIRBORNE_MIN_ALPHA_FACTOR := 0.4
+
 @onready var ali_sprite = $AliSprite
 @onready var placeholder_shape: Polygon2D = $Polygon2D
 
@@ -29,6 +50,7 @@ var _was_airborne := false
 var _land_pose_remaining := 0.0
 var _jump_buffer_remaining := 0.0
 var _ground_shadow: Polygon2D
+var _soft_shadow: Polygon2D
 var _run_dust: CPUParticles2D
 var _impact_dust: CPUParticles2D
 var _last_run_contact_frame := -1
@@ -42,13 +64,13 @@ func _ready() -> void:
 func _setup_ground_polish() -> void:
 	var feet_y: float = ali_sprite.FEET_Y
 
-	var soft_shadow := Polygon2D.new()
-	soft_shadow.polygon = _build_oval_polygon(SHADOW_SOFT_RADIUS)
-	soft_shadow.color = SHADOW_SOFT_COLOR
-	soft_shadow.position = Vector2(0, feet_y)
-	soft_shadow.z_as_relative = true
-	soft_shadow.z_index = -5
-	add_child(soft_shadow)
+	_soft_shadow = Polygon2D.new()
+	_soft_shadow.polygon = _build_oval_polygon(SHADOW_SOFT_RADIUS)
+	_soft_shadow.color = SHADOW_SOFT_COLOR
+	_soft_shadow.position = Vector2(0, feet_y)
+	_soft_shadow.z_as_relative = true
+	_soft_shadow.z_index = -5
+	add_child(_soft_shadow)
 
 	_ground_shadow = Polygon2D.new()
 	_ground_shadow.polygon = _build_oval_polygon(SHADOW_RADIUS)
@@ -99,6 +121,28 @@ func _build_oval_polygon(radius: Vector2) -> PackedVector2Array:
 	return points
 
 
+## Keeps both shadow polygons visually pinned to ROAD_SURFACE_Y regardless
+## of how far this body has actually risen during a jump/fall, and gives
+## them a subtle shrink/fade while airborne. The shadows are children of
+## this CharacterBody2D, so their *local* Y is recomputed every frame to
+## exactly cancel out global_position.y - this is the fix itself; nothing
+## here reads from or writes to ali_sprite's own pose offsets, so it can
+## never be affected by run-frame bob, ali_land calibration, or any other
+## visual-pose system.
+func _update_ground_shadow() -> void:
+	if _ground_shadow == null or _soft_shadow == null:
+		return
+	var air_height := maxf(0.0, GROUNDED_BODY_Y - global_position.y)
+	var air_fraction := clampf(air_height / MAX_AIR_RISE, 0.0, 1.0)
+	var shadow_scale := lerpf(1.0, SHADOW_AIRBORNE_MIN_SCALE, air_fraction)
+	var alpha_factor := lerpf(1.0, SHADOW_AIRBORNE_MIN_ALPHA_FACTOR, air_fraction)
+	var ground_local_y := ROAD_SURFACE_Y - global_position.y
+	for shadow in [_soft_shadow, _ground_shadow]:
+		shadow.position.y = ground_local_y
+		shadow.scale = Vector2(shadow_scale, shadow_scale)
+		shadow.modulate.a = alpha_factor
+
+
 func _play_impact_dust() -> void:
 	if _impact_dust == null:
 		return
@@ -138,6 +182,7 @@ func _physics_process(delta: float) -> void:
 		_play_impact_dust()
 
 	move_and_slide()
+	_update_ground_shadow()
 	_update_visual_pose(delta)
 
 

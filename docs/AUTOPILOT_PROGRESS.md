@@ -1402,3 +1402,38 @@ Immutable benchmarks re-verified unchanged via grep (gravity, jump velocity, max
 Recommended next task: **v1.37B — Safe Collectible Patterns** (obstacle-relative arc/reward-line patterns).
 
 Commit: `autopilot: v1.37A light shards collectibles foundation`.
+
+## v1.37-HOTFIX — Keep Ali Ground Shadow Projected on Road During Jump — STATUS: COMPLETE
+
+Files changed: `scripts/player.gd`.
+
+### Root cause
+
+`_ground_shadow`/`_soft_shadow` are children of `Player` (the `CharacterBody2D` itself), created once in `_setup_ground_polish()` at a **fixed local offset** `Vector2(0, ali_sprite.FEET_Y)`. That offset is only correct while grounded, because `Player.global_position.y` itself rises and falls during a real jump (real physics motion, not a visual-pose artifact) - and since the shadow's local offset was never recalculated, its global position rode along with the body's full vertical motion. Confirmed via the task's own diagnostic questions: the shadow is a child of the visual-adjacent body (not the sprite's own pose system), it does **not** inherit `ali_sprite`'s per-pose `.position` (run-frame bob/land calibration were never the cause), and it used a static local position rather than any ground-projected calculation - that last point is the actual bug.
+
+### Fix
+
+Added `_update_ground_shadow()`, called every `_physics_process()` tick right after `move_and_slide()`. Each frame it recomputes the shadow's **local** Y as `ROAD_SURFACE_Y - global_position.y` - by construction, `shadow.global_position.y` is then always exactly `ROAD_SURFACE_Y` (`510`), regardless of how far the body has actually risen. `ROAD_SURFACE_Y`/`PLAYER_COLLISION_HALF_HEIGHT` are duplicated locally in `player.gd` (not imported), matching this project's existing per-script-constant convention (`obstacle_spawner.gd` already keeps its own copy of `ROAD_SURFACE_Y` the same way).
+
+### Airborne polish
+
+`MAX_AIR_RISE` is computed directly from this project's real physics, not guessed: `JUMP_VELOCITY² / (2·GRAVITY) ≈ 92.19px`. `air_fraction = clamp((GROUNDED_BODY_Y - global_position.y) / MAX_AIR_RISE, 0, 1)` drives both shadows' `scale` (lerped `1.0 → 0.7`) and `modulate.a` (lerped `1.0 → 0.4`) - shrinking and softening smoothly as Ali rises, returning to normal the instant he's grounded again. Both shadows always share the same scale/alpha/Y so they move and fade together.
+
+### Interaction with other systems
+
+Untouched by design - this fix only ever writes to `_ground_shadow`/`_soft_shadow`'s own `position`/`scale`/`modulate`, never to `ali_sprite` or any of its pose/run/land/story-scaling logic, and never to `obstacle.gd`'s separate contact-shadow system (different nodes, different script, not referenced here at all).
+
+### Validation
+
+* Headless boot clean, exit `0`.
+* Smoke test (deleted after running, `tmp_shadow_smoke_test.gd` + its `.uid`): confirmed the shadow sits at `ROAD_SURFACE_Y` while grounded at normal scale/alpha; confirmed that during a real jump the shadow's global Y never moves (`max - min < 1px`) while the body itself measurably rises, and that the shadow visibly shrinks while airborne; confirmed it returns to normal scale/position after landing; confirmed the run animation, `ali_land`'s small/correct calibration, post-checkpoint alignment, and Retry/Restart are all unaffected; confirmed obstacles still carry their own separate contact-shadow polygon, unchanged. One real test-only bug was found and fixed along the way (not a product bug): checking `ali_land` while `_gameplay_active` was still `true` raced against `player.gd`'s own per-tick pose updates, which is why `set_gameplay_active(false)` is called first before that manual check now. **0 failed assertions.**
+
+Immutable benchmarks re-verified unchanged via grep - the new constants (`ROAD_SURFACE_Y`, `PLAYER_COLLISION_HALF_HEIGHT`, `GROUNDED_BODY_Y`, `MAX_AIR_RISE`) are all derived from the existing immutable values, not replacements for them.
+
+### Owner F6 checklist
+
+1. Confirm the shadow visually reads as staying on the road throughout a jump, not floating up with Ali.
+2. Confirm the shrink/fade while airborne feels subtle, not distracting.
+3. Confirm landing still looks/feels right (no shadow pop or snap).
+
+Commit: `autopilot: keep ali shadow grounded during jump`.
