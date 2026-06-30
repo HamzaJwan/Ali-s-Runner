@@ -1494,3 +1494,29 @@ Added a single, reusable `_pop_label(label)` - the same pivot/scale-from-`0.85`/
 Immutable benchmarks unaffected - this is a UI-only addition with no gameplay/physics involvement.
 
 Commit: `autopilot: v1.38 level 1 juice polish`.
+
+## v1.39 — Level 1 Closeout / Gold Candidate Update — STATUS: AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED
+
+Files changed: `docs/AUTOPILOT_PROGRESS.md`, `docs/LEVEL_1_GOLD_CHECKLIST.md`.
+
+Ran one comprehensive smoke test (deleted after running, `tmp_v139_full_smoke_test.gd` + its `.uid`) chaining every major system in a single continuous pass, to catch anything the per-milestone tests might have missed interacting with each other:
+
+menu (calm music) → Play → intro → Skip (gameplay-zoomed, `8` run frames detected) → jump/land → a real collectible pickup (count + label) → **Fatima** checkpoint (calm music during dialogue, companion joins, `+5` reward, re-zooms and returns to `486` road Y after) → **Zainab** checkpoint (shield granted) → **Jomana** checkpoint (safety window granted) → **Father ending** (all three sisters visible in the family group, Continue restarts from `0`) → a fresh run to a real **Game Over** (calm music, default framing) → **Retry** (restores checkpoint score/companion state, re-zooms) → **Restart** (score/collectible count/companion state all back to `0`).
+
+**Result: `V139_FULL_SMOKE_RESULT=PASS`, 0 failed assertions.** (One test-only timing bug was found and fixed first - checking the post-skip-intro zoom before the `0.35s` camera transition had finished - not a product bug.)
+
+Immutable benchmarks re-verified unchanged via grep across every gameplay script.
+
+### `docs/LEVEL_1_GOLD_CHECKLIST.md` updated with a new section for the full v1.37/v1.38 collectibles + juice + shadow-hotfix work (see file). Level 1 status wording stays exactly:
+
+**Level 1 remains AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED — not Final Gold.**
+
+### Remaining human gates (unchanged in kind, just restated for this closeout)
+
+* Owner F6 visual feel pass (now including: gameplay zoom `1.15`, grounded shadow during jumps, road/lane composition, light shard spin/pulse/placement).
+* SFX/music listening review (every SFX, both music tracks, and the new `shard_pickup.wav`, all still `HUMAN_AUDIO_REVIEW_REQUIRED`).
+* `level1_exciting_loop.ogg` public-release license documentation (`LICENSE_VERIFICATION_REQUIRED_BEFORE_PUBLIC_RELEASE`; owner has authorized in-project use meanwhile).
+* Collectible visual approval (`light_shard_sheet.png` is `HUMAN_VISUAL_REVIEW_REQUIRED`).
+* Mobile touch test and export test - addressed next in v1.40/v1.41.
+
+Commit: `autopilot: v1.39 level 1 closeout candidate`.

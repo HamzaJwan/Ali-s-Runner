@@ -46,7 +46,7 @@ More moving parts, still scoped to one feature at a time.
 
 * Checkpoint retry system (track last reached checkpoint, retry from there instead of always restarting from the beginning — see roadmap v0.66).
 * Emotional Game Over variants (death screen text changes based on the last checkpoint reached — see `docs/STORY_PLAN.md` "Death and Retry Tone").
-* Coins / collectibles risk-reward — **foundation done** (v1.37A, `scripts/gameplay/collectible.gd`/`collectible_spawner.gd`, themed as "شظايا نور" light shards, not generic coins). Still later — not started: obstacle-relative placement patterns (v1.37B) and pickup audio/juice (v1.37C).
+* Coins / collectibles risk-reward — **fully implemented through v1.37C** (animated shards, obstacle-relative patterns, pickup juice/SFX, shadow hotfix, score pop). Owner F6 visual/audio review still required before public release.
 * ~~Random obstacle pool (choosing among multiple obstacle types at random)~~ — **done** (v0.75, weighted selection in `scripts/gameplay/obstacle_spawner.gd`).
 * ~~Obstacle variety (concrete block, road barrier, construction cone, low crate, broken road sign)~~ — **done** (v0.75, all five exist with real PNG art, not placeholder-only).
 * Real obstacle PNG *quality* pass (replacing the current AI-generated/sourced art with anything better, or adding more variety beyond the current five) — optional future polish, not scheduled.

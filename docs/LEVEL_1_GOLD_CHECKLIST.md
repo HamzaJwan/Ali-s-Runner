@@ -82,7 +82,16 @@ Pending release gates:
 * ✅ Restart resets the counter; checkpoint reach snapshots it; Retry from that checkpoint restores it exactly.
 * ⬜ `OWNER_F6_RETEST_REQUIRED` — confirm the shard's spin/pulse reads well at gameplay zoom `1.15` and the road/elevated heights feel fair by eye.
 * ✅ Pickup SFX integrated (`shard_pickup.wav`, Kenney UI Audio, CC0) - `HUMAN_AUDIO_REVIEW_REQUIRED` still applies, same as every other SFX in the project.
-* Deferred to v1.37B/C (not blocking this checklist): obstacle-relative placement patterns, pickup juice text, optional pickup audio.
+
+Level 1 remains **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED**, not Final Gold.
+
+## 9. v1.37B/C + v1.37-HOTFIX + v1.38 — Collectible Patterns, Juice, Shadow Fix — 2026-06-29
+
+* ✅ Safe obstacle-relative patterns (arc above / reward line / raised-near-barrier), each spawned at the obstacle's own known position/speed so it can never drift into that obstacle's hitbox - verified by direct hitbox-rectangle overlap checks in the smoke test, not just by eye.
+* ✅ Pickup juice complete: sparkle, scale/fade pop, and a `"+1"` floating pop, all on top of the already-integrated `shard_pickup.wav`.
+* ✅ Ali's ground shadow now stays pinned to `ROAD_SURFACE_Y` during a jump (it previously rode up with the body) and gets a subtle airborne shrink/fade derived from this project's real jump-apex math.
+* ✅ Small score/light-shard counter "pop" juice added.
+* ⬜ `OWNER_F6_RETEST_REQUIRED` — confirm the arc/reward-line patterns feel intentional and fun, not random or distracting, and confirm the shadow fix reads correctly during a real jump.
 
 Level 1 remains **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED**, not Final Gold.
 

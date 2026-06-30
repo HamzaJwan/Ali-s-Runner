@@ -1632,15 +1632,13 @@ This milestone is planned only. See `docs/LEVEL_2_PLAN.md` for the full write-up
 
 ## Future — Coins / Collectibles Risk-Reward
 
-**STATUS UPDATE (v1.37A, 2026-06-29): foundation implemented.** Checkpoints
-were already stable, as this section required. Implemented as **"شظايا
-نور" (light shards)** — explicitly *not* generic coins, per the owner's own
-theming direction — using a real sourced/documented animated sprite sheet
-(`assets/collectibles/light_shard/light_shard_sheet.png`, CC0, see
-`docs/ASSET_CREDITS.md`). See `docs/AUTOPILOT_PROGRESS.md`'s "v1.37A"
-entry for the full implementation writeup. Still ahead, deferred to
-v1.37B/C: obstacle-relative placement patterns and pickup audio (no
-documented pickup SFX exists yet).
+**STATUS UPDATE (v1.37A/B/C + v1.37-HOTFIX + v1.38, 2026-06-29): fully implemented through the juice pass.** All three collectible milestones are committed and pushed:
+- v1.37A: animated shard foundation with sheet-based animation, `النور` UI counter, checkpoint snapshot/restore, spawning, and pickup SFX (`shard_pickup.wav`).
+- v1.37B: safe obstacle-relative patterns (arc above, reward line after, raised near barrier) wired via `obstacle_spawned` signal; no-overlap guarantee by construction.
+- v1.37C: sparkle burst, scale/fade pop, and `+1` floating label on pickup.
+- v1.37-HOTFIX: Ali's ground shadow now stays pinned to the road during jumps (was riding up with the body).
+- v1.38: score/collectible counter "pop" juice.
+Remaining: owner F6 visual/audio review of shards and shadow fix.
 
 Goal:
 Add coins or light fragments to tempt the player and create interesting decisions.
