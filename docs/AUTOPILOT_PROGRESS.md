@@ -1520,3 +1520,24 @@ Immutable benchmarks re-verified unchanged via grep across every gameplay script
 * Mobile touch test and export test - addressed next in v1.40/v1.41.
 
 Commit: `autopilot: v1.39 level 1 closeout candidate`.
+
+## v1.40 — Web Export Preparation — STATUS: BLOCKED_BY_EXPORT_TEMPLATES
+
+Files changed: `export_presets.cfg` (new), `exports/web/.gitkeep` (new).
+
+Checked for Godot 4.7 export templates at the default location (`C:\Users\Administrator\AppData\Roaming\Godot\export_templates\`): the directory exists but is **empty**. No export templates of any version are installed. Without the Web export template (`web_release.zip`/`web_debug.zip` for Godot 4.7), Godot's CLI and editor both refuse to export — this is a hard blocker, not a workaround-able issue.
+
+Created `export_presets.cfg` (at the project root, where Godot's editor writes it) with a minimal Web export preset targeting `exports/web/index.html`, `canvas_resize_policy=2` (scales to the container on the page), and `focus_canvas_on_start=true`. This file is valid config that Godot will use as soon as templates are available — the owner only needs to install templates and run the export, no further code changes required.
+
+**Owner action required to unblock:**
+
+1. Open the Godot editor.
+2. Editor → AssetLib or the Godot download page → download the export templates for Godot `4.7.stable`.
+3. In the editor: `Editor → Manage Export Templates → Install from file`, point at the downloaded `.tpz` archive.
+4. Confirm `C:\Users\Administrator\AppData\Roaming\Godot\export_templates\4.7.stable\` now contains `web_release.zip` (or equivalent).
+5. Run: `Godot_v4.7-stable_win64_console.exe --headless --path . --export-release "Web" exports/web/index.html`
+6. Alternatively: open the editor → Project → Export → Web → Export Project.
+
+**Hosting note (for reference when templates are ready):** the `exports/web/` output is a fully-static set of files (`.html`, `.js`, `.wasm`, `.pck`). Serve with any static HTTP server - `python -m http.server 8080` locally, or upload to GitHub Pages / Cloudflare Pages / Nginx for online access. Docker/Nginx is optional and not required for testing.
+
+Commit: `autopilot: v1.40 web export preparation`.
