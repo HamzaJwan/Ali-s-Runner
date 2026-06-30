@@ -1,6 +1,8 @@
 # Ali Runner — Level 2 Plan (Planning Only)
 
-This is a planning document only. Nothing in this document implements code, scenes, or assets. Level 2 work must not begin before **v1.34 — Level 1 Gold Candidate** (see `docs/LEVEL_1_GOLD_CHECKLIST.md`) and **v1.35 — Complete Roadmap Refresh** are both reached, per `docs/AI_GAME_ROADMAP.md` ("v2.0 — Level 2 Design Plan").
+This is a planning document only. Nothing in this document implements code, scenes, or assets. Level 2 work must not begin until the owner has completed their F6 visual/audio review pass on Level 1 and explicitly approved a Level 1 Gold status (see `docs/LEVEL_1_GOLD_CHECKLIST.md`).
+
+**v1.50 status update (2026-06-29/30):** Level 1 is now at **AUTOMATED GOLD CANDIDATE** status — every gameplay, story, audio, collectible, visual polish, and framing system has been implemented and automated-tested. The remaining gate before any Level 2 work is the **owner's own F6 visual/audio review** (a human-only pass, not automatable). This document is being updated now as the v1.50 planning step, per the sprint contract. No Level 2 code was written.
 
 ## Why Level 2 Exists
 
@@ -41,6 +43,46 @@ No character has been chosen as "the" Level 2 protagonist yet — this is a list
 * It does not specify gameplay mechanics, checkpoints, or assets for Level 2.
 * It does not change anything about Level 1.
 
+## Recommended First Theme (v1.50 addition)
+
+Given the three candidate characters above, the recommended Level 2 first theme is **جمانة في الشط (Jomana at the Zliten seafront)** for these reasons:
+- Jomana is already the "wisest/path-finder" sister in Level 1 lore - a seafront/beach obstacle course (rocks, fishing boats, wave hazards?) naturally extends that "knowing the right path" theme.
+- A beach/seafront in Zliten is visually distinct from the urban street of Level 1, giving immediate "new world" feel without rebuilding the game.
+- The same runner loop (tap/jump over obstacles) applies trivially — no new gameplay mechanic required for the first iteration.
+- Jomana is neither too young (Fatima) nor too similar to Ali (Zainab might feel like a colour-swap of Ali's existing mechanics), making her feel like a genuine new perspective.
+
+This is a recommendation only. The owner decides.
+
+## Mechanics Deferred from Level 1 (For Level 2 Consideration)
+
+These were explicitly blocked from Level 1 but could be considered for Level 2 after proper design and testing:
+
+- **Slide mechanic** — deliberately excluded from Level 1 (too complex, not needed for the story). Could be introduced in Level 2 if the beach/terrain context makes it feel natural (sliding under a wave?). Must not conflict with the one-tap simplicity that makes the game child-friendly.
+- **Ambience loops** — city/birds/wind ambient audio was blocked from Level 1 by missing CC0 sources. A beach/seafront level naturally wants wave sounds — source these before Level 2 audio work begins.
+- **Companion followers / playable sisters** — if Level 2 features Jomana as protagonist, Ali and the other sisters could appear as "companion followers" (visual only, not player-controlled) in a mirror of Level 1's companion ribbon. No implementation yet.
+- **Web/Android public release** — waiting on export templates, Android SDK/JDK, and the public license documentation for `level1_exciting_loop.ogg` before any public-facing release. Internal testing (APK sideload, local static server) can happen once templates are installed.
+
+## Level 2 Asset Requirements (Blocked Until Owner Approves)
+
+Before any Level 2 code begins, the following assets are needed at minimum:
+- **Background:** `bg_beach_sky.png`, `bg_beach_buildings.png`, `bg_beach_foreground.png`, `ground_beach.png` — same pipeline as the current Zliten urban art, needs to look authentically Zliten's coastline.
+- **Character sprite:** `jomana_run_1..8.png` (8-frame, same canvas convention as `ali_run_1..8.png`), `jomana_idle.png`, `jomana_jump.png`, `jomana_fall.png`, `jomana_land.png`, `jomana_hurt.png`, `jomana_victory.png`.
+- **Obstacles:** at least 2-3 beach-appropriate obstacles (rock, fishing net, boat mooring) in the same `visual_target_height` / `collision_height` ranges already tuned for the runner.
+- **Optional:** `bg_beach_ambience_loop.ogg` (wave sounds, must be CC0/documented before integration).
+
+None of these exist yet. This is an asset-sourcing and owner-approval gate before any Level 2 code begins.
+
+## What Remains Blocked
+
+| Item | Blocker |
+|---|---|
+| Level 2 code | Owner F6 review of Level 1 not yet complete |
+| Web public release | Missing export templates; `level1_exciting_loop.ogg` license docs for public release |
+| Android public release | Missing JDK, Android SDK, export templates, signing key, Play Store setup |
+| Beach/Jomana assets | Not sourced yet |
+| Ambience audio | No CC0 source found yet |
+| Slide mechanic | Design/scope decision pending |
+
 ## Status
 
-**PLANNED ONLY.** Waiting on `docs/LEVEL_1_GOLD_CHECKLIST.md` (v1.34) and the roadmap refresh (v1.35) before any further Level 2 design work begins, per `docs/AI_GAME_ROADMAP.md` ("v2.0 — Level 2 Design Plan").
+**PLANNING ONLY — LEVEL 2 GATE NOT YET OPENED.** The gate is: owner completes F6 visual/audio review of Level 1 → owner explicitly approves Level 1 Gold → Level 2 work may begin with this document as the initial brief.

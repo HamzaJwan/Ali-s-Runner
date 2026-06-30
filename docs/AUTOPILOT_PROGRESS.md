@@ -1582,3 +1582,18 @@ Checked the working tree for all stray artifacts:
 Final headless boot on the cleaned state: **exit `0`, no parser/runtime errors**. Both music tracks load, all SFX load, all character/obstacle assets load.
 
 Commit: `autopilot: v1.42 release candidate cleanup`.
+
+## v1.50 — Future Roadmap / Level 2 Planning — STATUS: COMPLETE (docs only, no code)
+
+Files changed: `docs/LEVEL_2_PLAN.md`, `docs/AI_GAME_ROADMAP.md`, `docs/FUTURE_FEATURE_BACKLOG.md`.
+
+Updated `docs/LEVEL_2_PLAN.md` with:
+* A clear pre-condition statement (owner F6 review of Level 1 is the gate, not a named milestone number that might shift).
+* **Recommended first Level 2 theme**: جمانة في الشط (Jomana at the Zliten seafront) — rationale: Jomana is already the "path-finder/wise" sister in Level 1 lore, a beach setting is visually distinct, and the same tap-jump runner loop applies without inventing new mechanics; owner decides.
+* A structured list of mechanics deferred from Level 1 (slide mechanic, ambience audio, companion followers, playable sisters) and why each is "later not never."
+* An **asset requirements table** for Level 2 Jomana (background layers, character sprite sheets following the same 8-frame canvas convention as Ali, obstacles) — none exist yet, sourcing/approval is a real gate.
+* A **blocked-items table** covering: Level 2 code (gate not open), web/Android public release (templates + license docs missing), beach/Jomana assets (not sourced), ambience (no CC0 source), slide mechanic (pending design decision).
+
+Nothing about Level 1 was changed. No Level 2 code was written, even speculatively.
+
+Commit: `autopilot: v1.50 future roadmap and level 2 planning`.

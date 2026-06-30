@@ -1608,7 +1608,9 @@ This is backlog only and should not affect Level 1 development. See `docs/FUTURE
 
 ---
 
-### v2.0 — Level 2 Design Plan — STATUS: PLANNED (plan only, not started)
+### v2.0 — Level 2 Design Plan — STATUS: UPDATED AS v1.50 (plan only, not started)
+
+v1.50 update (2026-06-29/30): `docs/LEVEL_2_PLAN.md` has been updated with a recommended first theme (جمانة في الشط), a list of mechanics deferred from Level 1 for Level 2 consideration, Level 2 asset requirements, and a clear blocked-items table. The gate remains: owner must complete F6 review of Level 1 and explicitly approve Gold status before any Level 2 code begins.
 
 Goal:
 Turn the long-standing v1.6 "Level 2 / Part 2: Sisters Adventure" idea into an actual design plan, once Level 1 is confirmed Gold (v1.34) and the roadmap refresh (v1.35) is done. This milestone is the planning step itself — it does not implement any Level 2 content or code.
