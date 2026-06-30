@@ -1541,3 +1541,25 @@ Created `export_presets.cfg` (at the project root, where Godot's editor writes i
 **Hosting note (for reference when templates are ready):** the `exports/web/` output is a fully-static set of files (`.html`, `.js`, `.wasm`, `.pck`). Serve with any static HTTP server - `python -m http.server 8080` locally, or upload to GitHub Pages / Cloudflare Pages / Nginx for online access. Docker/Nginx is optional and not required for testing.
 
 Commit: `autopilot: v1.40 web export preparation`.
+
+## v1.41 — Android APK Preparation — STATUS: BLOCKED_BY_ANDROID_SDK + BLOCKED_BY_JDK + BLOCKED_BY_EXPORT_TEMPLATES
+
+Checked all three required Android export dependencies on this machine. All are missing:
+
+- **JDK:** `java` not in PATH, no JDK directory found. Godot requires JDK 17+ for Android builds.
+- **Android SDK:** `C:\Users\Administrator\AppData\Local\Android\` does not exist. No `adb`, no SDK tools.
+- **Export templates:** same empty state as v1.40 — no templates installed at all.
+
+No export preset for Android was created (unlike Web, where the preset was trivially safe to pre-configure) — the Android preset requires a valid keystore path and SDK paths pointing at real installed locations, so pre-writing fake paths would produce a misleading config that looks ready but immediately fails.
+
+**Owner actions required to unblock (in order):**
+
+1. Install JDK 17 or later (e.g. from `https://adoptium.net/`). Confirm: `java -version` should print `17.x` or higher.
+2. Install Android SDK (easiest: install Android Studio from `https://developer.android.com/studio`; it installs the SDK automatically, or install just the command-line tools). Confirm: `adb version` works.
+3. Install Godot export templates (same as v1.40 step 2-4: editor → Manage Export Templates → install for `4.7.stable`).
+4. In the editor: Project → Export → Add → Android, configure the keystore (for a debug APK, Godot can generate a debug keystore automatically), set the SDK paths to wherever Android Studio installed them.
+5. Export the debug APK: `Godot --headless --path . --export-debug "Android" exports/android/AliRunner.apk` (or use the editor GUI).
+
+**APK internal-test note:** after export, transfer the APK to the owner's phone (USB or email), enable "Install from trusted sources" on the phone, and tap the APK file to install. No Google Play account or signing key is needed for internal testing. Public Play release requires an AAB, a signing keystore, store assets, and a privacy policy - all out of scope for this sprint.
+
+Commit: `autopilot: v1.41 android apk preparation`.
