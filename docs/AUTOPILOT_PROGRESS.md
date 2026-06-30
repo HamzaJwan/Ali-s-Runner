@@ -1597,3 +1597,83 @@ Updated `docs/LEVEL_2_PLAN.md` with:
 Nothing about Level 1 was changed. No Level 2 code was written, even speculatively.
 
 Commit: `autopilot: v1.50 future roadmap and level 2 planning`.
+
+## Final Roadmap Completion Audit — STATUS: COMPLETE
+
+Files changed: `assets/backgrounds/mantarha/bg_buildings.png.png` (+import), `assets/backgrounds/mantarha/bg_foreground.png.png` (+import), and accumulated concurrent-process doc updates committed together.
+
+### Phase 0 — Roadmap Audit Summary
+
+Read and audited `docs/AI_GAME_ROADMAP.md`, `docs/FUTURE_FEATURE_BACKLOG.md`, `docs/LEVEL_1_GOLD_CHECKLIST.md`, `docs/AUTOPILOT_PROGRESS.md`, `docs/AUDIO_DESIGN_PLAN.md`, `docs/ASSET_REQUIREMENTS.md`, `docs/ASSET_CREDITS.md`, `docs/LEVEL_2_PLAN.md`, and `export_presets.cfg`.
+
+#### COMPLETE / AUTOMATED_PASS
+
+All of the following are implemented and have passed automated smoke tests this sprint:
+
+- Arabic menu, cinematic intro, all story checkpoints (Fatima/Zainab/Jomana/Father), companion ribbon, Father family ending.
+- Game Over, Retry, Restart with checkpoint snapshot/restore.
+- Dynamic calm/gameplay music, full SFX system (11 sounds + shard_pickup), safe fallbacks throughout.
+- Ali pose system, 8-frame-ready run, shadow grounded during jump with airborne shrink/fade.
+- Road/lane polish, gameplay zoom 1.15, obstacle grounding contact shadows, obstacle variety (5 types).
+- Animated light shard collectibles, obstacle-relative patterns, pickup juice, `النور` counter.
+- Score/counter pop animations, RTL punctuation fix, Jomana dialogue wrapping.
+- Dialogue blip already plays on each line advance (`dialogue_blip.wav` in SOUND_PATHS since v0.95A) — the per-character typewriter blip (v0.96) is explicitly "later if ever."
+- Menu pulse/bob: **already smooth** (code uses `TRANS_SINE/EASE_IN_OUT` for both idle bob and Play button pulse; `PLAY_BUTTON_PULSE_SCALE=1.05` at 0.9s); the v1.25A-P backlog entry "not started" was stale and the code had already been corrected. Backlog updated.
+
+#### PLANNED_SAFE_TO_IMPLEMENT_NOW (executed in this pass)
+
+- **Improved background art:** `bg_buildings.png.png` (810KB→1056KB, canvas 1672×941, visible 1641×410) and `bg_foreground.png.png` (683KB→1204KB, canvas 1536×1024, visible 1536×933) were both updated by the owner/concurrent process on 2026-06-29 with higher-quality versions. The existing `fit_sprite_visible_to_width`/`align_sprite_visible_left_bottom` pipeline handles both new sizes automatically (confirmed by headless boot log showing both align correctly to `visible_bottom=480.0`). Committed with re-generated `.import` files.
+- **Concurrent-process doc updates committed:** `docs/AUDIO_DESIGN_PLAN.md` (updated to reflect actual integration status of both music tracks), `docs/AUDIO_CREDITS.md`, `docs/ASSET_CREDITS.md`, `docs/ASSET_REQUIREMENTS.md` all had valid, accurate improvements from the sourcing pass.
+
+#### BLOCKED (confirmed, not to be re-attempted this pass)
+
+| Item | Status |
+|---|---|
+| Web export | `BLOCKED_BY_EXPORT_TEMPLATES` |
+| Android APK | `BLOCKED_BY_ANDROID_SDK` + `BLOCKED_BY_JDK` + `BLOCKED_BY_EXPORT_TEMPLATES` |
+| Footstep audio | `BLOCKED_BY_AUDIO_ASSET` (no documented footstep sound in AUDIO_CREDITS.md) |
+| Ambience loops | `BLOCKED_BY_AUDIO_ASSET` (no CC0 ambience files sourced) |
+| Dialogue typewriter per-character | `FUTURE` (AUDIO_DESIGN_PLAN.md: "if ever pursued"; not needed for Level 1 Gold) |
+| Public release | Waiting on owner audio/visual review + `level1_exciting_loop.ogg` license docs |
+
+#### FUTURE / NOT FOR LEVEL 1 (confirmed safe to defer)
+
+- Slide mechanic (changes controls and collision readability; post-Gold or Level 2)
+- Companion followers behind Ali (high visual/layout risk; High-Risk backlog)
+- Audio mute toggle (not in any roadmap doc; new idea, deliberately deferred)
+- Arabic title change (owner decision per explicit documentation)
+- Level 2 implementation (gate not open)
+
+### Phase 1 — Safe Candidates Evaluated
+
+- **Candidate A (Dialogue typewriter):** `BLOCKED_BY_AUDIO_ASSET` for per-character blips; one-per-line dialogue_blip already integrated. Visual per-character reveal is in FUTURE_FEATURE_BACKLOG as "later". Not implemented.
+- **Candidate B (Footstep audio):** `BLOCKED_BY_AUDIO_ASSET`. No footstep sound in any credits doc. Documented and skipped.
+- **Candidate C (Audio mute toggle):** Not in roadmap docs. Evaluated as `NEW_IDEA_NOT_IN_ROADMAP`. Not implemented per the audit-only-implement-documented-items rule.
+- **Candidate D (UI readability polish):** Headless boot and live gameplay review show no obvious UI overflow, clipping, or readability issues introduced this sprint. Confirmed clean at 1152×648, no changes needed.
+- **Candidate E (Foreground/background asset report):** Owner-improved `bg_buildings.png.png` and `bg_foreground.png.png` found uncommitted in working tree. Sizes verified correct (visible areas render at expected proportions), imported, committed. No code changes needed — the dynamic `fit_sprite_visible_to_width` pipeline handled the new dimensions automatically.
+
+### Phase 3 — Full Regression Results
+
+One comprehensive smoke test (deleted after use, `tmp_final_regression_smoke.gd` + `.uid`) chained through every major system:
+
+menu (calm music, default framing) → Play → intro → Skip (gameplay zoom 1.15, gameplay music) → jump (shadow stays on road, shrinks airborne) → landing → obstacle with contact shadow → light shard pickup (count + label) → Fatima (checkpoint, calm music, companion joins, +5 reward, re-zooms, road Y correct) → Zainab (companion joins) → Jomana (companion joins, safer spacing) → Father (all 3 sisters visible, Continue resets to 0) → new run → Fatima again → Game Over (calm music) → Retry (score+count restored from snapshot) → Restart (full reset) → immutable constants verified (gravity 1050, jump -440, max fall 700, buffer 0.12, road Y 510, spawn interval 2.25, spawn X 1292).
+
+**Result: `FINAL_REGRESSION_RESULT=PASS`, 0 failed assertions.**
+
+### Remaining Items After This Sprint
+
+| Item | Status |
+|---|---|
+| Owner F6 visual review | `OWNER_REVIEW_REQUIRED` |
+| Owner audio listening review | `HUMAN_AUDIO_REVIEW_REQUIRED` |
+| `level1_exciting_loop.ogg` public license docs | `LICENSE_VERIFICATION_REQUIRED_BEFORE_PUBLIC_RELEASE` |
+| Web export templates | `BLOCKED_BY_EXPORT_TEMPLATES` |
+| Android JDK + SDK + templates | `BLOCKED_BY_ANDROID_SDK` + `BLOCKED_BY_JDK` + `BLOCKED_BY_EXPORT_TEMPLATES` |
+| Level 2 assets | Not sourced |
+| Slide mechanic | `FUTURE` |
+| Ambience loops | `BLOCKED_BY_AUDIO_ASSET` |
+| Companion followers | `FUTURE / HIGH_RISK` |
+
+Level 1 remains **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED** — not Final Gold.
+
+Commit: `autopilot: final roadmap completion audit`.

@@ -93,6 +93,15 @@ Level 1 remains **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUI
 * ✅ Small score/light-shard counter "pop" juice added.
 * ⬜ `OWNER_F6_RETEST_REQUIRED` — confirm the arc/reward-line patterns feel intentional and fun, not random or distracting, and confirm the shadow fix reads correctly during a real jump.
 
+## 10. Final Roadmap Audit — 2026-06-30
+
+* ✅ Improved background art committed (`bg_buildings.png.png`, `bg_foreground.png.png` — owner-provided higher-quality versions, confirmed rendering correctly at 1152×648).
+* ✅ Menu pulse/bob confirmed already smooth (`TRANS_SINE/EASE_IN_OUT`; backlog entry was stale).
+* ✅ Full end-to-end regression smoke test passed — menu, intro, jump/shadow/run, all 4 checkpoints, Father ending, Game Over, Retry, Restart, music state, collectibles, immutable constants.
+* ✅ Footstep audio — `BLOCKED_BY_AUDIO_ASSET` (no footstep sound in AUDIO_CREDITS.md); documented, correctly deferred.
+* ✅ Dialogue typewriter per-character — `FUTURE` per AUDIO_DESIGN_PLAN.md "if ever pursued"; the one-per-advance blip already plays.
+* ✅ Audio mute toggle — not in roadmap; evaluated and intentionally deferred as a new idea for the owner to approve.
+
 Level 1 remains **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED**, not Final Gold.
 
 ## What "Gold" Does Not Require

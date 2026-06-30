@@ -10,6 +10,7 @@ Place each PNG at the exact path below. If an image is missing, the game keeps u
 | `bg_foreground.png` | `assets/backgrounds/mantarha/` | `1152x648` | Yes | Fills `1152x648` | Foreground details behind gameplay |
 | `ground_mantarha.png` | `assets/backgrounds/mantarha/` | `1152x70` or wider | Yes or No | `1152x70` strip | Ground aligned with the collision surface |
 | `obstacle_block.png` | `assets/objects/` | `512x512` to `1024x1024` | Yes | About `65 px` tall | Runner obstacle art |
+| `light_shard_sheet.png` | `assets/collectibles/light_shard/` | Varies | Yes | Varies | Animated light shard collectible |
 
 ## Exact paths
 
@@ -77,6 +78,26 @@ Filename warning:
 
 * Preferred names use underscores: `ali_run_1.png`, `ali_run_2.png`, `ali_run_3.png`, `ali_run_4.png`.
 * A temporary compatibility path exists for `ali_run1.png` (no underscore, frame 1 only) — the loader checks it only if `ali_run_1.png` is missing. This is a fallback, not the preferred naming convention; rename to `ali_run_1.png` when convenient.
+
+### Future Family Companion Visuals (v1.26/v1.27)
+
+These optional slots support the planned Family Companion Journey. They are not required by the current game and must not be treated as implemented assets:
+
+| File name | Folder path | Recommended source dimensions | Transparency | Stage 1 in-game use | Purpose |
+| --- | --- | --- | --- | --- | --- |
+| `fatima_companion.png` | `assets/characters/fatima/` | `256x256` to `512x512` | Yes | About `40-64 px` portrait/icon | Joined-Fatima HUD/ending visual; seated baby only |
+| `zainab_companion.png` | `assets/characters/zainab/` | `256x256` to `512x512` | Yes | About `40-64 px` portrait/icon | Joined-Zainab HUD/ending visual |
+| `jomana_companion.png` | `assets/characters/jomana/` | `256x256` to `512x512` | Yes | About `40-64 px` portrait/icon | Joined-Jomana HUD/ending visual |
+
+Exact future paths:
+
+* `res://assets/characters/fatima/fatima_companion.png`
+* `res://assets/characters/zainab/zainab_companion.png`
+* `res://assets/characters/jomana/jomana_companion.png`
+
+Stage 1 requires only small transparent portraits/icons. Existing `*_helper.png` art may be reused if it remains readable at HUD size. If neither a companion file nor suitable helper portrait exists, the UI must use a labeled/color fallback and continue safely.
+
+Future Stage 3 following/running poses are not requested now. If they are ever approved, they need a separate asset task with consistent baselines and non-colliding visual rules. Fatima must remain seated and must never receive a running pose.
 
 ## Future Asset Folder Scaffold
 

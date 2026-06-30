@@ -66,7 +66,7 @@ More moving parts, still scoped to one feature at a time.
 * ~~**v1.27 — Father Ending Family Group Scene**~~ — **IMPLEMENTED / OWNER F6 RETEST REQUIRED.** Family composition/reset is tested; current Father ending phrase remains unchanged by owner decision.
 * ~~**v1.2B — Dust/Shadow Polish**~~ — **IMPLEMENTED / OWNER F6 RETEST REQUIRED.** Dust and impact effects work; the reported black rectangle was replaced with a soft oval shadow.
 * **v1.34 — Level 1 Gold Candidate:** **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED.** Do not declare Final Gold yet.
-* **Menu motion smoothing (v1.36 planning; tracked as v1.25A-P):** the Play button's pulse feels jerky/rattling — owner wants it slower, more subtle, smooth sine ease, no sharp grow/shrink. Not started.
+* ~~**Menu motion smoothing (v1.25A-P)**~~ — **DONE.** Both the Play button pulse and Ali's idle bob already use `TRANS_SINE`/`EASE_IN_OUT` with gentle scales (1.05 and 1.04 respectively) and long periods (0.9s and 1.2s). The "not started" status was stale; code was already correct. Confirmed in final audit.
 * **Arabic title reconsideration (v1.36 planning; tracked as v1.25A-P):** "علي رنر" is too narrow for a story that may later include playable Jomana/Zainab. Owner-suggested first try: **"مغامرة نور البيت"** with subtitle **"رحلة في المنطرحة — زليتن"**, keeping "Ali Runner" as the internal/repo name only. Not started — see `docs/AI_GAME_ROADMAP.md` ("v1.25A-P") for the full candidate list.
 * ~~**Cinematic intro redesign (v1.25B)**~~ — **IMPLEMENTED / OWNER F6 RETEST REQUIRED.** The in-world Ali/Father intro, heroic focus, living idle motion, and corrected `التالي` placement are automated-tested.
 

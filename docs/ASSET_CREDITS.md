@@ -8,7 +8,7 @@ No assets have been downloaded or credited yet — this is a template only. Ever
 
 | Asset file | Source URL | Author | License | Attribution required? | Usage | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| *(example)* `ui/star_icon.png` | *(example)* `https://example.com/asset-page` | *(example)* Jane Doe | *(example)* CC0 1.0 | *(example)* No | *(example)* Reward icon for Fatima's star | *(example)* Generic icon, safe per `docs/ASSET_SOURCING_PLAN.md` Section 6 |
+| `collectibles/light_shard/light_shard_sheet.png` | `https://opengameart.org/content/spinning-heart-and-star-trinkets-items-collectables` | Eiyeron | CC0 1.0 | No | Animated light shard / star collectible | Sprite sheet format with 6 frames. Status: HUMAN_VISUAL_REVIEW_REQUIRED |
 
 ## Rules
 

@@ -130,3 +130,11 @@ Vocal jump sourcing was blocked due to OpenGameArt zip download timeouts, so a l
   * Author: HorrorPen
   * License: CC0 1.0
   * Status: BLOCKED_BY_ASSET (Download repeatedly timed out due to OGA rate limits, owner must download manually)
+
+### Collectibles
+* `res://assets/audio/gameplay/shard_pickup.wav`
+  * Source Pack: Kenney UI Audio
+  * Original Name: `switch2.wav`
+  * License: CC0 1.0
+  * Status: HUMAN_AUDIO_REVIEW_REQUIRED
+  * Description: A soft magical chime for collecting light shards/stars.

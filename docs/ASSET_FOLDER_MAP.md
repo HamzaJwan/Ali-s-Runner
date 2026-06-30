@@ -48,6 +48,13 @@ This is the single master map of every asset folder, every expected future file,
 | `assets/objects/` | `obstacle_crate.png` | v0.75 | Later | Yes — same placeholder pattern |
 | `assets/objects/` | `obstacle_sign.png` | v0.75 | Later | Yes — same placeholder pattern |
 
+## Collectibles
+
+| Path | File | Milestone | Required now or later | Fallback exists? |
+| --- | --- | --- | --- | --- |
+| `assets/collectibles/light_shard/` | `light_shard_sheet.png` | v1.37A | **Required for animated shards** | Yes — can use static shape fallback |
+
+
 ## Audio
 
 No audio files exist anywhere yet. All of the following are **later**, starting at v0.95 at the earliest, and none currently have fallback needs since no audio plays at all today (silence is the current "fallback").
@@ -88,6 +95,8 @@ See `docs/AUDIO_DESIGN_PLAN.md` for file format rules, licensing rules, and the 
 | `assets/ui/` | Existed, was empty | Yes (`README.md` only, added in v0.68) | Was previously untracked since it had no files |
 | `assets/objects/` | Yes | Yes | Has `obstacle_block.png` + new `README.md` |
 | `assets/audio/` and all 6 subfolders | Created in v0.68 | Yes (`README.md` only) | Empty until real audio is added |
+| `assets/collectibles/light_shard/` | Created in v1.37A | Yes | Has `light_shard_sheet.png` and `README.md` |
+
 
 ---
 
