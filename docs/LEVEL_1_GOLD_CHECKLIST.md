@@ -103,6 +103,7 @@ To keep this checklist honest and not a moving target, the following are explici
 * Ambience loops, if the owner accepts shipping without them.
 * v1.3 Character Animation Expansion (the older, broader animation-expansion milestone, distinct from the narrower v1.26A calibration fix above).
 * Any Level 2 content (`docs/LEVEL_2_PLAN.md`) — explicitly out of scope until after this checklist.
+* Web / Android export (v1.40/v1.41) — both blocked by missing export templates, Android SDK, and JDK; documented with exact owner action steps in `docs/AUTOPILOT_PROGRESS.md`.
 
 ## How to Use This Checklist
 
