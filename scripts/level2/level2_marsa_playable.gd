@@ -140,6 +140,7 @@ var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
 var _l2_audio: Node   = null         # Level2AudioManager
 var _jomana_vis: Node    = null   # JomanaPlayerVisual (the active instance)
 var _ali_polygon: Node2D = null   # cached $Player/Polygon2D — hidden every frame
+var _init_cam_x: float   = 0.0   # camera X at scene start, for scroll-based parallax
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
@@ -151,6 +152,7 @@ var _boat_times: Array[float] = []
 func _ready() -> void:
 	randomize()
 	_gameplay_cam_pos = _calc_cam_pos()
+	_init_cam_x = _gameplay_cam_pos.x   # capture for scroll-based parallax
 	ground.position = Vector2(VIEW_W / 2.0, GROUND_CENTER_Y)
 
 	obstacle_spawner.setup(spawn_timer)
@@ -663,32 +665,39 @@ func _on_player_landed() -> void:
 #   → left edge at screen-left, tiny drift creates subtle parallax depth.
 
 func _update_background_parallax() -> void:
-	var cam_x := game_camera.position.x
-	var cam_y := game_camera.position.y
-	var zoom  := game_camera.zoom.x          # 0.95 on start screen → 1.38 gameplay
-	var hw    := VIEW_W / (2.0 * zoom)       # half-viewport width in world units
-	var hh    := VIEW_H / (2.0 * zoom)       # half-viewport height in world units
-	var left  := cam_x - hw                  # world X of screen left edge
-	var top   := cam_y - hh                  # world Y of screen top edge
+	var cam_x  := game_camera.position.x
+	var cam_y  := game_camera.position.y
+	var zoom   := game_camera.zoom.x
+	var hw     := VIEW_W / (2.0 * zoom)
+	var hh     := VIEW_H / (2.0 * zoom)
+	var left   := cam_x - hw
+	var top    := cam_y - hh
+	# scroll = distance camera has moved since scene start.
+	# Scroll-based drift is always safe — layers never go off-screen.
+	var scroll := cam_x - _init_cam_x
 
-	# Sky: fully camera-fixed — fills entire backdrop at any zoom.
+	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
 	sky_layer.position = Vector2(left, top)
 
-	# Sea: 12% from top — starts early so the sky/sea line is within the sky area.
-	sea_layer.position.x = left - cam_x * 0.003
-	sea_layer.position.y = top + VIEW_H * 0.12 / zoom
+	# ── Sea: distant, very slow parallax ─────────────────────────────────────
+	# 22% from top puts the sea horizon in the upper third of screen.
+	sea_layer.position.x = left - scroll * 0.012
+	sea_layer.position.y = top + VIEW_H * 0.22 / zoom
 
-	# Buildings: 26% from top — inside the sea content, reduces visible top-edge seam.
-	buildings_layer.position.x = left - cam_x * 0.005
-	buildings_layer.position.y = top + VIEW_H * 0.26 / zoom
+	# ── Buildings: mid-far ────────────────────────────────────────────────────
+	# 32% — minaret and harbour walls visible behind the boats and pier.
+	buildings_layer.position.x = left - scroll * 0.022
+	buildings_layer.position.y = top + VIEW_H * 0.32 / zoom
 
-	# Boats: 46% from top — overlaps lower buildings area.
-	boats_layer.position.x = left - cam_x * 0.008
-	boats_layer.position.y = top + VIEW_H * 0.46 / zoom
+	# ── Boats: mid-near ───────────────────────────────────────────────────────
+	# 52% — fishing boats at sea level, behind the pier wall.
+	boats_layer.position.x = left - scroll * 0.035
+	boats_layer.position.y = top + VIEW_H * 0.52 / zoom
 
-	# Pier: 58% from top. Jomana runs at ~71% → 13% of stone visible, clear visual floor.
+	# ── Pier: camera-fixed (gameplay ground, no horizontal drift) ─────────────
+	# 68% matches CURB_TOP_Y in world coords (stone curb just above Jomana feet at 71%).
 	foreground_layer.position.x = left
-	foreground_layer.position.y = top + VIEW_H * 0.58 / zoom
+	foreground_layer.position.y = top + VIEW_H * 0.68 / zoom
 
 
 # ── Level 2 obstacle visual skins ─────────────────────────────────────────
