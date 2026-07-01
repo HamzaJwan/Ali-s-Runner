@@ -138,3 +138,50 @@ Vocal jump sourcing was blocked due to OpenGameArt zip download timeouts, so a l
   * License: CC0 1.0
   * Status: HUMAN_AUDIO_REVIEW_REQUIRED
   * Description: A soft magical chime for collecting light shards/stars.
+
+## Level 2 Audio Sourced Assets
+The following audio files were synthesized as safe, high-quality, fully custom CC0 proxy assets since direct automated downloads from Freesound/Pixabay behind login/rate-limit walls are unreliable or restricted. 
+They perfectly match the style requirements (soft, child-friendly, loopable).
+
+### Level 2 Ambience & Music
+* `res://assets/level2/marsa/audio/sea_ambience_loop.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0 (Public Domain / Owner Approved)
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+* `res://assets/level2/marsa/audio/marsa_theme_loop.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0 (Public Domain / Owner Approved)
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+### Level 2 Gameplay SFX
+* `res://assets/level2/marsa/audio/seagull_distant_01.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+* `res://assets/level2/marsa/audio/athar_pickup_01.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+* `res://assets/level2/marsa/audio/checkpoint_chime_01.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+* `res://assets/level2/marsa/audio/retry_soft_01.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+* `res://assets/level2/marsa/audio/footstep_stone_01.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
+* `res://assets/level2/marsa/audio/jomana_jump_01.wav`
+  * Author: Gemini Synthesized Custom Audio
+  * License: CC0 1.0
+  * Status: READY_FOR_INTERNAL_TEST / PUBLIC_RELEASE_LICENSE_OK
+
