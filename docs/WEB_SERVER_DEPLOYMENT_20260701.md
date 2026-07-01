@@ -9,7 +9,7 @@ deployment. It is documentation only and does not declare a public release.
 
 ```text
 Deployment branch: deploy/internal-web-20260701
-Source commit: 31ee380 deploy: embed Arabic font for web playtest
+Source state: Level 1 RC plus fixed mobile landscape overlay from f439f60
 Server: 172.31.1.71
 Server path: /opt/Appdata/ali_runner_web
 Compose project: ali-runner-web
@@ -18,6 +18,15 @@ Published port: 8088:80
 Internal diagnostic URL: http://172.31.1.71:8088
 HTTPS playtest URL: https://game.juanspace.org
 ```
+
+Latest redeploy:
+
+- Mobile landscape overlay deployed on 2026-07-01.
+- Parser-safe RTL escapes are used in `mobile_rotate_overlay.gd`.
+- Container health and HTTP/MIME checks passed.
+- Server backup: `/opt/Appdata/ali_runner_web.backup_20260701_214626`.
+- Previous live directory: `/opt/Appdata/ali_runner_web.previous_20260701_214626`.
+- Production remains Level 1 only. Level 2 was not imported or deployed.
 
 ## Cloudflare Tunnel Route
 

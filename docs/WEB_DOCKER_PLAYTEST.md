@@ -4,6 +4,16 @@ This setup serves the current Level 1 RC locally at `http://localhost:8088`.
 It is for internal testing only. It is not a public release and contains no
 Level 2 implementation.
 
+## Mobile Overlay Deployment - 2026-07-01
+
+- The Level 1 HTTPS playtest now includes the mobile landscape overlay.
+- Portrait phone view pauses the tree and asks the player to rotate the phone.
+- Landscape view hides the overlay and resumes normal Level 1 input.
+- The deployed build remains Level 1 only; no Level 2 scenes, scripts, audio,
+  or art are included.
+- Use `https://game.juanspace.org`. Direct IP HTTP is diagnostic only and may
+  fail Godot's Secure Context requirement.
+
 ## Prerequisites
 
 - Godot 4.7 stable and its matching export templates.

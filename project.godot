@@ -8,6 +8,10 @@
 
 config_version=5
 
+[autoload]
+
+MobileRotateOverlay="*res://scripts/ui/mobile_rotate_overlay.gd"
+
 [application]
 
 config/name="test"
