@@ -42,7 +42,24 @@ Jomana wasn't expected at the harbor — Ali's words encourage her to keep going
 
 ---
 
-### Score 35 — فاطمة
+### Score 35 — زينب *(updated order: Zainab before Fatima)*
+**Value:** الصبر والتفكير الهادئ — patience and calm thinking
+
+**Tone:** Steady, grounding. Zainab reminds Jomana to slow down and
+think before moving — wisdom in action.
+
+**Draft dialogue:**
+> زينب: "اهدئي يا جمانة… خذي بالأسباب، وامشي خطوة خطوة."
+> جمانة: "الصبر والتركيز — شجاعتك دايمًا تقوّيني يا زينب."
+
+**Reward:** "حصلت على ثبات زينب."
+
+**Game Over line:**
+"الشجاعة مش ضجيج… ارجع وامشِ بثبات."
+
+---
+
+### Score 60 — فاطمة *(updated order: Fatima after Zainab)*
 **Value:** الرفق والرحمة — mercy and gentleness
 
 **Tone:** Sweet and simple. Fatima's smile reminds Jomana that gentleness
@@ -50,29 +67,12 @@ makes the road lighter. (Fatima remains seated/baby-safe, same as Level 1.)
 
 **Draft dialogue:**
 > فاطمة: "آآ… جمانة! ⭐"
-> جمانة: "فاطمة! ضحكتك تذكّرني إن الرفق يخلي الطريق أخف."
+> جمانة: "فاطمة! الرفق يخلي الطريق أخف، والكلمة الحلوة تفرّح القلب."
 
 **Reward:** "حصلت على فرحة فاطمة."
 
 **Game Over line:**
 "فرحة فاطمة مازالت معاك… ارجع وحاول."
-
----
-
-### Score 60 — زينب
-**Value:** الصبر والتفكير الهادئ — patience and calm thinking
-
-**Tone:** Steady, grounding. Zainab reminds Jomana to slow down and
-think before moving — wisdom in action.
-
-**Draft dialogue:**
-> زينب: "جمانة، اهدئي… خذي بالأسباب وامشي خطوة خطوة."
-> جمانة: "الصبر والتركيز — شجاعتك دايمًا تقوّيني يا زينب."
-
-**Reward:** "حصلت على قلب زينب الشجاع."
-
-**Game Over line:**
-"الشجاعة مش ضجيج… ارجع وامشِ بثبات."
 
 ---
 
@@ -97,8 +97,8 @@ Father sees Jomana arrive with her أثر — every kind word counted.
 |---|---|
 | Start | 225 px/s |
 | After Ali (15) | 240 px/s |
-| After Fatima (35) | 255 px/s |
-| After Zainab (60) | 270 px/s |
+| After Zainab (35) | 255 px/s |
+| After Fatima (60) | 270 px/s |
 | Father ending (90) | — |
 
 ---

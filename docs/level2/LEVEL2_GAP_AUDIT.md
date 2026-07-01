@@ -38,7 +38,7 @@ This table compares the Production Roadmap target with the current implementatio
 | **Seagull SFX** | `seagull_distant_01.wav` (CC0) | ⬜ Not integrated | File + license needed | Audio Lane Sprint 6 |
 | **أثر pickup SFX** | New or reuse Level 1 shard_pickup | ⬜ Currently reusing Level 1 | — | Audio Lane Sprint 6 |
 | **Checkpoint chime** | `checkpoint_chime_01.wav` | ⬜ Currently reusing Level 1 | — | Audio Lane Sprint 6 |
-| **Web export** | Compatibility renderer, single-threaded | ⬜ Export templates still missing | Templates needed + Level 2 added to build | After Sprint 7 |
+| **Web export** | Compatibility renderer, single-threaded | ⬜ Web build exists (Level 1 only); Level 2 not wired into build yet | Level 2 must be integrated into main menu first | After Sprint 7 |
 | **Mobile touch test** | Tap to jump works | ✅ InputEventScreenTouch handled | Owner test needed on real device | Sprint 7 |
 | **QA / owner F6** | Full playthrough approval | ⬜ Pending | Owner must play F6 | NOW — first action |
 | **Arabic RTL text** | All labels RTL-correct, no overflow | ✅ RTL enforced | May need viewport test | Sprint 7 check |
@@ -60,6 +60,6 @@ This table compares the Production Roadmap target with the current implementatio
 | Collectibles | MVP done | Rare types | Intentionally deferred |
 | Checkpoints | 4/4 | NPC art, dialogue approval | Art + Owner |
 | Audio | 0/6 | 6 | CC0 sources + integration |
-| QA/Web | 0/3 | 3 | Owner review + export templates |
+| QA/Web | 0/3 | 3 | Owner review + Level 2 web integration (separate from Level 1 web build) |
 
 **Overall:** Gameplay foundation is complete. The project is blocked on art assets and the owner's F6 review, not on code.

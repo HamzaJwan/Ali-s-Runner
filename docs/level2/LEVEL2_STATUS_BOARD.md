@@ -1,5 +1,5 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
-# Last updated: 2026-07-01 | Commit: 1218487
+# Last updated: 2026-07-01 | Commit: 383f413
 
 Quick reference for owner and coders. Open this file to know exactly where things stand.
 
@@ -15,7 +15,7 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 | Checkpoint zoom micro-focus | +5% on dialogue |
 | Jomana placeholder (teal polygon) | Foot-aligned to pier |
 | Jomana animation pipeline | `jomana_player_visual.gd` — auto-detects PNG frames |
-| Family checkpoint order | Ali(15)→Zainab(35)→Fatima(60)→Father(90) |
+| Family checkpoint order | ✅ Ali(15)→Zainab(35)→Fatima(60)→Father(90) — canonical, confirmed |
 | Checkpoint dialogue (draft) | In `level2_encounter_data.gd` |
 | Game Over card with Arabic | Animated entrance, warm style |
 | Retry / Restart flow | Working correctly |
@@ -40,7 +40,7 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 | Item | Owner/Coder | Notes |
 |---|---|---|
 | Owner F6 camera review | **OWNER** | Open scene → F6 → evaluate camera feel |
-| Level 1 Web export | **Codex** (separate worktree) | Templates required |
+| Level 1 Web export | **Codex** (separate worktree `test-web-deploy`) | Web build works; Arabic font embedding is the remaining issue |
 
 ---
 

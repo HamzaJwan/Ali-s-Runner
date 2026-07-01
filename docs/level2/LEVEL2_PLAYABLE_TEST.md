@@ -36,8 +36,8 @@
 | Pink/gold أثر collectibles | ✅ Same engine as Level 1 |
 | "الأثر: N" HUD counter | ✅ |
 | Ali checkpoint at score 15 | ✅ Placeholder text |
-| Fatima checkpoint at score 35 | ✅ Placeholder text |
-| Zainab checkpoint at score 60 | ✅ Placeholder text |
+| Zainab checkpoint at score 35 | ✅ Placeholder text |
+| Fatima checkpoint at score 60 | ✅ Placeholder text |
 | Father ending at score 90 | ✅ Placeholder text |
 | Game Over card | ✅ Arabic, animated |
 | Retry / Restart buttons | ✅ Working |
