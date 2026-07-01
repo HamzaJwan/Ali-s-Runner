@@ -49,7 +49,11 @@ func _build_sprite_seagull() -> void:
 		sf.add_frame("fly", atlas)
 
 	anim.sprite_frames = sf
-	anim.scale = Vector2(GULL_SCALE * _dir, GULL_SCALE)  # flip when flying right-to-left
+	# Sprite sheet faces LEFT by default.
+	# Flying right (from_right=false, _dir=1) → flip horizontally to face right.
+	# Flying left  (from_right=true,  _dir=-1) → no flip (already faces left).
+	anim.flip_h = not from_right
+	anim.scale = Vector2(GULL_SCALE, GULL_SCALE)
 	add_child(anim)
 	anim.play("fly")
 

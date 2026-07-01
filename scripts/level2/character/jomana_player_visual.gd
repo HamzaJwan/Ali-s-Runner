@@ -123,6 +123,7 @@ func _add_anim(sf: SpriteFrames, name: String, frames: Array, fps: float, loop: 
 
 
 func _play_anim(pose: Pose) -> void:
+	_current_pose = pose   # always keep state in sync with actual animation
 	if _anim == null or _anim.sprite_frames == null:
 		return
 	var anim_name := "run"

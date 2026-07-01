@@ -138,7 +138,8 @@ var npc_arriving       := false
 var audio_manager    := AUDIO_MANAGER.new()
 var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
 var _l2_audio: Node   = null         # Level2AudioManager
-var _jomana_vis: Node = null         # JomanaPlayerVisual (the active instance)
+var _jomana_vis: Node    = null   # JomanaPlayerVisual (the active instance)
+var _ali_polygon: Node2D = null   # cached $Player/Polygon2D — hidden every frame
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
@@ -198,6 +199,14 @@ func _ready() -> void:
 # ── Frame ─────────────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
+	# Suppress Level 1 Ali visual every frame.
+	# player.gd._physics_process() re-enables ali_sprite and placeholder_shape each frame.
+	# _process() runs after _physics_process(), so these are the final values before render.
+	if is_instance_valid(_jomana_vis):
+		jomana_sprite.visible = false
+		if _ali_polygon != null:
+			_ali_polygon.visible = false
+
 	if npc_arriving and encounter_npc != null:
 		encounter_npc.position.x = move_toward(
 			encounter_npc.position.x, ENCOUNTER_TARGET_X, CHECKPOINT_ARRIVAL_SPEED * delta)
@@ -608,13 +617,14 @@ func _setup_jomana_visual() -> void:
 	player.add_child(vis)
 	_jomana_vis = vis
 
-	# Hide the Level 1 Polygon2D (blue rectangle) that shows under Jomana.
-	var player_poly := player.get_node_or_null("Polygon2D")
-	if player_poly != null:
-		player_poly.visible = false
-
-	# Hide AliSprite if it somehow became visible (it starts false in Player.tscn).
+	# Cache Level 1 visual nodes for per-frame suppression.
+	# player.gd._physics_process() calls _set_visual_pose() every frame which
+	# re-enables ali_sprite.visible and placeholder_shape.visible.
+	# We counter it by hiding them every _process() (which runs after physics).
+	_ali_polygon = player.get_node_or_null("Polygon2D") as Node2D
 	jomana_sprite.visible = false
+	if _ali_polygon != null:
+		_ali_polygon.visible = false
 
 	# Start in IDLE — menu should not show Jomana running in place.
 	vis.set_pose(vis.Pose.IDLE)
@@ -656,25 +666,24 @@ func _update_background_parallax() -> void:
 	var left  := cam_x - hw                  # world X of screen left edge
 	var top   := cam_y - hh                  # world Y of screen top edge
 
-	# Sky: fully camera-fixed, stretched to cover entire backdrop.
+	# Sky: fully camera-fixed — fills entire backdrop at any zoom.
 	sky_layer.position = Vector2(left, top)
 
-	# Sea: appears at 18% from screen top; tiny horizontal drift for parallax depth.
+	# Sea: 12% from top — starts early so the sky/sea line is within the sky area.
 	sea_layer.position.x = left - cam_x * 0.003
-	sea_layer.position.y = top + VIEW_H * 0.18 / zoom
+	sea_layer.position.y = top + VIEW_H * 0.12 / zoom
 
-	# Harbor buildings: at 32% from top, slightly more drift.
+	# Buildings: 26% from top — inside the sea content, reduces visible top-edge seam.
 	buildings_layer.position.x = left - cam_x * 0.005
-	buildings_layer.position.y = top + VIEW_H * 0.32 / zoom
+	buildings_layer.position.y = top + VIEW_H * 0.26 / zoom
 
-	# Boats: at 50% from top (behind pier, above gameplay lane).
+	# Boats: 46% from top — overlaps lower buildings area.
 	boats_layer.position.x = left - cam_x * 0.008
-	boats_layer.position.y = top + VIEW_H * 0.50 / zoom
+	boats_layer.position.y = top + VIEW_H * 0.46 / zoom
 
-	# Pier ground: camera-fixed X, positioned so stone edge aligns with Jomana feet.
-	# Jomana's feet are at screen ~71% → pier top at 60% leaves clear visual floor.
+	# Pier: 58% from top. Jomana runs at ~71% → 13% of stone visible, clear visual floor.
 	foreground_layer.position.x = left
-	foreground_layer.position.y = top + VIEW_H * 0.60 / zoom
+	foreground_layer.position.y = top + VIEW_H * 0.58 / zoom
 
 
 # ── Level 2 obstacle visual skins ─────────────────────────────────────────
