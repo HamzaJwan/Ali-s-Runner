@@ -363,13 +363,9 @@ func _apply_l2_collectible_visual(c: Node) -> void:
 	# Load Level 2 أثر shard PNG.
 	var path := L2_MANIFEST.COL_SHARD_SINGLE
 	if not L2_MANIFEST.file_exists(path):
-		if poly != null:
-			poly.visible = true   # restore fallback if art missing
-		return
+		return   # keep hidden — L2 art missing, blank collectible is OK
 	var tex := load(path) as Texture2D
 	if tex == null:
-		if poly != null:
-			poly.visible = true
 		return
 	if c.get_node_or_null("L2ShardSprite") != null:
 		return   # already applied
