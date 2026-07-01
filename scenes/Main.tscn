@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2"]
@@ -42,6 +42,21 @@ corner_radius_bottom_left = 14
 shadow_color = Color(0.02, 0.012, 0.004, 0.45)
 shadow_size = 10
 shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="5"]
+bg_color = Color(0.085, 0.06, 0.03, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.68, 0.46, 0.14, 0.8)
+corner_radius_top_left = 22
+corner_radius_top_right = 22
+corner_radius_bottom_right = 22
+corner_radius_bottom_left = 22
+shadow_color = Color(0.01, 0.006, 0.002, 0.72)
+shadow_size = 22
+shadow_offset = Vector2(0, 8)
 
 [node name="Main" type="Node2D"]
 process_mode = 3
@@ -241,29 +256,31 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TitleLabel" type="Label" parent="UI/StartScreen"]
-offset_left = 326.0
-offset_top = 64.0
-offset_right = 826.0
+offset_left = 276.0
+offset_top = 58.0
+offset_right = 876.0
 offset_bottom = 130.0
 theme_override_font_sizes/font_size = 52
 theme_override_constants/outline_size = 7
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
-text = "علي رنر"
+text = "البحث عن النور"
 horizontal_alignment = 1
 text_direction = 3
 language = "ar"
 
 [node name="SubtitleLabel" type="Label" parent="UI/StartScreen"]
-offset_left = 326.0
-offset_top = 132.0
-offset_right = 826.0
-offset_bottom = 160.0
-theme_override_font_sizes/font_size = 18
+offset_left = 276.0
+offset_top = 134.0
+offset_right = 876.0
+offset_bottom = 164.0
+theme_override_font_sizes/font_size = 17
 theme_override_constants/outline_size = 4
-theme_override_colors/font_color = Color(1, 1, 1, 0.72)
+theme_override_colors/font_color = Color(1, 0.94, 0.72, 0.82)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
-text = "Ali Runner"
+text = "رحلة في المنطرحة — زليتن"
 horizontal_alignment = 1
+text_direction = 3
+language = "ar"
 
 [node name="InstructionLabel" type="Label" parent="UI/StartScreen"]
 offset_left = 326.0
@@ -512,53 +529,112 @@ text = "🗝️"
 mouse_filter = 2
 visible = false
 
-[node name="GameOverLabel" type="Label" parent="UI"]
-offset_left = 426.0
-offset_top = 125.0
-offset_right = 726.0
-offset_bottom = 185.0
-theme_override_font_sizes/font_size = 42
+[node name="GameOverPanel" type="Control" parent="UI"]
+z_index = 90
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameOverDim" type="ColorRect" parent="UI/GameOverPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.03, 0.015, 0.78)
+
+[node name="GameOverCard" type="Panel" parent="UI/GameOverPanel"]
+layout_mode = 0
+offset_left = 256.0
+offset_top = 148.0
+offset_right = 896.0
+offset_bottom = 498.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("5")
+
+[node name="GameOverLabel" type="Label" parent="UI/GameOverPanel/GameOverCard"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 18.0
+offset_right = 640.0
+offset_bottom = 78.0
+theme_override_font_sizes/font_size = 40
 theme_override_constants/outline_size = 6
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_colors/font_color = Color(1.0, 0.88, 0.45, 1.0)
 text = "انتهت المحاولة"
 horizontal_alignment = 1
 text_direction = 3
 language = "ar"
-visible = false
 
-[node name="GameOverMessage" type="Label" parent="UI"]
-offset_left = 226.0
-offset_top = 205.0
-offset_right = 926.0
-offset_bottom = 295.0
-theme_override_colors/font_outline_color = Color(0, 0, 0, 0.82)
-theme_override_font_sizes/font_size = 24
-theme_override_constants/outline_size = 5
+[node name="GameOverMessage" type="Label" parent="UI/GameOverPanel/GameOverCard"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 86.0
+offset_right = 612.0
+offset_bottom = 178.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_colors/font_color = Color(0.95, 0.92, 0.84, 1.0)
+theme_override_font_sizes/font_size = 22
+theme_override_constants/outline_size = 4
 text = "الطريق ما زال في بدايته يا علي… حاول مرة ثانية."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 text_direction = 3
 language = "ar"
-visible = false
 
-[node name="RetryButton" type="Button" parent="UI"]
-offset_left = 411.0
-offset_top = 325.0
-offset_right = 741.0
-offset_bottom = 373.0
+[node name="GameOverLightCount" type="Label" parent="UI/GameOverPanel/GameOverCard"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 185.0
+offset_right = 640.0
+offset_bottom = 220.0
 theme_override_font_sizes/font_size = 18
+theme_override_constants/outline_size = 3
+theme_override_colors/font_color = Color(1.0, 0.88, 0.38, 1.0)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.6)
+text = "النور الذي جمعته: 0"
+horizontal_alignment = 1
+text_direction = 3
+language = "ar"
+
+[node name="RetryButton" type="Button" parent="UI/GameOverPanel/GameOverCard"]
+layout_mode = 0
+offset_left = 152.0
+offset_top = 234.0
+offset_right = 488.0
+offset_bottom = 280.0
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("3")
+theme_override_styles/hover = SubResource("4")
+theme_override_styles/pressed = SubResource("4")
+theme_override_styles/focus = SubResource("4")
+theme_override_colors/font_color = Color(0.12, 0.08, 0.04, 1)
+theme_override_colors/font_hover_color = Color(0.12, 0.08, 0.04, 1)
 text = "إعادة المحاولة من آخر نقطة"
-visible = false
+text_direction = 3
+language = "ar"
 
-[node name="RestartButton" type="Button" parent="UI"]
-offset_left = 411.0
-offset_top = 390.0
-offset_right = 741.0
-offset_bottom = 438.0
+[node name="RestartButton" type="Button" parent="UI/GameOverPanel/GameOverCard"]
+layout_mode = 0
+offset_left = 182.0
+offset_top = 294.0
+offset_right = 458.0
+offset_bottom = 338.0
 theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("2")
+theme_override_styles/hover = SubResource("2")
+theme_override_colors/font_color = Color(1.0, 0.87, 0.55, 0.92)
 text = "إعادة البدء من البداية"
-visible = false
+text_direction = 3
+language = "ar"
 
 [node name="CheckpointPanel" type="Control" parent="UI"]
 process_mode = 3

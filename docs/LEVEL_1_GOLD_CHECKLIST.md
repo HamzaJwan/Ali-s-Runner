@@ -121,4 +121,16 @@ To keep this checklist honest and not a moving target, the following are explici
 3. The ⬜ HUMAN_TEST_REQUIRED items cannot be closed by any AI agent — they need the owner to actually press F6 and look/listen.
 4. Once every item is ✅ or explicitly owner-accepted, declare Level 1 Gold and proceed to `docs/AI_GAME_ROADMAP.md` ("v1.35 — Complete Roadmap Refresh") and then `docs/LEVEL_2_PLAN.md`.
 
-**Current overall status: NOT FINAL GOLD — AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED.** Automated checks cover the complete Level 1 loop and latest polish. The owner gates above remain open, including dynamic-music listening, Jomana/RTL review, LAND/post-checkpoint-height retest, and active-audio approval.
+**Current overall status: INTERNAL RELEASE CANDIDATE / OWNER FINAL VISUAL AND AUDIO APPROVAL REQUIRED.**
+
+## 11. v1.0-RC — Final Polish Pass — 2026-07-01
+
+* ✅ Public title renamed: "البحث عن النور" (subtitle: "رحلة في المنطرحة — زليتن"). Internal/repo name "Ali Runner" unchanged.
+* ✅ Ali menu feet anchored — idle bob switched from scale to Y-position bob; fade-in entrance replaces scale-based zoom-in; feet never float above the road.
+* ✅ Play button pulse reduced: 1.018 scale, 1.6s period — alive but not shaky.
+* ✅ Collectible spacing increased (ARC 48px, REWARD_LINE 62px); pattern cooldown 1.8s; minimum independent shard gap 62px.
+* ✅ Game Over redesigned: warm dark overlay panel, rounded card, gold title, story message, live light-shard count "النور الذي جمعته: N", golden/dark button pair, animated entrance (fade + scale pop).
+* ✅ Release hygiene: rpg_voice.zip, dl_pickup.py, scrape_coin.py, temp/ all removed.
+* ⬜ `OWNER_F6_VISUAL_REQUIRED` — visual review of new title, menu fix, collectible spacing, and Game Over card at 1152×648.
+
+Level 1 remains **INTERNAL RELEASE CANDIDATE / OWNER FINAL VISUAL AND AUDIO APPROVAL REQUIRED** — not Final Gold.

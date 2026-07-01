@@ -58,11 +58,11 @@ const MENU_ALI_X := 320.0
 const MENU_ALI_VISUAL_HEIGHT := 190.0
 const MENU_HERO_ZOOM_IN_TIME := 0.5
 const MENU_IDLE_BOB_TIME := 1.2
-const MENU_IDLE_BOB_SCALE := 1.04
+const MENU_IDLE_BOB_PX := 3.5
 const MENU_FADE_IN_TIME := 0.5
 const INTRO_FADE_IN_TIME := 0.3
-const PLAY_BUTTON_PULSE_SCALE := 1.05
-const PLAY_BUTTON_PULSE_TIME := 0.9
+const PLAY_BUTTON_PULSE_SCALE := 1.018
+const PLAY_BUTTON_PULSE_TIME := 1.6
 const INTRO_LINES := [
 	{
 		"speaker": "الراوي",
@@ -181,10 +181,12 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var zainab_companion_placeholder: Control = $UI/CompanionRibbon/ZainabCompanionPlaceholder
 @onready var jomana_companion_texture: TextureRect = $UI/CompanionRibbon/JomanaCompanionTexture
 @onready var jomana_companion_placeholder: Control = $UI/CompanionRibbon/JomanaCompanionPlaceholder
-@onready var game_over_label: Label = $UI/GameOverLabel
-@onready var game_over_message: Label = $UI/GameOverMessage
-@onready var retry_button: Button = $UI/RetryButton
-@onready var restart_button: Button = $UI/RestartButton
+@onready var game_over_panel: Control = $UI/GameOverPanel
+@onready var game_over_label: Label = $UI/GameOverPanel/GameOverCard/GameOverLabel
+@onready var game_over_message: Label = $UI/GameOverPanel/GameOverCard/GameOverMessage
+@onready var game_over_light_count: Label = $UI/GameOverPanel/GameOverCard/GameOverLightCount
+@onready var retry_button: Button = $UI/GameOverPanel/GameOverCard/RetryButton
+@onready var restart_button: Button = $UI/GameOverPanel/GameOverCard/RestartButton
 @onready var start_screen: Control = $UI/StartScreen
 @onready var menu_title_label: Label = $UI/StartScreen/TitleLabel
 @onready var menu_subtitle_label: Label = $UI/StartScreen/SubtitleLabel
@@ -253,6 +255,7 @@ var intro_active := false
 var intro_step_index := 0
 var _menu_idle_tween: Tween
 var _play_button_pulse_tween: Tween
+var _menu_ali_base_y := 0.0
 var _menu_zoom_tween: Tween
 var _menu_fade_tween: Tween
 var _intro_focus_tween: Tween
@@ -384,10 +387,7 @@ func _show_start_screen() -> void:
 	start_screen.visible = true
 	score_label.visible = false
 	light_shard_label.visible = false
-	game_over_label.visible = false
-	game_over_message.visible = false
-	retry_button.visible = false
-	restart_button.visible = false
+	game_over_panel.visible = false
 	obstacle_spawner.stop_spawning()
 	obstacle_spawner.clear_obstacles()
 	collectible_spawner.stop_spawning()
@@ -406,35 +406,41 @@ func _show_menu_hero_presentation() -> void:
 		ASSET_UTILS.align_sprite_visible_bottom(
 			player_story_sprite, PLAYER_COLLISION_HALF_HEIGHT
 		)
+	# Save calibrated position so the idle bob can return to it exactly.
+	_menu_ali_base_y = player_story_sprite.position.y
 	_play_menu_hero_zoom_in()
 	_start_menu_idle_motion()
 	_play_menu_intro_fade()
 
 
 func _play_menu_hero_zoom_in() -> void:
-	var target_scale := player_story_sprite.scale
-	player_story_sprite.scale = target_scale * 0.85
+	# Pure fade-in only — no scale change so the feet never float above
+	# the road during the entrance. The scale was already set correctly
+	# by align_sprite_visible_bottom; changing it would shift the visible
+	# bottom away from PLAYER_COLLISION_HALF_HEIGHT.
 	player_story_sprite.modulate.a = 0.0
-	_menu_zoom_tween = create_tween().set_parallel()
-	_menu_zoom_tween.tween_property(
-		player_story_sprite, "scale", target_scale, MENU_HERO_ZOOM_IN_TIME
-	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_menu_zoom_tween = create_tween()
 	_menu_zoom_tween.tween_property(
 		player_story_sprite, "modulate:a", 1.0, MENU_HERO_ZOOM_IN_TIME
 	)
 
 
 func _start_menu_idle_motion() -> void:
+	# Position-only Y bob: scale stays fixed at its calibrated value so
+	# the feet never lift off the road. The sprite rises MENU_IDLE_BOB_PX
+	# pixels (y decreases = up in Godot 2D) and returns, looping smoothly.
 	_stop_menu_idle_motion()
-	var base_scale := player_story_sprite.scale
 	_menu_idle_tween = create_tween()
 	_menu_idle_tween.set_loops()
 	_menu_idle_tween.tween_property(
-		player_story_sprite, "scale", base_scale * MENU_IDLE_BOB_SCALE,
+		player_story_sprite, "position:y",
+		_menu_ali_base_y - MENU_IDLE_BOB_PX,
 		MENU_IDLE_BOB_TIME
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_menu_idle_tween.tween_property(
-		player_story_sprite, "scale", base_scale, MENU_IDLE_BOB_TIME
+		player_story_sprite, "position:y",
+		_menu_ali_base_y,
+		MENU_IDLE_BOB_TIME
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_start_play_button_pulse()
 
@@ -792,10 +798,7 @@ func _begin_run(initial_score: int, checkpoint: int, obstacle_speed: float) -> v
 	score_label.visible = true
 	score_label.text = "النقاط: %d" % score
 	light_shard_label.visible = true
-	game_over_label.visible = false
-	game_over_message.visible = false
-	retry_button.visible = false
-	restart_button.visible = false
+	game_over_panel.visible = false
 	_reset_ali_for_gameplay()
 	player.set_gameplay_active(true)
 	obstacle_spawner.clear_obstacles()
@@ -903,21 +906,36 @@ func _play_impact_bounce() -> void:
 
 
 func _show_game_over_options() -> void:
-	game_over_label.visible = true
-	game_over_message.visible = true
-	restart_button.visible = true
-
 	var checkpoint_config := ENCOUNTER_DATA.get_checkpoint(last_reached_checkpoint)
 	if checkpoint_config.is_empty():
 		game_over_message.text = ENCOUNTER_DATA.rtl_safe(
 			ENCOUNTER_DATA.GAME_OVER_BEFORE_CHECKPOINT
 		)
 		retry_button.visible = false
-		restart_button.grab_focus()
 	else:
 		game_over_message.text = ENCOUNTER_DATA.rtl_safe(checkpoint_config["game_over_line"])
 		retry_button.visible = true
+
+	game_over_light_count.text = "النور الذي جمعته: %d" % collectible_count
+
+	var card: Node = game_over_panel.get_node("GameOverCard")
+	game_over_panel.modulate.a = 0.0
+	card.scale = Vector2(0.92, 0.92)
+	card.pivot_offset = card.size / 2.0
+	game_over_panel.visible = true
+
+	var enter_tween := create_tween().set_parallel()
+	enter_tween.tween_property(
+		game_over_panel, "modulate:a", 1.0, 0.28
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	enter_tween.tween_property(
+		card, "scale", Vector2.ONE, 0.28
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	if retry_button.visible:
 		retry_button.grab_focus()
+	else:
+		restart_button.grab_focus()
 
 
 func _on_restart_pressed() -> void:

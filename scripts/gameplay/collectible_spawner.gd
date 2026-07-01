@@ -63,7 +63,7 @@ const ARC_ABOVE_CHANCE := 0.15
 const REWARD_LINE_CHANCE := 0.12
 const RAISED_NEAR_BARRIER_CHANCE := 0.1
 const ARC_SHARD_COUNT := 3
-const ARC_SPACING_X := 26.0
+const ARC_SPACING_X := 48.0
 # Clearance above the *specific* obstacle's own collision top (not a flat
 # world Y), so this is always reachable regardless of obstacle height: at
 # this project's real jump apex, the body's collision spans ~369.8-417.8 -
@@ -71,12 +71,21 @@ const ARC_SPACING_X := 26.0
 # still lands at 434, comfortably inside that band, not at its edge.
 const ARC_CLEARANCE_ABOVE_OBSTACLE := 20.0
 const REWARD_LINE_COUNT := 3
-const REWARD_LINE_SPACING_X := 50.0
-const REWARD_LINE_START_OFFSET_X := 70.0
+const REWARD_LINE_SPACING_X := 62.0
+const REWARD_LINE_START_OFFSET_X := 80.0
 # Reachable while just running (no jump) - same reasoning as ROAD_SHARD_Y.
 const REWARD_LINE_Y := ROAD_SURFACE_Y - 30.0
-const RAISED_NEAR_BARRIER_OFFSET_X := 40.0
+const RAISED_NEAR_BARRIER_OFFSET_X := 45.0
 const RAISED_NEAR_BARRIER_Y := ROAD_SURFACE_Y - 60.0
+# After any obstacle-relative pattern fires, suppress the independent
+# baseline timer for this long so the two sources never visually crowd
+# each other. Uses a one-shot timer restart rather than _process tracking.
+const PATTERN_BASELINE_COOLDOWN := 1.8
+# Minimum horizontal gap between the right-most live shard and SPAWN_X
+# before a NEW baseline shard is allowed.  Pattern shards are placed at
+# explicit relative offsets and are already guaranteed by construction not
+# to overlap each other, so this check is only applied to the baseline path.
+const MIN_SHARD_SPACING_X := 62.0
 
 var current_speed := 225.0
 var _spawn_timer: Timer
@@ -123,10 +132,19 @@ func _on_base_timer_timeout() -> void:
 
 
 func _spawn_baseline_shard() -> void:
+	if _shard_too_close_to_spawn_x():
+		return
 	if _rng.randf() < ELEVATED_SHARD_CHANCE or _obstacle_too_close_to_spawn_x():
 		_spawn_shard_at(SPAWN_X, ELEVATED_SHARD_Y)
 	else:
 		_spawn_shard_at(SPAWN_X, ROAD_SHARD_Y)
+
+
+func _shard_too_close_to_spawn_x() -> bool:
+	for child in get_children():
+		if child is Node2D and absf(child.global_position.x - SPAWN_X) < MIN_SHARD_SPACING_X:
+			return true
+	return false
 
 
 func _obstacle_too_close_to_spawn_x() -> bool:
@@ -156,12 +174,27 @@ func _on_obstacle_spawned(definition: Dictionary, obstacle_position: Vector2) ->
 	var collision_height: float = definition.get("collision_height", 50.0)
 	var collision_width: float = definition.get("collision_width", 30.0)
 	var roll := _rng.randf()
+	var spawned_pattern := false
 	if roll < ARC_ABOVE_CHANCE:
 		_spawn_arc_above(obstacle_position, collision_height)
+		spawned_pattern = true
 	elif roll < ARC_ABOVE_CHANCE + REWARD_LINE_CHANCE:
 		_spawn_reward_line(obstacle_position)
+		spawned_pattern = true
 	elif roll < ARC_ABOVE_CHANCE + REWARD_LINE_CHANCE + RAISED_NEAR_BARRIER_CHANCE:
 		_spawn_raised_near_barrier(obstacle_position, collision_width)
+		spawned_pattern = true
+	if spawned_pattern:
+		_extend_base_timer(PATTERN_BASELINE_COOLDOWN)
+
+
+func _extend_base_timer(extra_seconds: float) -> void:
+	if _spawn_timer == null or not _spawn_timer.is_inside_tree():
+		return
+	var remaining := _spawn_timer.time_left
+	_spawn_timer.stop()
+	_spawn_timer.wait_time = remaining + extra_seconds
+	_spawn_timer.start()
 
 
 ## A short arc of shards above the obstacle, cleared by

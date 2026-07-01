@@ -1677,3 +1677,47 @@ menu (calm music, default framing) → Play → intro → Skip (gameplay zoom 1.
 Level 1 remains **AUTOMATED GOLD CANDIDATE / OWNER VISUAL AND AUDIO REVIEW REQUIRED** — not Final Gold.
 
 Commit: `autopilot: final roadmap completion audit`.
+
+## v1.0-RC — Menu, Title, Collectible, and Game Over Polish — STATUS: INTERNAL RELEASE CANDIDATE / OWNER FINAL VISUAL AND AUDIO APPROVAL REQUIRED
+
+Files changed: `scripts/main.gd`, `scripts/gameplay/collectible_spawner.gd`, `scenes/Main.tscn`, `docs/AUTOPILOT_PROGRESS.md`, `docs/LEVEL_1_GOLD_CHECKLIST.md`.
+
+### Task A — Ali Menu Grounding Fix
+
+**Root cause:** The idle bob previously animated `player_story_sprite.scale`, causing the sprite to expand from its texture origin. Since `align_sprite_visible_bottom()` sets `sprite.position.y` once at the calibrated scale, any scale change shifts the visible bottom away from the road — feet float. Additionally `_play_menu_hero_zoom_in()` set `scale = target * 0.85` before `_start_menu_idle_motion()` captured `base_scale`, so the idle motion oscillated around the wrong 0.85× value and never settled at the correct calibrated height.
+
+**Fix:** `_play_menu_hero_zoom_in()` now does a pure alpha fade-in (no scale change). `_start_menu_idle_motion()` bobs `position.y ± MENU_IDLE_BOB_PX (3.5px)` instead of scale. Feet are permanently anchored to the road. New `_menu_ali_base_y` var records the calibrated Y on each menu show.
+
+### Task B — Play Button Pulse
+
+`PLAY_BUTTON_PULSE_SCALE` 1.05 → **1.018**. `PLAY_BUTTON_PULSE_TIME` 0.9s → **1.6s**. Button now breathes at barely 2% scale over 1.6s — alive but not jittery.
+
+### Task C — Public Game Title Renamed
+
+`TitleLabel.text` "علي رنر" → **"البحث عن النور"**. `SubtitleLabel.text` "Ali Runner" → **"رحلة في المنطرحة — زليتن"** (RTL properties added). Repository/script identifiers remain "Ali Runner" unchanged.
+
+### Task D — Collectible Spacing
+
+`ARC_SPACING_X` 26 → **48px**. `REWARD_LINE_SPACING_X` 50 → **62px**. `REWARD_LINE_START_OFFSET_X` 70 → **80px**. Added `PATTERN_BASELINE_COOLDOWN := 1.8` (extends baseline timer after any pattern), `MIN_SHARD_SPACING_X := 62.0` (skips baseline spawn if a shard is already too close), and the `_extend_base_timer()` / `_shard_too_close_to_spawn_x()` helpers.
+
+### Task E — Modern Game Over UI
+
+Replaced the 4 flat floating Labels/Buttons with a proper `$UI/GameOverPanel` overlay:
+- `GameOverDim` (full-screen 78% dark warm tint).
+- `GameOverCard` (640×350px warm-dark card, golden border, rounded corners, soft shadow — new SubResource "5").
+- `GameOverLabel` (gold title "انتهت المحاولة", 40pt).
+- `GameOverMessage` (warm white story message, 22pt, autowrap).
+- `GameOverLightCount` (gold "النور الذي جمعته: N", live count per Game Over, 18pt).
+- `RetryButton` (golden, same style as Play button). `RestartButton` (dark, same as SkipIntro).
+- Entrance: panel fades in (0.28s), card pops 0.92→1.0 scale (TRANS_BACK/EASE_OUT).
+All 3 hide/show sites in main.gd updated to use `game_over_panel.visible`.
+
+### Task F — Release Hygiene
+
+Deleted: `rpg_voice.zip`, `dl_pickup.py`, `scrape_coin.py`, `temp/audio_sourcing/kenney_ui.zip`, `temp/` dir. `project.godot` viewport confirmed `1152×648`.
+
+### Validation
+
+`RC_SMOKE=PASS, 0 failures`: title text, Ali feet anchored (bob within ±3.5px), pulse ≤ 1.025, panel hidden at boot, collectible pickup, Game Over panel visible with correct light count, Restart works, all immutable constants unchanged.
+
+Commit: `autopilot: v1.0 RC menu collectible and game over polish`.
