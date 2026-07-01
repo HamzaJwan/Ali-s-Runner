@@ -10,11 +10,16 @@ Level 2 implementation.
 - Docker Desktop using the `desktop-linux` context.
 - A Chromium-based browser or Firefox with WebGL 2.0 support.
 
-Godot 4 Web exports use WebGL 2.0 and the Compatibility renderer. The project
-keeps its existing Mobile renderer on Windows and uses the project setting
-override `renderer/rendering_method.web="gl_compatibility"` for Web only.
-The Web preset explicitly disables thread support, so this local server does
-not require COOP/COEP headers for the first internal test.
+Godot 4 Web exports use WebGL 2.0 and the Compatibility renderer. This isolated
+deployment branch therefore uses `renderer/rendering_method="gl_compatibility"`;
+the gameplay branch remains untouched. The Web preset explicitly disables
+thread support, so this local server does not require COOP/COEP headers for the
+first internal test.
+
+The Web preset keeps desktop texture compression enabled and disables mobile
+ETC2/ASTC compression. Godot 4.7 otherwise rejects the preset when those mobile
+texture variants have not been imported, even though this internal build targets
+desktop browsers.
 
 ## Install the Web export templates
 
@@ -58,6 +63,18 @@ docker compose -f docker-compose.web.yml down
 5. Open browser developer tools and check for missing `.wasm`, `.pck`, or `.js`
    requests.
 6. Test the page at desktop size and in mobile device emulation.
+
+## Current browser-test blocker
+
+The first Docker browser run loads the HTML, JavaScript, PCK, and WASM files
+successfully, but Arabic UI text renders as missing-glyph boxes. The project has
+no embedded `.ttf` or `.otf` font, so the Web build cannot rely on the Windows
+system-font fallback available during local editor testing.
+
+Before this build can pass owner browser review, add a locally packaged Arabic
+font with documented redistribution rights, assign it through the Godot UI
+theme, and rebuild the Web export. Do not solve this by copying a Windows font
+or downloading an unlicensed font into the deployment branch.
 
 ## Moving to a production server later
 
