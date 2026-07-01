@@ -112,7 +112,7 @@ func _build_overlay() -> void:
 
 	# Main Arabic title
 	var title := Label.new()
-	title.text = "‏اقلب الهاتف بالعرض"
+	title.text = "\u200fاقلب الهاتف بالعرض"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color(1.0, 0.90, 0.55, 1.0))
@@ -124,7 +124,7 @@ func _build_overlay() -> void:
 
 	# Subtitle
 	var sub := Label.new()
-	sub.text = "‏اللعبة مصممة للعب بالعرض"
+	sub.text = "\u200fاللعبة مصممة للعب بالعرض"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 18)
 	sub.add_theme_color_override("font_color", Color(0.8, 0.8, 0.85, 0.9))
@@ -134,7 +134,7 @@ func _build_overlay() -> void:
 
 	# Small tip
 	var tip := Label.new()
-	tip.text = "‏بعد قلب الهاتف المس الشاشة للمتابعة"
+	tip.text = "\u200fبعد قلب الهاتف المس الشاشة للمتابعة"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_font_size_override("font_size", 14)
 	tip.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65, 0.8))

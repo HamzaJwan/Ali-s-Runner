@@ -110,3 +110,12 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 | Level 2 in main menu | Level 2 not production-ready yet |
 | Level 3 (Zainab) | Level 2 must reach production first |
 | Full game title change | Owner decision only |
+
+---
+
+## 2026-07-01 Parser Hotfix
+
+- Fixed the Level 2 audio manager preload parse error caused by invalid named-argument syntax.
+- Confirmed `Level2_Marsa_Playable.tscn` loads and detects all eight Level 2 audio files.
+- Level 2 audio remains local to Level 2; Level 1 audio and gameplay were not changed.
+- Escaped the mobile rotate overlay's RTL marks so the project autoload parses in Godot 4.7.

@@ -39,10 +39,10 @@ func setup(parent: Node, level1_audio_manager = null) -> void:
 	_sfx      = _make_player(parent, "L2SFX",      PICKUP_VOLUME_DB, false)
 	_jump     = _make_player(parent, "L2Jump",     JUMP_VOLUME_DB, false)
 
-	_load_stream_to(_ambience, "sea_ambience", looping=true)
+	_load_stream_to(_ambience, "sea_ambience", true)
 	_load_stream_to(_seagull, "seagull")
 	# Theme and jump streams pre-loaded but not played yet.
-	_load_stream_to(_theme, "theme", looping=true)
+	_load_stream_to(_theme, "theme", true)
 	_load_stream_to(_jump, "jump")
 
 	_print_status()
