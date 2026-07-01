@@ -1,84 +1,42 @@
-## level2_environment_visual.gd
-## Level 2 environment layer loader — auto-detects real PNG assets when present,
-## falls back to current procedural shapes silently (non-fatal).
-##
-## To activate real art:
-##   Drop PNGs into assets/level2/marsa/backgrounds/
-##   (see docs/level2/LEVEL2_ENVIRONMENT_ASSET_REQUIREMENTS.md)
-##   Re-open Level2_Marsa_Playable.tscn — no code change needed.
-##
-## Lane: Environment Lane only. Do NOT call from Level 1 or shared scripts.
+## level2_environment_visual.gd — Level 2 environment PNG auto-loader.
+## Reads paths from Level2AssetManifest. Each layer can be dropped independently.
+## Falls back to procedural shapes if any layer is missing. Non-fatal.
 extends Node
 
-const ASSET_ROOT := "res://assets/level2/marsa/backgrounds/"
+const MANIFEST := preload("res://scripts/level2/level2_asset_manifest.gd")
 
-const LAYER_SPECS: Array[Dictionary] = [
-	{
-		"name": "L2_SkyLayer",
-		"file": "bg_sky_marsa.png",
-		"parallax_ratio": 0.01,
-		"z": -30,
-		"loop": false,
-	},
-	{
-		"name": "L2_SeaBreakwaterLayer",
-		"file": "bg_sea_breakwater.png",
-		"parallax_ratio": 0.05,
-		"z": -20,
-		"loop": true,
-	},
-	{
-		"name": "L2_FarBuildingsLayer",
-		"file": "bg_harbor_buildings.png",
-		"parallax_ratio": 0.15,
-		"z": -15,
-		"loop": true,
-	},
-	{
-		"name": "L2_BoatsMidLayer",
-		"file": "mg_boats_mid.png",
-		"parallax_ratio": 0.35,
-		"z": -10,
-		"loop": true,
-	},
-	{
-		"name": "L2_ForegroundPierLayer",
-		"file": "fg_pier_ground.png",
-		"parallax_ratio": 1.0,
-		"z": -5,
-		"loop": true,
-	},
-]
+const VIEW_W := 1152.0
+const VIEW_H := 648.0
 
 var _loaded_count := 0
 var _missing: Array[String] = []
 
 
-## Call from Level2_Marsa_Playable._ready() with the Background node reference.
-## Returns true if at least one real asset was loaded.
-func setup(background_node: Node2D, view_w: float) -> bool:
+## Call once from Level2_Marsa_Playable._ready() with the $Background node.
+## Returns true if at least one real layer was loaded.
+func setup(background_node: Node2D) -> bool:
 	_loaded_count = 0
 	_missing.clear()
 
-	for spec: Dictionary in LAYER_SPECS:
-		var layer: Node2D = background_node.get_node_or_null(spec["name"])
+	var layers := MANIFEST.get_background_layers()
+	for node_name: String in layers:
+		var path: String = layers[node_name]
+		var layer: Node2D = background_node.get_node_or_null(node_name)
 		if layer == null:
+			push_warning("[L2 Env] Layer node '%s' not found in scene." % node_name)
 			continue
-		var full_path: String = ASSET_ROOT + spec["file"]
-		var tex := load(full_path) as Texture2D
+		var tex := load(path) as Texture2D
 		if tex != null:
-			_apply_layer_sprite(layer, tex, view_w, spec)
+			_apply_layer(layer, tex, node_name)
 			_loaded_count += 1
 		else:
-			_missing.append(spec["file"])
+			_missing.append(path.get_file())
 
 	if _missing.size() > 0:
-		var warn_msg: String = (
-			"[Level2 Environment] %d layer(s) missing — using procedural placeholder: %s. Drop PNGs in %s"
-			% [_missing.size(), ", ".join(_missing), ASSET_ROOT]
+		push_warning(
+			"[L2 Env] %d background layer(s) using procedural placeholder: %s" %
+			[_missing.size(), ", ".join(_missing)]
 		)
-		push_warning(warn_msg)
-
 	return _loaded_count > 0
 
 
@@ -86,25 +44,21 @@ func get_loaded_count() -> int:
 	return _loaded_count
 
 
-func get_missing_files() -> Array[String]:
-	return _missing.duplicate()
-
-
-func _apply_layer_sprite(layer: Node2D, tex: Texture2D, view_w: float, spec: Dictionary) -> void:
-	# Clear any existing procedural children from the layer
+func _apply_layer(layer: Node2D, tex: Texture2D, node_name: String) -> void:
+	# Remove procedural children before placing real sprite.
 	for child: Node in layer.get_children():
 		child.queue_free()
 
 	var sprite := Sprite2D.new()
-	sprite.name = "LayerSprite_" + spec["name"]
+	sprite.name = "RealBG_" + node_name
 	sprite.texture = tex
 	sprite.centered = false
 	sprite.position = Vector2.ZERO
 
-	# Scale sprite to fit viewport width while preserving aspect
-	var tex_w: float = float(tex.get_width())
-	if tex_w > 0.0:
-		sprite.scale = Vector2(view_w / tex_w, view_w / tex_w)
+	# Scale to fill viewport width (preserve aspect).
+	var tw: float = float(tex.get_width())
+	if tw > 0.0:
+		var s := VIEW_W / tw
+		sprite.scale = Vector2(s, s)
 
-	sprite.z_index = spec.get("z", 0)
 	layer.add_child(sprite)

@@ -151,7 +151,7 @@ func _ready() -> void:
 
 	# Try loading real PNG environment layers — falls back to procedural if missing.
 	var env_loader := L2_ENV.new()
-	var any_real := env_loader.setup(bg_node, VIEW_W)
+	var any_real := env_loader.setup(bg_node)
 	if not any_real:
 		_build_backgrounds()   # procedural fallback
 	_build_ambient()

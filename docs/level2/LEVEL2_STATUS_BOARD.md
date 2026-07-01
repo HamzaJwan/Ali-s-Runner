@@ -1,5 +1,5 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
-# Last updated: 2026-07-01 | Commit: 383f413
+# Last updated: 2026-07-01 | Commit: (see git log)
 
 Quick reference for owner and coders. Open this file to know exactly where things stand.
 
@@ -29,6 +29,15 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 | Production Roadmap doc | `LEVEL2_PRODUCTION_ROADMAP.md` |
 | Gap Audit doc | `LEVEL2_GAP_AUDIT.md` |
 | Asset pipeline docs | Environment, Obstacle, Audio requirements |
+| Asset manifest system | `level2_asset_manifest.gd` — single source of truth for all paths |
+| Jomana auto-pipeline | `jomana_player_visual.gd` — 8-frame PNG auto-loads, polygon fallback |
+| Background auto-pipeline | `level2_environment_visual.gd` — each of 5 layers auto-loads independently |
+| Obstacle skin adapter | `level2_obstacle_visuals.gd` — adds Sprite2D skin without touching Level 1 |
+| Family checkpoint sprites | `level2_family_checkpoint_visuals.gd` — auto-loads PNG per character |
+| Audio wrapper | `level2_audio_manager.gd` — plays L2 audio if present, CC0 gate documented |
+| Foot dust | `jomana_foot_dust.gd` — CPUParticles2D, web-safe, easy to disable |
+| Asset check tool | `scripts/tools/level2_asset_check.gd` — headless report, exit 0 always |
+| Asset drop guide | `docs/level2/LEVEL2_ASSET_DROP_GUIDE.md` — owner guide, no code changes needed |
 | Multi-coder workflow | `MULTI_CODER_WORKFLOW.md` |
 | Level 1 untouched | Confirmed |
 | Docker/deploy untouched | Confirmed |
