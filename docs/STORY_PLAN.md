@@ -133,7 +133,7 @@ All Arabic. RTL enforced in code. No long quotes in UI — short, warm, child-fr
 
 ### Jomana Checkpoint (score 60)
 
-جمانة: "قريب وصلت يا علي… لكن لازم تختار الطريق الصح."
+جمانة: "قريب توصل يا خوي علي… لكن لازم تختار الطريق الصح."
 
 علي: "وريني الطريق يا جمانة."
 
