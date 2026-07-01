@@ -522,8 +522,8 @@ func _show_level2_ending() -> void:
 	collectible_spawner.stop_spawning()
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.set_pose(_jomana_vis.Pose.STORY)
-	game_over_title.text = Level2EncounterData.rtl_safe("‏أحسنتِ يا جمانة!")
-	game_over_msg.text   = Level2EncounterData.rtl_safe("‏كل كلمة طيبة تترك أثرًا")
+	game_over_title.text = Level2EncounterData.rtl_safe("أحسنتِ يا جمانة!")
+	game_over_msg.text   = Level2EncounterData.rtl_safe("كل كلمة طيبة تترك أثرًا")
 	game_over_count.text = "الأثر الذي تركتِه: %d" % collectible_count
 	retry_button.visible   = false
 	restart_button.visible = true
