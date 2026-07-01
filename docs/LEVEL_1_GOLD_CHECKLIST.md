@@ -129,8 +129,20 @@ To keep this checklist honest and not a moving target, the following are explici
 * ✅ Ali menu feet anchored — idle bob switched from scale to Y-position bob; fade-in entrance replaces scale-based zoom-in; feet never float above the road.
 * ✅ Play button pulse reduced: 1.018 scale, 1.6s period — alive but not shaky.
 * ✅ Collectible spacing increased (ARC 48px, REWARD_LINE 62px); pattern cooldown 1.8s; minimum independent shard gap 62px.
-* ✅ Game Over redesigned: warm dark overlay panel, rounded card, gold title, story message, live light-shard count "النور الذي جمعته: N", golden/dark button pair, animated entrance (fade + scale pop).
+* ✅ Game Over redesigned: warm dark overlay panel, rounded card, gold title, story message, live count "الأثر الذي تركته: N", golden/dark button pair, animated entrance (fade + scale pop).
 * ✅ Release hygiene: rpg_voice.zip, dl_pickup.py, scrape_coin.py, temp/ all removed.
 * ⬜ `OWNER_F6_VISUAL_REQUIRED` — visual review of new title, menu fix, collectible spacing, and Game Over card at 1152×648.
 
-Level 1 remains **INTERNAL RELEASE CANDIDATE / OWNER FINAL VISUAL AND AUDIO APPROVAL REQUIRED** — not Final Gold.
+## 12. Story Values Refactor — 2026-07-01
+
+* ✅ Public title renamed: "خطوات الخير" (subtitle: "حكايات من زليتن"). Full series core message: "كل خطوة طيبة تترك أثرًا."
+* ✅ Story reoriented away from "النور as magical force" toward "الأثر الطيب / good deeds and effort": trying again, الأخذ بالأسباب, الاستعانة بالله, kind words, family cooperation.
+* ✅ Collectible UI: "النور: N" → "الأثر: N". Game Over count: "النور الذي جمعته" → "الأثر الذي تركته".
+* ✅ Intro lines rewritten: father's advice now frames effort and tawakkul, not magical light retrieval.
+* ✅ Father ending dialogue: "وجبت النور معاك" → "خطواتك تركت أثرًا" / "اللي يحاول ويقوم مرة ثانية يترك أثرًا طيبًا."
+* ✅ Fatima Ali line: "كنت عارف إن نورك قريب" → "ضحكتك تذكّرني إن الطريق أهون بالعيلة."
+* ✅ Game Over before checkpoint: reframed as "ركّز، وخذ بالأسباب، وحاول مرة ثانية."
+* ✅ 4-level + finale series arc documented in STORY_PLAN.md and LEVEL_2_PLAN.md.
+* ⬜ `OWNER_STORY_APPROVAL_REQUIRED` — owner must read and approve all new Arabic dialogue before final release. Especially: Father ending lines, intro Father speech, game-over wording.
+
+Level 1 remains **INTERNAL RELEASE CANDIDATE / OWNER FINAL VISUAL, AUDIO AND STORY APPROVAL REQUIRED** — not Final Gold.

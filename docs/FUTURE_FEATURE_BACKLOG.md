@@ -1,4 +1,18 @@
-# Ali Runner — Future Feature Backlog
+# خطوات الخير — Future Feature Backlog
+
+*(Internal project codename: Ali Runner)*
+
+## Series Arc (Planning Only — no Level 2+ code until Level 1 Gold approved)
+
+| Level | Title | Value | Status |
+|---|---|---|---|
+| 1 | علي وأول خطوة — المنطرحة | المحاولة، مساعدة العائلة | INTERNAL RELEASE CANDIDATE |
+| 2 | جمانة وأثر الكلمة — مرسى زليتن | الكلمة الطيبة، الحكمة | PLANNED — gate: Level 1 Gold |
+| 3 | زينب وثبات القلب — السوق | الشجاعة، الصبر | DREAM BACKLOG |
+| 4 | العائلة تجمع الخير — البيت | الرحمة، التعاون | DREAM BACKLOG |
+| نهاية | كل خطوة لها أثر | التوكل مع العمل | DREAM BACKLOG |
+
+---
 
 ## Golden Rule
 

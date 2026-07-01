@@ -66,17 +66,17 @@ const PLAY_BUTTON_PULSE_TIME := 1.6
 const INTRO_LINES := [
 	{
 		"speaker": "الراوي",
-		"text": "في شارع المنطرحة بزليتن… بدأ نور البيت يضعف.",
+		"text": "في شارع المنطرحة بزليتن… وقف علي مستعدًا للرحلة.",
 		"speaker_visual": "narrator",
 	},
 	{
 		"speaker": "الأب",
-		"text": "يا علي… لو تبي ترجع النور، اجمع فرحة فاطمة، وشجاعة زينب، وحكمة جمانة.",
+		"text": "يا علي… الطريق يحتاج قلب طيب وتركيز. لو غلطت، حاول مرة ثانية… وخذ بالأسباب واستعن بالله.",
 		"speaker_visual": "father",
 	},
 	{
 		"speaker": "علي",
-		"text": "حاضر يا بابا… بنوصل للنهاية.",
+		"text": "حاضر يا بابا… بنمشي خطوة خطوة، ولو وقعنا بنقوم ونحاول.",
 		"speaker_visual": "ali",
 	},
 ]
@@ -840,7 +840,7 @@ func _on_collectible_collected() -> void:
 
 
 func _update_light_shard_label() -> void:
-	light_shard_label.text = "النور: %d" % collectible_count
+	light_shard_label.text = "الأثر: %d" % collectible_count
 
 
 func _on_obstacle_hit() -> void:
@@ -916,7 +916,7 @@ func _show_game_over_options() -> void:
 		game_over_message.text = ENCOUNTER_DATA.rtl_safe(checkpoint_config["game_over_line"])
 		retry_button.visible = true
 
-	game_over_light_count.text = "النور الذي جمعته: %d" % collectible_count
+	game_over_light_count.text = "الأثر الذي تركته: %d" % collectible_count
 
 	var card: Node = game_over_panel.get_node("GameOverCard")
 	game_over_panel.modulate.a = 0.0

@@ -17,7 +17,7 @@ const ARRIVAL_REVEAL := "reveal"
 const ARRIVAL_ENTER := "enter"
 
 const GAME_OVER_BEFORE_CHECKPOINT := \
-	"الطريق ما زال في بدايته يا علي… حاول مرة ثانية."
+	"الخسارة مش نهاية الطريق. ركّز، وخذ بالأسباب، وحاول مرة ثانية."
 
 const FATIMA_REWARD_BONUS := 5
 
@@ -38,13 +38,13 @@ const ENCOUNTERS := {
 			{"role": ROLE_HELPER, "text": "آآ… علي! ⭐"},
 			{
 				"role": ROLE_ALI,
-				"text": "فاطمة… لقيتك. كنت عارف إن نورك قريب يا فاطمة.",
+				"text": "فاطمة! ضحكتك تذكّرني إن الطريق أهون بالعيلة.",
 			},
 			{"role": ROLE_REWARD, "text": "حصلت على نجمة الفرح."},
 		],
 		"reward_text": "حصلت على نجمة الفرح.",
 		"game_over_line": \
-			"نجمة فاطمة ما زالت تنور لك الطريق… ارجع وحاول من جديد.",
+			"فرحة فاطمة مازالت معاك… ارجع وحاول من جديد.",
 	},
 	ZAINAB: {
 		"character_id": ZAINAB,
@@ -110,10 +110,10 @@ const ENCOUNTERS := {
 		"dialogue_steps": [
 			{
 				"role": ROLE_HELPER,
-				"text": "أحسنت يا علي… وصلت وجبت النور معاك.",
+				"text": "أحسنت يا علي… وصلت وخطواتك تركت أثرًا.",
 			},
-			{"role": ROLE_ALI, "text": "النور طلع فينا نحنا."},
-			{"role": ROLE_HELPER, "text": "بالضبط… البيت ينور بأهله."},
+			{"role": ROLE_ALI, "text": "الأثر ما يكون إلا بالمحاولة يا بابا."},
+			{"role": ROLE_HELPER, "text": "بالضبط… اللي يحاول ويقوم مرة ثانية يترك أثرًا طيبًا."},
 			{
 				"role": ROLE_REWARD,
 				"text": "اكتملت الرحلة — المنطرحة، زليتن.",

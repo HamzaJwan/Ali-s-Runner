@@ -1773,6 +1773,28 @@ The current Game Over moment still needs polish: obstacles may continue visually
 
 ---
 
+## Story Values Refactor — 2026-07-01
+
+**Public game title:** خطوات الخير | **Subtitle:** حكايات من زليتن | **Repo:** Ali Runner (unchanged)
+
+The story was refactored away from "النور as a magical/fantasy force" toward **الأثر الطيب / good deeds and effort** as the core theme, per owner intent to teach lasting Islamic and life values through play:
+
+* Trying again after mistakes (الأخذ بالأسباب، المحاولة مرة ثانية)
+* Loss is not the end
+* Reliance on Allah (الاستعانة بالله)
+* Kind words, patience, family cooperation, respect for parents
+
+**Changed in-game wording:**
+- UI collectible counter: "النور: N" → "الأثر: N"
+- Game Over light count: "النور الذي جمعته" → "الأثر الذي تركته"
+- Intro father line: reframed around effort and tawakkul, not magical light retrieval
+- Father ending dialogue: "وجبت النور معاك" → "خطواتك تركت أثرًا"
+- Game Over before checkpoint: reframed as encouragement to take means and try again
+
+**Full 4-level + finale series arc:** see `docs/STORY_PLAN.md` Section 3 and `docs/LEVEL_2_PLAN.md`.
+
+Asset file names (light_shard_sheet.png, shard_pickup.wav, etc.) remain unchanged internally — only the player-visible Arabic UI text changed.
+
 ## Final Instruction for AI Agents
 
 This is a working project. Treat it carefully.

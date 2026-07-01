@@ -1721,3 +1721,46 @@ Deleted: `rpg_voice.zip`, `dl_pickup.py`, `scrape_coin.py`, `temp/audio_sourcing
 `RC_SMOKE=PASS, 0 failures`: title text, Ali feet anchored (bob within ±3.5px), pulse ≤ 1.025, panel hidden at boot, collectible pickup, Game Over panel visible with correct light count, Restart works, all immutable constants unchanged.
 
 Commit: `autopilot: v1.0 RC menu collectible and game over polish`.
+
+## Story Values Refactor — خطوات الخير — STATUS: COMPLETE
+
+Files changed: `scripts/story/encounter_data.gd`, `scripts/main.gd`, `scenes/Main.tscn`, `docs/STORY_PLAN.md`, `docs/LEVEL_2_PLAN.md`, `docs/AI_GAME_ROADMAP.md`, `docs/FUTURE_FEATURE_BACKLOG.md`, `docs/LEVEL_1_GOLD_CHECKLIST.md`, `docs/AUTOPILOT_PROGRESS.md`.
+
+**Owner intent:** Reframe the game's story values away from "النور as a magical/fantasy force" toward "الأثر الطيب / good deeds and effort" — teaching lasting Islamic and life values (trying again, الأخذ بالأسباب, الاستعانة بالله, kind words, family, respect for parents, good character) through play and warmth, not lectures.
+
+### Implementation changes (in-game text only)
+
+| Location | Old | New |
+|---|---|---|
+| TitleLabel (Main.tscn) | البحث عن النور | **خطوات الخير** |
+| SubtitleLabel (Main.tscn) | رحلة في المنطرحة — زليتن | **حكايات من زليتن** |
+| LightShardLabel (Main.tscn) | النور: 0 | **الأثر: 0** |
+| GameOverLightCount (Main.tscn) | النور الذي جمعته: 0 | **الأثر الذي تركته: 0** |
+| `_update_light_shard_label()` format | "النور: %d" | **"الأثر: %d"** |
+| `_show_game_over_options()` format | "النور الذي جمعته: %d" | **"الأثر الذي تركته: %d"** |
+| Intro — الراوي line | "بدأ نور البيت يضعف" | **"وقف علي مستعدًا للرحلة"** |
+| Intro — الأب line | "لو تبي ترجع النور…" | **"يحتاج قلب طيب وتركيز… خذ بالأسباب واستعن بالله"** |
+| Intro — علي line | "بنوصل للنهاية" | **"بنمشي خطوة خطوة، ولو وقعنا بنقوم ونحاول"** |
+| Fatima Ali line | "كنت عارف إن نورك قريب" | **"ضحكتك تذكّرني إن الطريق أهون بالعيلة"** |
+| Fatima game_over_line | "نجمة فاطمة ما زالت تنور لك الطريق" | **"فرحة فاطمة مازالت معاك"** |
+| Father dialogue line 1 | "وجبت النور معاك" | **"خطواتك تركت أثرًا"** |
+| Father — Ali reply | "النور طلع فينا نحنا" | **"الأثر ما يكون إلا بالمحاولة يا بابا"** |
+| Father reply | "البيت ينور بأهله" | **"اللي يحاول ويقوم مرة ثانية يترك أثرًا طيبًا"** |
+| GAME_OVER_BEFORE_CHECKPOINT | "الطريق ما زال في بدايته يا علي…" | **"الخسارة مش نهاية الطريق. ركّز، وخذ بالأسباب، وحاول مرة ثانية."** |
+
+No physics, checkpoint thresholds, scores, rewards logic, or asset filenames were changed.
+
+### Documentation changes
+
+- `docs/STORY_PLAN.md` — complete rewrite: values table, full series arc (4 levels + finale), Level 1 dialogue updated, collectible terminology table, reward-value alignment.
+- `docs/LEVEL_2_PLAN.md` — Level 2 now named "جمانة وأثر الكلمة", story premise and series table updated.
+- `docs/AI_GAME_ROADMAP.md` — values-refactor section appended.
+- `docs/FUTURE_FEATURE_BACKLOG.md` — series arc table prepended.
+- `docs/LEVEL_1_GOLD_CHECKLIST.md` — story refactor section added with owner-approval gates.
+
+### Remaining owner approval items
+
+- **OWNER_STORY_APPROVAL_REQUIRED:** owner must read and approve all new Arabic dialogue, especially father ending lines, intro father speech, and game-over wording before public release.
+- All other existing gates remain: F6 visual, audio listening, level1_exciting_loop.ogg license docs.
+
+Commit: `story: refactor game values around good deeds and effort`.

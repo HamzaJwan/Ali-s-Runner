@@ -1,22 +1,45 @@
-# Ali Runner — Level 2 Plan (Planning Only)
+# خطوات الخير — Level 2 Plan (Planning Only)
 
-This is a planning document only. Nothing in this document implements code, scenes, or assets. Level 2 work must not begin until the owner has completed their F6 visual/audio review pass on Level 1 and explicitly approved a Level 1 Gold status (see `docs/LEVEL_1_GOLD_CHECKLIST.md`).
+**Series:** خطوات الخير | **Internal codename:** Ali Runner | **This document covers:** Level 2 planning only.
 
-**v1.50 status update (2026-06-29/30):** Level 1 is now at **AUTOMATED GOLD CANDIDATE** status — every gameplay, story, audio, collectible, visual polish, and framing system has been implemented and automated-tested. The remaining gate before any Level 2 work is the **owner's own F6 visual/audio review** (a human-only pass, not automatable). This document is being updated now as the v1.50 planning step, per the sprint contract. No Level 2 code was written.
+This is a planning document only. Nothing in this document implements code, scenes, or assets. Level 2 work must not begin until the owner has completed their F6 visual/audio review of Level 1 and explicitly approved Level 1 Gold status (see `docs/LEVEL_1_GOLD_CHECKLIST.md`).
+
+**Status update (2026-07-01):** Story values refactored away from "النور as magic" toward "الأثر الطيب / good deeds and effort" across the full series (see `docs/STORY_PLAN.md`). Level 1 remains at INTERNAL RELEASE CANDIDATE, awaiting owner final visual/audio approval before any Level 2 code begins.
+
+## Series Overview
+
+The full خطوات الخير series spans four levels and a finale, each teaching one core life/Islamic value through play:
+
+| Level | Title | Place | Value |
+|---|---|---|---|
+| 1 | علي وأول خطوة | المنطرحة، زليتن | المحاولة — trying again after mistakes |
+| **2** | **جمانة وأثر الكلمة** | **مرسى زليتن** | **الكلمة الطيبة — kind words and wisdom** |
+| 3 | زينب وثبات القلب | السوق / الحي | الشجاعة والصبر — courage and steadiness |
+| 4 | العائلة تجمع الخير | طريق البيت | الرحمة والتعاون — mercy and cooperation |
+| نهاية | كل خطوة لها أثر | — | التوكل مع العمل — tawakkul with action |
 
 ## Why Level 2 Exists
 
-Level 1 (Al-Mantarah, Zliten) tells Ali's story: gathering فرحة فاطمة، شجاعة زينب، and حكمة جمانة on his way to Father, with the family reunited as نور البيت returns (see `docs/STORY_PLAN.md` Section 14, "Family Companion Journey"). That framing — the family coming together, not just Ali succeeding alone — is what makes a second part centered on a sister feel like a continuation rather than a spin-off.
+Level 1 tells Ali's story of gathering his sisters' gifts and reaching Father together. Level 2 gives the player a sister's perspective — Jomana's — and deepens the same family theme: each person in the family has their own journey and their own أثر (good trace left behind).
 
-## Title Universe (Not a Final Decision)
+## Level 2 Story
 
-The current working title "علي رنر" (and the English "Ali Runner") is tied specifically to Ali. If Level 2 ever lets the player control or follow a sister, a title scoped to "Ali" alone stops fitting. This document records the candidate direction already raised elsewhere in the docs (`docs/STORY_PLAN.md` Section 14, `docs/AI_GAME_ROADMAP.md` "v1.25A-P") without deciding it:
+**Title:** جمانة وأثر الكلمة
+**Place:** مرسى زليتن — Zliten seaside / harbour
+**Playable character:** جمانة (Jomana)
+**Value:** الكلمة الطيبة (kind words), الحكمة (wisdom), الصبر (patience)
 
-* **مغامرة نور البيت** (Adventure of the Light of Home)
-* **رحلة نور البيت** (Journey of the Light of Home)
-* **أبطال نور البيت** (Heroes of the Light of Home)
+**Lesson:**
+"الكلمة الطيبة تفتح الطريق المسكّر. تكلّم بخير وامشِ بهدوء."
+(A kind word can open a closed path. Speak well and move calmly.)
 
-Any of these reads naturally whether the playable character is Ali, Jomana, or Zainab — none of them name a single character. "Ali Runner" can remain the internal/project/repository name regardless of what the public/in-game title becomes. **The final title is an owner decision, not an AI-agent decision** — this document only keeps the candidate list visible so it isn't lost.
+**Seed story premise (owner to approve before implementation):**
+جمانة تمشي في مرسى زليتن وتساعد صيادين وأطفال في طريقها — بكلمة طيبة هنا، وصبر هناك — وتصل إلى نهاية الرصيف وهي تحمل أثرًا من كل لقاء.
+(Jomana walks through Zliten harbour and helps fishermen and children along the way — with a kind word here, patience there — arriving at the end of the pier carrying an أثر from each encounter.)
+
+## Title
+
+Public title for the full series is **خطوات الخير** (established). Each episode has its own subtitle. Internal/repo name "Ali Runner" remains unchanged.
 
 ## Candidate Playable/Helper Characters
 
