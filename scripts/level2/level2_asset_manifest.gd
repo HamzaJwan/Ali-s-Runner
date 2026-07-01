@@ -59,7 +59,7 @@ const OBSTACLE_TEXTURE_MAP: Dictionary = {
 }
 
 # ── Collectibles ────────────────────────────────────────────────────────────
-const COL_SHARD_SINGLE := ROOT_COL + "col_athar_shard_pink_gold_01.png"
+const COL_SHARD_SINGLE := ROOT_COL + "col_light_shard_pink_01.png"   # actual filename owner generated
 const COL_SHARD_SHEET  := ROOT_COL + "col_athar_shard_sheet_6f.png"  # 6-frame animated
 
 # ── Ambient props ───────────────────────────────────────────────────────────

@@ -149,3 +149,18 @@ After pressing F6, verify:
 
 Once the owner confirms the camera feel is acceptable, signal the Character Lane coder to start generating/sourcing Jomana images per `docs/level2/JOMANA_IMAGE_REQUESTS.md`.
 Drop the PNGs in `assets/level2/marsa/characters/jomana/run/` and re-open the scene — the placeholder disappears automatically.
+
+## After dropping real art
+
+- [ ] Jomana real run animation appears instead of placeholder
+- [ ] Jomana feet stay on pier
+- [ ] no frame jumps in run cycle
+- [ ] camera 1.38 still feels good
+- [ ] obstacles visible early enough
+- [ ] background layers do not distract
+- [ ] pier ground is clear
+- [ ] collectibles readable
+- [ ] seagulls/boats/flags are decorative only
+- [ ] checkpoint order still Ali → Zainab → Fatima → Father
+- [ ] game still runs with missing optional assets
+

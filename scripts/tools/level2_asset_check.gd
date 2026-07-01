@@ -92,6 +92,19 @@ func _init() -> void:
 	]:
 		_report(info[0] as String, 1 if MANIFEST.file_exists(info[1]) else 0, 1)
 
+	print("──────────────────────────────────────────────────────")
+
+	# ── Ambient props ─────────────────────────────────────────────────────
+	for info: Array in [
+		["Seagull fly sheet (4f)",   MANIFEST.AMB_SEAGULL_SHEET],
+		["Boat blue",                MANIFEST.AMB_BOAT_BLUE],
+		["Boat small",               MANIFEST.AMB_BOAT_SMALL],
+		["Flags line",               MANIFEST.AMB_FLAGS],
+		["Rope hanging",             MANIFEST.AMB_ROPE],
+		["Fishing net pile",         MANIFEST.AMB_DECO_NET],
+	]:
+		_report(info[0] as String, 1 if MANIFEST.file_exists(info[1]) else 0, 1)
+
 	print("══════════════════════════════════════════════════════")
 	print("LEVEL2_ASSET_CHECK=DONE  (exit 0 — missing art is not a build failure)")
 	print("See docs/level2/LEVEL2_ASSET_DROP_GUIDE.md for next steps.\n")

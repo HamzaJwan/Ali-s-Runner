@@ -13,7 +13,10 @@ extends Node2D
 
 const MANIFEST   := preload("res://scripts/level2/level2_asset_manifest.gd")
 
-const VISUAL_HEIGHT  := 160.0   # px, same calibration as Level 1 ali_idle
+const VISUAL_HEIGHT  := 160.0   # px — final on-screen character height
+const CANVAS_HEIGHT  := 512.0   # all normalized frames are 512px tall
+const CANVAS_WIDTH   := 384.0   # all normalized frames are 384px wide
+const FOOT_OFFSET_Y  := 24.0    # match Player CharacterBody2D half-collision height
 const BASE_RUN_FPS   := 11.0    # 10–12 FPS is the sweet spot
 const MIN_SPD_SCALE  := 0.80
 const MAX_SPD_SCALE  := 1.50
@@ -42,6 +45,10 @@ func set_pose(pose: Pose) -> void:
 		_placeholder_pose(pose)
 	else:
 		_play_anim(pose)
+
+
+func is_using_placeholder() -> bool:
+	return _using_placeholder
 
 
 func set_speed(speed: float) -> void:
@@ -94,12 +101,14 @@ func _try_load_real_frames() -> void:
 	var wave_tex := load(MANIFEST.JOMANA_WAVE) as Texture2D
 	_add_anim(sf, "story", [wave_tex if wave_tex != null else run_frames[1]], 3.0, true)
 
-	# Scale to visual height target
-	if run_frames[0] != null:
-		var raw_h := float(run_frames[0].get_height())
-		if raw_h > 0.0:
-			var s := VISUAL_HEIGHT / raw_h
-			_anim.scale = Vector2(s, s)
+	# Scale to visual height — all normalized frames are CANVAS_HEIGHT tall.
+	# centered=false so we control exact foot placement.
+	var s := VISUAL_HEIGHT / CANVAS_HEIGHT
+	_anim.scale    = Vector2(s, s)
+	_anim.centered = false
+	# Position: top-left X centred horizontally, Y such that feet land at local y=FOOT_OFFSET_Y
+	# (matching Player CharacterBody2D half-collision so feet appear on the ground).
+	_anim.position = Vector2(-(CANVAS_WIDTH * s) / 2.0, -VISUAL_HEIGHT + FOOT_OFFSET_Y)
 
 	_play_anim(Pose.RUN)
 

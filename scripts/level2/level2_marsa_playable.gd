@@ -24,7 +24,11 @@ const AUDIO_MANAGER       := preload("res://scripts/audio/audio_manager.gd")
 # The Environment Lane coder will wire real Sprite2D layers + motion later.
 
 # ── Level 2 environment PNG auto-detector (non-fatal) ─────────────────────
-const L2_ENV := preload("res://scripts/level2/environment/level2_environment_visual.gd")
+const L2_ENV        := preload("res://scripts/level2/environment/level2_environment_visual.gd")
+# ── Level 2 Jomana character visual (replaces Level 1 AliSprite) ──────────
+const L2_JOMANA_VIS := preload("res://scripts/level2/character/jomana_player_visual.gd")
+# ── Level 2 obstacle visual skins (non-fatal, no shared code change) ──────
+const L2_OBS_VIS    := preload("res://scripts/level2/gameplay/level2_obstacle_visuals.gd")
 
 # ── Level 2 encounter data ────────────────────────────────────────────────
 # Level2EncounterData is available globally via its class_name declaration.
@@ -128,6 +132,7 @@ var enc_step           := 0
 var npc_arriving       := false
 
 var audio_manager    := AUDIO_MANAGER.new()
+var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
@@ -149,13 +154,21 @@ func _ready() -> void:
 
 	audio_manager.setup(self)
 
+	# Position background layer nodes in world space so layers align with the
+	# gameplay zone. Camera sees world y≈149–619 (cam_y≈384, zoom=1.38).
+	_position_background_layers()
+
 	# Try loading real PNG environment layers — falls back to procedural if missing.
 	var env_loader := L2_ENV.new()
 	var any_real := env_loader.setup(bg_node)
 	if not any_real:
 		_build_backgrounds()   # procedural fallback
 	_build_ambient()
-	_tag_jomana()
+	_setup_jomana_visual()
+
+	# Level 2 obstacle visual skins (RefCounted helper — not a Node).
+	_obs_vis = L2_OBS_VIS.new()
+	obstacle_spawner.obstacle_spawned.connect(_on_obstacle_spawned_l2)
 
 	play_button.pressed.connect(_on_play_pressed)
 	restart_button.pressed.connect(_on_restart_pressed)
@@ -500,7 +513,45 @@ func _tween_cam(tpos: Vector2, tzoom: Vector2, dur := CAM_TRANSITION_TIME) -> vo
 	_cam_tween.tween_property(game_camera, "zoom", tzoom, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
-# ── Jomana visual tag ─────────────────────────────────────────────────────
+# ── Jomana real art wiring ────────────────────────────────────────────────
+
+func _setup_jomana_visual() -> void:
+	var vis := L2_JOMANA_VIS.new()
+	vis.name = "JomanaVisual"
+	player.add_child(vis)
+	# Hide Level 1 AliSprite when real Jomana art auto-loaded.
+	if not vis.is_using_placeholder():
+		jomana_sprite.visible = false
+	else:
+		_tag_jomana()   # teal tint fallback while waiting for real art
+
+
+# ── Background layer world-Y positioning ─────────────────────────────────
+# Camera at cam_world_y≈384 (ROAD_SURFACE_Y - CAM_OFFSET) sees world y≈149–619.
+# These offsets place each layer so the correct part of each background image
+# is visible at the right depth in the screen composition.
+
+func _position_background_layers() -> void:
+	sky_layer.position.y       = 0.0    # sky fills upper viewport, above gameplay zone
+	sea_layer.position.y       = 294.0  # sea horizon at ~25% down the screen
+	buildings_layer.position.y = 345.0  # buildings at ~40% down
+	boats_layer.position.y     = 410.0  # boats above pier, ~55% down
+	foreground_layer.position.y = 446.0 # pier ground starts at ~65% down, covers gameplay floor
+
+
+# ── Level 2 obstacle visual skins ─────────────────────────────────────────
+
+func _on_obstacle_spawned_l2(definition: Dictionary, _pos: Vector2) -> void:
+	if _obs_vis == null or obstacle_spawner.get_child_count() == 0:
+		return
+	# The obstacle is already in the tree when the signal fires (spawner emits after add_child).
+	var obs_type: String = definition.get("type", "")
+	var newest: Node = obstacle_spawner.get_child(obstacle_spawner.get_child_count() - 1)
+	if newest is Node2D:
+		_obs_vis.apply_skin(newest as Node2D, obs_type)
+
+
+# ── Jomana visual tag (legacy placeholder fallback) ───────────────────────
 
 func _tag_jomana() -> void:
 	# Apply teal tint to Ali's placeholder polygon so it reads as Jomana
