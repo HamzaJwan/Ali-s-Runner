@@ -1,60 +1,65 @@
-## seagull_loop.gd
-## A single procedural seagull that flies across the sky and repeats.
-## Drawn as a small M-shaped white polygon — no external asset required.
-## No collision, no enemy behavior, purely decorative.
+## seagull_loop.gd — Decorative seagull that flies across the sky.
+## Uses owner PNG sheet if present; falls back to tiny invisible node (no triangles).
+## No collision, no enemy, purely decorative.
 class_name SeagullLoop
 extends Node2D
 
-@export var flight_y: float     = 130.0  # world Y to fly at
-@export var speed: float        = 70.0   # pixels per second
-@export var from_right: bool    = false  # spawn direction
-@export var wing_beat_hz: float = 1.4   # wing flaps per second
+@export var flight_y: float     = 130.0
+@export var speed: float        = 70.0
+@export var from_right: bool    = false
+@export var wing_beat_hz: float = 1.4
 
 const VIEW_W := 1152.0
-const GULL_SIZE := 8.0
-const GULL_COLOR := Color(1.0, 1.0, 1.0, 0.80)
 
-var _polygon: Polygon2D
-var _wing_time: float = 0.0
+const SHEET_PATH   := "res://assets/level2/marsa/ambient/seagulls/seagull_fly_sheet_4f.png"
+const SHEET_FRAMES := 4
+const SHEET_W      := 610
+const SHEET_H      := 147
+const GULL_SCALE   := 0.14   # small distant bird
+
 var _dir: float = 1.0
 
 
 func _ready() -> void:
 	_dir = -1.0 if from_right else 1.0
 	position.y = flight_y
-	position.x = -GULL_SIZE * 3.0 if not from_right else VIEW_W + GULL_SIZE * 3.0
+	position.x = -SHEET_W * 0.5 if not from_right else VIEW_W + SHEET_W * 0.5
 
-	_polygon = Polygon2D.new()
-	_polygon.color = GULL_COLOR
-	_polygon.scale.x = _dir
-	add_child(_polygon)
-	_update_wing(0.0)
+	if ResourceLoader.exists(SHEET_PATH):
+		_build_sprite_seagull()
+	# If sheet is missing, node stays invisible (no triangle placeholder).
+
+
+func _build_sprite_seagull() -> void:
+	var tex := load(SHEET_PATH) as Texture2D
+	if tex == null:
+		return
+
+	var anim := AnimatedSprite2D.new()
+	var sf := SpriteFrames.new()
+	sf.add_animation("fly")
+	sf.set_animation_speed("fly", wing_beat_hz * 4.0)   # 4 poses per beat cycle
+	sf.set_animation_loop("fly", true)
+
+	var fw := SHEET_W / SHEET_FRAMES   # 152 px per frame
+	for i: int in SHEET_FRAMES:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = tex
+		atlas.region = Rect2(i * fw, 0, fw, SHEET_H)
+		sf.add_frame("fly", atlas)
+
+	anim.sprite_frames = sf
+	anim.scale = Vector2(GULL_SCALE * _dir, GULL_SCALE)  # flip when flying right-to-left
+	add_child(anim)
+	anim.play("fly")
 
 
 func _process(delta: float) -> void:
 	position.x += speed * _dir * delta
-
-	# Wrap around when off-screen
-	if _dir > 0.0 and position.x > VIEW_W + GULL_SIZE * 4.0:
-		position.x = -GULL_SIZE * 3.0
-		position.y = flight_y + randf_range(-15.0, 15.0)
-	elif _dir < 0.0 and position.x < -GULL_SIZE * 4.0:
-		position.x = VIEW_W + GULL_SIZE * 3.0
-		position.y = flight_y + randf_range(-15.0, 15.0)
-
-	_wing_time += delta
-	_update_wing(_wing_time)
-
-
-func _update_wing(t: float) -> void:
-	# M-shape: two wings, flap angle varies with time
-	var flap := sin(t * TAU * wing_beat_hz) * 0.5 + 0.5  # 0..1
-	var up := lerpf(-GULL_SIZE * 0.3, -GULL_SIZE * 0.9, flap)
-	var s := GULL_SIZE
-	_polygon.polygon = PackedVector2Array([
-		Vector2(-s,    0.0),
-		Vector2(-s * 0.5, up),
-		Vector2(0.0,  0.0),
-		Vector2(s * 0.5,  up),
-		Vector2(s,    0.0),
-	])
+	var margin := SHEET_W * GULL_SCALE * 4.0
+	if _dir > 0.0 and position.x > VIEW_W + margin:
+		position.x = -margin
+		position.y = flight_y + randf_range(-20.0, 20.0)
+	elif _dir < 0.0 and position.x < -margin:
+		position.x = VIEW_W + margin
+		position.y = flight_y + randf_range(-20.0, 20.0)

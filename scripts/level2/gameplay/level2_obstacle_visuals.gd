@@ -28,14 +28,16 @@ func apply_skin(obstacle: Node2D, obstacle_type: String) -> bool:
 	if tex == null:
 		return false
 
+	# Hide the Level 1 procedural Polygon2D under the L2 skin.
+	var old_poly := obstacle.get_node_or_null("Polygon2D")
+	if old_poly != null:
+		old_poly.visible = false
+
 	var skin := Sprite2D.new()
 	skin.name = "L2Skin"
 	skin.texture = tex
 	skin.centered = true
-	# Position at the obstacle's visual center (rough center of collision box).
 	skin.position = Vector2.ZERO
-	# Scale to roughly fit the obstacle's visual height.
-	# Obstacle visual height = roughly collision_height from definition.
 	var obs_h: float = _get_obstacle_visual_height(obstacle_type)
 	if obs_h > 0.0 and tex.get_height() > 0:
 		var s := obs_h / float(tex.get_height())
@@ -54,11 +56,11 @@ func _get_texture(obs_type: String) -> Texture2D:
 
 
 func _get_obstacle_visual_height(obs_type: String) -> float:
-	# Approximate collision heights from Level 1 obstacle definitions.
+	# Match Level 1 obstacle visual_target_height from OBSTACLE_DEFINITIONS.
 	match obs_type:
-		"block":   return 28.0
-		"barrier": return 36.0
-		"cone":    return 44.0
-		"crate":   return 44.0
-		"sign":    return 52.0
-	return 40.0
+		"block":   return 56.0
+		"barrier": return 56.0
+		"cone":    return 48.0
+		"crate":   return 54.0
+		"sign":    return 58.0
+	return 54.0

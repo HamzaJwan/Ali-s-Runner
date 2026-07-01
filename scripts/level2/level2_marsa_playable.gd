@@ -31,6 +31,8 @@ const L2_JOMANA_VIS  := preload("res://scripts/level2/character/jomana_player_vi
 const L2_OBS_VIS     := preload("res://scripts/level2/gameplay/level2_obstacle_visuals.gd")
 # ── Level 2 Marsa audio (replaces Level 1 fallbacks where L2 files exist) ─
 const L2_AUDIO_MGR   := preload("res://scripts/level2/audio/level2_audio_manager.gd")
+# ── Level 2 manifest for collectible path ─────────────────────────────────
+const L2_MANIFEST    := preload("res://scripts/level2/level2_asset_manifest.gd")
 
 # ── Level 2 encounter data ────────────────────────────────────────────────
 # Level2EncounterData is available globally via its class_name declaration.
@@ -136,6 +138,7 @@ var npc_arriving       := false
 var audio_manager    := AUDIO_MANAGER.new()
 var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
 var _l2_audio: Node   = null         # Level2AudioManager
+var _jomana_vis: Node = null         # JomanaPlayerVisual (the active instance)
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
@@ -184,12 +187,9 @@ func _ready() -> void:
 	cp_continue.pressed.connect(_on_continue_pressed)
 
 	if player.has_signal("landed"):
-		player.landed.connect(func(): audio_manager.play_land())
+		player.landed.connect(_on_player_landed)
 	if player.has_signal("jumped"):
-		player.jumped.connect(func():
-			if is_instance_valid(_l2_audio): _l2_audio.play_jump()
-			else: audio_manager.play_jump()
-		)
+		player.jumped.connect(_on_player_jumped)
 
 	_show_start_screen()
 	audio_manager.play_calm_music()
@@ -274,12 +274,17 @@ func _show_start_screen() -> void:
 	collectible_spawner.clear_collectibles()
 	player.reset_player(START_PLAYER_POSITION)
 	_apply_default_cam()
+	# Show idle/story pose on the menu — not running.
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.IDLE)
 
 
 func _on_play_pressed() -> void:
 	start_screen.visible = false
 	if is_instance_valid(_l2_audio):
 		_l2_audio.play_gameplay_music()
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
 	_play_harbor_reveal()
 
@@ -329,6 +334,33 @@ func _on_obstacle_hit() -> void:
 
 func _on_collectible_spawned(c: Node) -> void:
 	c.collected.connect(_on_collected)
+	_apply_l2_collectible_visual(c)
+
+
+func _apply_l2_collectible_visual(c: Node) -> void:
+	# Hide the Level 1 yellow diamond Polygon2D.
+	var poly := c.get_node_or_null("Polygon2D")
+	if poly != null:
+		poly.visible = false
+	# Load Level 2 أثر shard PNG.
+	var path := L2_MANIFEST.COL_SHARD_SINGLE
+	if not L2_MANIFEST.file_exists(path):
+		if poly != null:
+			poly.visible = true   # restore fallback if art missing
+		return
+	var tex := load(path) as Texture2D
+	if tex == null:
+		if poly != null:
+			poly.visible = true
+		return
+	if c.get_node_or_null("L2ShardSprite") != null:
+		return   # already applied
+	var sprite := Sprite2D.new()
+	sprite.name = "L2ShardSprite"
+	sprite.texture = tex
+	var s := 30.0 / float(tex.get_height())   # scale to ~30 px visual height
+	sprite.scale = Vector2(s, s)
+	c.add_child(sprite)
 
 
 func _on_collected() -> void:
@@ -361,6 +393,8 @@ func _start_checkpoint(char_id: int) -> void:
 		_l2_audio.play_checkpoint()
 	else:
 		audio_manager.play_checkpoint()
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.STORY)
 	_apply_checkpoint_cam()
 	var enc := Level2EncounterData.get_encounter(char_id)
 	npc_label.text = enc.get("placeholder_text", "؟")
@@ -413,7 +447,7 @@ func _on_continue_pressed() -> void:
 	checkpoint_active = false
 
 	if current_enc_id == Level2EncounterData.FATHER:
-		_show_start_screen()
+		_show_level2_ending()
 		return
 
 	var new_speed: float = enc.get("post_speed", current_speed)
@@ -430,6 +464,8 @@ func _finish_countdown() -> void:
 	collectible_spawner.start_spawning(current_speed)
 	_apply_gameplay_cam()
 	audio_manager.play_gameplay_music()
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
 
 
 # ── Game Over ─────────────────────────────────────────────────────────────
@@ -438,6 +474,8 @@ func _end_run() -> void:
 	if game_over or checkpoint_active or countdown_active:
 		return
 	game_over = true
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.IDLE)
 	audio_manager.play_hit()
 	audio_manager.play_calm_music()
 	_apply_default_cam()
@@ -473,6 +511,31 @@ func _show_game_over() -> void:
 		retry_button.grab_focus()
 	else:
 		restart_button.grab_focus()
+
+
+# ── Level 2 ending (after Father checkpoint) ──────────────────────────────
+
+func _show_level2_ending() -> void:
+	started = false
+	player.set_gameplay_active(false)
+	obstacle_spawner.stop_spawning()
+	collectible_spawner.stop_spawning()
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.STORY)
+	game_over_title.text = Level2EncounterData.rtl_safe("‏أحسنتِ يا جمانة!")
+	game_over_msg.text   = Level2EncounterData.rtl_safe("‏كل كلمة طيبة تترك أثرًا")
+	game_over_count.text = "الأثر الذي تركتِه: %d" % collectible_count
+	retry_button.visible   = false
+	restart_button.visible = true
+	var card: Panel = $UI/GameOverPanel/Card
+	game_over_panel.modulate.a = 0.0
+	card.scale = Vector2(0.92, 0.92)
+	card.pivot_offset = card.size / 2.0
+	game_over_panel.visible = true
+	var t := create_tween().set_parallel()
+	t.tween_property(game_over_panel, "modulate:a", 1.0, 0.5).set_trans(Tween.TRANS_SINE)
+	t.tween_property(card, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	restart_button.grab_focus()
 
 
 func _on_restart_pressed() -> void:
@@ -543,11 +606,37 @@ func _setup_jomana_visual() -> void:
 	var vis := L2_JOMANA_VIS.new()
 	vis.name = "JomanaVisual"
 	player.add_child(vis)
-	# Hide Level 1 AliSprite when real Jomana art auto-loaded.
-	if not vis.is_using_placeholder():
-		jomana_sprite.visible = false
-	else:
-		_tag_jomana()   # teal tint fallback while waiting for real art
+	_jomana_vis = vis
+
+	# Hide the Level 1 Polygon2D (blue rectangle) that shows under Jomana.
+	var player_poly := player.get_node_or_null("Polygon2D")
+	if player_poly != null:
+		player_poly.visible = false
+
+	# Hide AliSprite if it somehow became visible (it starts false in Player.tscn).
+	jomana_sprite.visible = false
+
+	# Start in IDLE — menu should not show Jomana running in place.
+	vis.set_pose(vis.Pose.IDLE)
+
+
+# ── Player event handlers ─────────────────────────────────────────────────
+
+func _on_player_jumped() -> void:
+	if is_instance_valid(_l2_audio): _l2_audio.play_jump()
+	else: audio_manager.play_jump()
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.JUMP)
+
+
+func _on_player_landed() -> void:
+	audio_manager.play_land()
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.LAND)
+		# Return to RUN after a brief landing frame display.
+		await get_tree().create_timer(0.2).timeout
+		if not game_over and not checkpoint_active and is_instance_valid(_jomana_vis):
+			_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
 
 
 # ── Background parallax ───────────────────────────────────────────────────
@@ -757,11 +846,13 @@ func _build_ambient() -> void:
 	var gull_script := load("res://scripts/level2/ambient/seagull_loop.gd")
 	if gull_script == null:
 		return
+	# flight_y values in WORLD space. Camera at world y≈384 sees from y≈149.
+	# y=175-235 places seagulls in the sky area (screen top 5-18%).
 	for i: int in 3:
 		var g := Node2D.new()
 		g.set_script(gull_script)
-		g.set("flight_y", 100.0 + i * 48.0)
-		g.set("speed", 60.0 + i * 18.0)
+		g.set("flight_y", 175.0 + i * 30.0)
+		g.set("speed", 55.0 + i * 14.0)
 		g.set("from_right", (i % 2) == 1)
 		g.set("wing_beat_hz", 1.2 + i * 0.2)
 		ambient_layer.add_child(g)
