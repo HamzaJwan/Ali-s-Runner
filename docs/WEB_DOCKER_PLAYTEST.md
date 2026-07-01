@@ -64,17 +64,16 @@ docker compose -f docker-compose.web.yml down
    requests.
 6. Test the page at desktop size and in mobile device emulation.
 
-## Current browser-test blocker
+## Embedded Arabic font
 
-The first Docker browser run loads the HTML, JavaScript, PCK, and WASM files
-successfully, but Arabic UI text renders as missing-glyph boxes. The project has
-no embedded `.ttf` or `.otf` font, so the Web build cannot rely on the Windows
-system-font fallback available during local editor testing.
+The Web build embeds `assets/fonts/Cairo-Regular.ttf` and applies it globally
+through `themes/arabic_ui_theme.tres`. This avoids relying on Windows system-font
+fallbacks, which are unavailable inside the WebAssembly build and previously
+caused Arabic UI text to render as missing-glyph boxes.
 
-Before this build can pass owner browser review, add a locally packaged Arabic
-font with documented redistribution rights, assign it through the Godot UI
-theme, and rebuild the Web export. Do not solve this by copying a Windows font
-or downloading an unlicensed font into the deployment branch.
+The owner explicitly authorized this font for the internal Web playtest. Record
+its exact download source and redistribution license before any public release;
+this internal approval is not a substitute for public-release license records.
 
 ## Moving to a production server later
 
