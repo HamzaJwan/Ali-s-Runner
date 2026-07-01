@@ -57,18 +57,20 @@ const GAME_OVER_DELAY         := 0.45
 # Increase GAMEPLAY_ZOOM to bring Jomana closer; safe range: 1.25–1.45.
 # At 1.38 the visible world width is 1152/1.38 ≈ 835 px, obstacles at
 # spawn X=1292 appear ~475 px ahead (world space) — comfortable react time.
-const GAMEPLAY_ZOOM           := 1.15   # 1.38 was too close; 1.15 ≈ Level 1 feel
-const CAMERA_REVEAL_FROM      := 0.88   # cinematic opening starts smaller
-const CAMERA_CHECKPOINT_BOOST := 0.05   # +5% zoom during checkpoint
-# Where Jomana lands on screen (px from left at gameplay zoom):
-const CAM_SCREEN_X            := 260.0  # left-third — enough look-ahead right
-const CAM_SCREEN_Y            := 498.0  # road surface screen Y (same as L1)
+const GAMEPLAY_ZOOM           := 1.18   # balanced: Jomana ≈ 188px on screen
+const CAMERA_REVEAL_FROM      := 0.88
+const CAMERA_CHECKPOINT_BOOST := 0.05
+const CAM_SCREEN_X            := 255.0  # left-third, enough road ahead visible
+const CAM_SCREEN_Y            := 498.0
 const CAM_TRANSITION_TIME     := 0.38
-# Smooth look-ahead: camera slides slightly forward so players see more ahead.
-const LOOKAHEAD_X             := 160.0  # more look-ahead at smaller zoom
-const FOLLOW_SPEED            := 5.5    # lerp speed for look-ahead correction
-# Vertical feel: slight upward shift keeps jump arc in frame.
+const LOOKAHEAD_X             := 150.0
+const FOLLOW_SPEED            := 5.5
 const VERTICAL_OFFSET         := -14.0
+
+# ── Level 2 collectible lane Y values (world coords) ─────────────────────
+const L2_RUN_PICKUP_Y  := 480.0  # grab while running (near feet)
+const L2_LIGHT_JUMP_Y  := 435.0  # small hop required
+const L2_FULL_JUMP_Y   := 385.0  # full jump arc
 
 # ── Harbour palette (procedural — no external assets required) ────────────
 const C_SKY        := Color(0.38, 0.66, 0.90, 1.0)
@@ -139,6 +141,8 @@ var _l2_audio: Node   = null         # Level2AudioManager
 var _jomana_vis: Node    = null   # JomanaPlayerVisual (the active instance)
 var _ali_polygon: Node2D = null   # cached $Player/Polygon2D — hidden every frame
 var _init_cam_x: float   = 0.0   # camera X at scene start, for scroll-based parallax
+var _l2_col_idx: int     = 0      # cycles through Level 2 collectible lane patterns
+var _ground_base: Node2D = null   # $Ground/GroundBase — hidden when pier PNG loads
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
@@ -175,6 +179,14 @@ func _ready() -> void:
 	var any_real := env_loader.setup(bg_node)
 	if not any_real:
 		_build_backgrounds()   # procedural fallback
+
+	# Hide the GroundBase visual polygon when the real pier PNG is loaded.
+	# GroundBase z_index=-1 renders in front of the pier sprite z_index=-5 and
+	# would otherwise appear as a large brown rectangle covering the pier art.
+	_ground_base = ground.get_node_or_null("GroundBase") as Node2D
+	if _ground_base != null:
+		_ground_base.visible = not L2_MANIFEST.file_exists(L2_MANIFEST.BG_PIER)
+
 	_build_ambient()
 	_setup_jomana_visual()
 
@@ -349,7 +361,24 @@ func _on_obstacle_hit() -> void:
 
 func _on_collectible_spawned(c: Node) -> void:
 	c.collected.connect(_on_collected)
+	_override_l2_collectible_lane(c)
 	_apply_l2_collectible_visual(c)
+
+
+func _override_l2_collectible_lane(c: Node) -> void:
+	# Redirect collectible spawn Y to Level 2 defined lanes.
+	# The shared spawner uses Level 1 Y values; Level 2 has different visual scale.
+	# Pattern cycles: LOW_LINE → SMALL_ARC → FULL_ARC → repeat.
+	const PATTERNS: Array = [
+		[480.0, 480.0, 480.0, 480.0],           # LOW_LINE  (run to collect)
+		[480.0, 435.0, 400.0, 435.0, 480.0],    # SMALL_ARC (light jump)
+		[435.0, 400.0, 385.0, 400.0, 435.0],    # FULL_ARC  (full jump)
+	]
+	var pat: Array = PATTERNS[(_l2_col_idx / 5) % PATTERNS.size()]
+	var pos_in_pat: int = _l2_col_idx % pat.size()
+	var target_y: float = pat[pos_in_pat]
+	(c as Node2D).global_position.y = target_y
+	_l2_col_idx += 1
 
 
 func _apply_l2_collectible_visual(c: Node) -> void:

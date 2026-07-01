@@ -1,20 +1,34 @@
-## level2_obstacle_visuals.gd — Level 2 obstacle visual skin manager.
-## Adds a harbor-themed Sprite2D skin on top of each Level 1 obstacle,
-## without touching Level 1 ObstacleSpawner or its collision logic.
+## level2_obstacle_visuals.gd — Level 2 harbor obstacle visual skin manager.
+## Adds a harbor-themed Sprite2D skin on each Level 1 obstacle.
+## Hides the Level 1 Polygon2D. Keeps collision unchanged.
 ##
-## Usage: call apply_skin(obstacle_node, obstacle_type_string) right after
-## the spawner creates an obstacle. The spawner remains untouched.
+## Bottom alignment: skin.position.y = collision_height/2 - visual_height/2
+## This pins the skin's visual bottom to the collision box's bottom edge.
 extends RefCounted
 
 const MANIFEST := preload("res://scripts/level2/level2_asset_manifest.gd")
 
-# Cache loaded textures so each is only loaded once per session.
+# Target visual heights (px in world space) per obstacle type.
+const VISUAL_HEIGHTS: Dictionary = {
+	"block":   72.0,
+	"barrier": 70.0,
+	"cone":    70.0,
+	"crate":   88.0,
+	"sign":    64.0,
+}
+
+# Collision heights from Level 1 OBSTACLE_DEFINITIONS (obstacle_spawner.gd).
+const COLLISION_HEIGHTS: Dictionary = {
+	"block":   50.0,
+	"barrier": 46.0,
+	"cone":    44.0,
+	"crate":   52.0,
+	"sign":    56.0,
+}
+
 var _tex_cache: Dictionary = {}
 
 
-## Apply harbor skin to an existing obstacle node.
-## obstacle_type: string key from ObstacleSpawner definition (block/barrier/cone/crate/sign)
-## Returns true if a real texture was applied; false = procedural placeholder stays.
 func apply_skin(obstacle: Node2D, obstacle_type: String) -> bool:
 	if obstacle == null:
 		return false
@@ -28,22 +42,31 @@ func apply_skin(obstacle: Node2D, obstacle_type: String) -> bool:
 	if tex == null:
 		return false
 
-	# Hide the Level 1 procedural Polygon2D under the L2 skin.
-	var old_poly := obstacle.get_node_or_null("Polygon2D")
-	if old_poly != null:
-		old_poly.visible = false
+	# Hide Level 1 visual (Polygon2D placeholder).
+	var poly := obstacle.get_node_or_null("Polygon2D")
+	if poly != null:
+		(poly as Node2D).visible = false
+
+	var vis_h: float  = VISUAL_HEIGHTS.get(obstacle_type, 56.0)
+	var col_h: float  = COLLISION_HEIGHTS.get(obstacle_type, 50.0)
+
+	# Scale skin so its visual height matches vis_h.
+	var raw_h := float(tex.get_height())
+	if raw_h <= 0.0:
+		return false
+	var s := vis_h / raw_h
 
 	var skin := Sprite2D.new()
 	skin.name = "L2Skin"
 	skin.texture = tex
 	skin.centered = true
-	skin.position = Vector2.ZERO
-	var obs_h: float = _get_obstacle_visual_height(obstacle_type)
-	if obs_h > 0.0 and tex.get_height() > 0:
-		var s := obs_h / float(tex.get_height())
-		skin.scale = Vector2(s, s)
+	skin.scale = Vector2(s, s)
+	# Align bottom of visual with bottom of collision box.
+	skin.position.y = col_h / 2.0 - vis_h / 2.0
 
 	obstacle.add_child(skin)
+	print("[L2 obstacle] type=%s  tex=%s  vis_h=%.0fpx  bottom_y=%.1f" %
+		[obstacle_type, tex.resource_path.get_file(), vis_h, col_h / 2.0])
 	return true
 
 
@@ -51,16 +74,5 @@ func _get_texture(obs_type: String) -> Texture2D:
 	if _tex_cache.has(obs_type):
 		return _tex_cache[obs_type]
 	var tex := MANIFEST.get_obstacle_texture(obs_type)
-	_tex_cache[obs_type] = tex  # cache even if null (avoids repeated disk checks)
+	_tex_cache[obs_type] = tex
 	return tex
-
-
-func _get_obstacle_visual_height(obs_type: String) -> float:
-	# Match Level 1 obstacle visual_target_height from OBSTACLE_DEFINITIONS.
-	match obs_type:
-		"block":   return 56.0
-		"barrier": return 56.0
-		"cone":    return 48.0
-		"crate":   return 54.0
-		"sign":    return 58.0
-	return 54.0
