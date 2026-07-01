@@ -57,20 +57,18 @@ const GAME_OVER_DELAY         := 0.45
 # Increase GAMEPLAY_ZOOM to bring Jomana closer; safe range: 1.25–1.45.
 # At 1.38 the visible world width is 1152/1.38 ≈ 835 px, obstacles at
 # spawn X=1292 appear ~475 px ahead (world space) — comfortable react time.
-const GAMEPLAY_ZOOM           := 1.38   # was 1.18 — now visibly larger
-const CAMERA_REVEAL_FROM      := 0.95   # cinematic opening starts here
+const GAMEPLAY_ZOOM           := 1.15   # 1.38 was too close; 1.15 ≈ Level 1 feel
+const CAMERA_REVEAL_FROM      := 0.88   # cinematic opening starts smaller
 const CAMERA_CHECKPOINT_BOOST := 0.05   # +5% zoom during checkpoint
 # Where Jomana lands on screen (px from left at gameplay zoom):
-const CAM_SCREEN_X            := 238.0  # left-third — enough look-ahead right
+const CAM_SCREEN_X            := 260.0  # left-third — enough look-ahead right
 const CAM_SCREEN_Y            := 498.0  # road surface screen Y (same as L1)
 const CAM_TRANSITION_TIME     := 0.38
 # Smooth look-ahead: camera slides slightly forward so players see more ahead.
-# In a fixed-X runner, look-ahead = horizontal offset applied every frame.
-const LOOKAHEAD_X             := 120.0  # extra px of look-ahead (world space)
+const LOOKAHEAD_X             := 160.0  # more look-ahead at smaller zoom
 const FOLLOW_SPEED            := 5.5    # lerp speed for look-ahead correction
-# Vertical feel: slight upward shift keeps jump apex in frame without
-# showing empty sky. Negative = camera is higher, showing more below.
-const VERTICAL_OFFSET         := -18.0
+# Vertical feel: slight upward shift keeps jump arc in frame.
+const VERTICAL_OFFSET         := -14.0
 
 # ── Harbour palette (procedural — no external assets required) ────────────
 const C_SKY        := Color(0.38, 0.66, 0.90, 1.0)

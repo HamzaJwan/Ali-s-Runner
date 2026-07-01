@@ -82,11 +82,16 @@ func _apply_layer(layer: Node2D, tex: Texture2D, node_name: String) -> void:
 	if tw > 0.0 and th > 0.0:
 		var s_x := VIEW_W / tw
 		if node_name == "L2_SkyLayer":
-			# Sky is the full-screen backdrop. Scale height to 2× viewport so it
-			# fills completely at any camera zoom level (0.95 start → 1.38 gameplay).
+			# Sky fills entire backdrop at any zoom.
 			sprite.scale = Vector2(s_x, VIEW_H * 2.0 / th)
 		else:
-			# Other layers preserve aspect; the parallax loop positions them correctly.
 			sprite.scale = Vector2(s_x, s_x)
+			# Skip the top few rows of each non-sky layer — the first pixel row
+			# is near-white/cream in the owner's cropped images (measured with PIL):
+			# pier row0=247,244,226 (brightness 239), boats row0=212,235,246 (231).
+			# Skipping these eliminates the white horizontal seam lines.
+			var skip := 4.0
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0.0, skip, tw, th - skip)
 
 	layer.add_child(sprite)
