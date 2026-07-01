@@ -1,0 +1,11 @@
+services:
+  ali-runner-web:
+    build:
+      context: .
+      dockerfile: deploy/web/Dockerfile
+    container_name: ali-runner-web-rc
+    ports:
+      - "8088:80"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
