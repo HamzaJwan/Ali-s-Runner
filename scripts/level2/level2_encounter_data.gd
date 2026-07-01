@@ -1,4 +1,4 @@
-class_name Level2EncounterData
+﻿class_name Level2EncounterData
 extends RefCounted
 
 ## Level 2: جمانة وأثر الكلمة — مرسى زليتن
@@ -126,7 +126,7 @@ const ENCOUNTERS := {
 static func rtl_safe(text: String) -> String:
 	if text.is_empty():
 		return text
-	return "‏" + text + "‏"
+	return "\u200f" + text + "\u200f"
 
 
 static func get_encounter(character_id: int) -> Dictionary:

@@ -195,3 +195,39 @@ Godot_v4.7-stable_win64_console.exe --headless --path . scenes/level2/lookdev/Le
 ```
 
 No commit goes in if Level 1 is broken.
+
+---
+
+## How the Playable MVP is Split for Future Coders
+
+The playable foundation (`scenes/level2/Level2_Marsa_Playable.tscn` +
+`scripts/level2/level2_marsa_playable.gd`) was built as a single integrated
+scene for speed. Here is how each lane can take ownership going forward:
+
+### Character Lane
+- Replace `$Player/Polygon2D` (teal tint) with a Jomana Sprite2D + player_visual.gd equivalent.
+- Create `scenes/level2/character/JomanaPlayerVisual.gd`.
+- Do NOT touch player.gd physics.
+
+### Environment Lane
+- Replace the procedural `_build_sky()`, `_build_sea()`, `_build_buildings()`, `_build_boats()`, `_build_pier()` calls in `level2_marsa_playable.gd` with Sprite2D nodes loaded from `assets/level2/marsa/backgrounds/`.
+- Maintain the same 5 node names: `L2_SkyLayer`, `L2_SeaBreakwaterLayer`, `L2_FarBuildingsLayer`, `L2_BoatsMidLayer`, `L2_ForegroundPierLayer`.
+
+### Ambient Life Lane
+- The seagulls are spawned in `_build_ambient()` inside `level2_marsa_playable.gd`.
+- To hand off to the ambient lane: extract that function into `scripts/level2/ambient/level2_ambient_controller.gd` and attach it to the `$AmbientLife` node.
+- Water shimmer uses `scripts/level2/ambient/water_shimmer.gdshader` — already separate.
+
+### Audio Lane
+- Audio is handled via `AudioManager` (Level 1 shared, unmodified).
+- Level 2 specific audio (sea ambience, harbour music) should be added to a new `scripts/level2/audio/level2_audio_manager.gd` that wraps or extends the base AudioManager behaviour.
+
+### Camera Lane
+- Current camera is inline tweens in `level2_marsa_playable.gd`.
+- The standalone production camera is documented in `scripts/level2/camera/level2_camera_controller.gd`.
+- When ready: attach `level2_camera_controller.gd` to `$GameCamera` and call its API from the controller.
+
+### Gameplay Dressing Lane
+- Obstacles: same `ObstacleSpawner` as Level 1. Harbor-themed obstacle PNG art goes in `assets/level2/marsa/obstacles/`.
+- Collectibles: same `CollectibleSpawner` as Level 1. New collectible sheet goes in `assets/level2/marsa/collectibles/`.
+- No changes to collision logic, spawn intervals, or shared spawner scripts.
