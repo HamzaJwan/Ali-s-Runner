@@ -23,6 +23,9 @@ const AUDIO_MANAGER       := preload("res://scripts/audio/audio_manager.gd")
 # incompatible with BackgroundMotion.add_layer(Sprite2D).
 # The Environment Lane coder will wire real Sprite2D layers + motion later.
 
+# ── Level 2 environment PNG auto-detector (non-fatal) ─────────────────────
+const L2_ENV := preload("res://scripts/level2/environment/level2_environment_visual.gd")
+
 # ── Level 2 encounter data ────────────────────────────────────────────────
 # Level2EncounterData is available globally via its class_name declaration.
 # Do NOT preload — the class_name registration handles resolution.
@@ -146,7 +149,11 @@ func _ready() -> void:
 
 	audio_manager.setup(self)
 
-	_build_backgrounds()
+	# Try loading real PNG environment layers — falls back to procedural if missing.
+	var env_loader := L2_ENV.new()
+	var any_real := env_loader.setup(bg_node, VIEW_W)
+	if not any_real:
+		_build_backgrounds()   # procedural fallback
 	_build_ambient()
 	_tag_jomana()
 

@@ -128,3 +128,55 @@ const ASSET_ROOT := "res://assets/level2/marsa/characters/jomana/"
 
 When the run frames are present, the placeholder automatically hides.
 No code change needed — just drop the PNGs in the correct folder.
+
+---
+
+## Fallback If Only One Image Is Available
+
+If you only have one reference image of Jomana (e.g., a single standing pose):
+
+1. Use it as `jomana_idle_01.png` (duplicated to 01–04 for a still idle)
+2. The placeholder continues for running
+3. This gives you Jomana on the story checkpoint screen without placeholder
+
+The pipeline supports partial assets — even one frame is better than none.
+
+---
+
+## Quality Checklist (Before Submitting Frames)
+
+For each PNG frame, verify:
+
+- [ ] Background is **transparent** (not white or colored)
+- [ ] Canvas is exactly **256×256 px**
+- [ ] Character **faces right** in all frames
+- [ ] Feet touch the **same Y pixel** in every frame
+- [ ] Character is same **height/scale** in every frame
+- [ ] Same **face**, same **dress color**, same **hijab** in every frame
+- [ ] No text, no watermarks, no signatures inside image
+- [ ] No baked-in hard shadow under character
+
+---
+
+## Recommendation: Start With 8 PNG Frames, Not Skeleton2D
+
+Skeleton2D (bone-based animation with dress/hair physics) is powerful but complex.
+For MVP, test the 8-frame PNG approach first.
+
+If the owner approves the look of the 8-frame run animation → ship it.
+If the owner wants smoother hair/dress → pursue Skeleton2D R&D separately.
+
+Do NOT spend weeks on Skeleton2D before confirming basic animation is acceptable.
+
+---
+
+## Current Status
+
+| Asset | Status |
+|---|---|
+| jomana_run_01–08.png | ⬜ NEEDED |
+| jomana_idle_01–04.png | ⬜ NEEDED |
+| jomana_jump_01.png | ⬜ NEEDED |
+| jomana_land_01.png | ⬜ NEEDED |
+| jomana_smile_wave_01.png | ⬜ NEEDED |
+| Pipeline code | ✅ Ready — auto-detects when files are present |
