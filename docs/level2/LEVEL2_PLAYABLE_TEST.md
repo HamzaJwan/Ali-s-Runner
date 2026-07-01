@@ -113,3 +113,39 @@ If the web build is deployed (see `docs/WEB_DOCKER_PLAYTEST.md`):
 - Checkpoint NPC arrives from off-screen right (same as Level 1) — placeholder motion only
 - No sound effects specific to Level 2 yet (reuses Level 1 audio system)
 - Water shimmer may fall back to a tween if the shader fails to compile — still works
+- Background does NOT scroll yet (static procedural layers) — parallax comes in Phase 4
+
+---
+
+## Camera / Animation Review Checklist (Phase 2)
+
+After pressing F6, verify:
+
+| Check | What to look for |
+|---|---|
+| **Jomana large enough?** | She should fill roughly 18–22% of screen height |
+| **Camera zoom comfortable?** | Harbor should feel "close-in" but not claustrophobic |
+| **Jump arc visible?** | During a full jump, head should NOT be cropped at top |
+| **Obstacles visible early?** | You should see obstacles 300+ px before they reach Jomana |
+| **Collectible arcs readable?** | Pink gem arcs should be easy to see and judge |
+| **Opening reveal smooth?** | Harbor should zoom in gently over ~1.4 seconds |
+| **Checkpoint focus OK?** | Slight zoom during dialogue should not feel sudden |
+| **UI readable?** | Arabic labels (الأثر: N) must be clear and not too large |
+| **Feet on pier?** | Jomana's feet should always touch the stone surface |
+| **Placeholder acceptable?** | Teal polygon should read clearly as "a character" |
+| **Checkpoint order correct?** | علي (15) → زينب (35) → فاطمة (60) → الأب (90) |
+| **Difficulty feels fair?** | Speed increases gradually, obstacles remain beatable |
+
+## Updated Family Checkpoint Order
+
+| Score | Character | Value |
+|---|---|---|
+| 15 | علي | الكلمة الطيبة بين الأخوة |
+| 35 | زينب | الصبر والتفكير الهادئ |
+| 60 | فاطمة | الرفق والرحمة |
+| 90 | الأب | التوكل والعمل وخير العائلة |
+
+## When to Start Character Art
+
+Once the owner confirms the camera feel is acceptable, signal the Character Lane coder to start generating/sourcing Jomana images per `docs/level2/JOMANA_IMAGE_REQUESTS.md`.
+Drop the PNGs in `assets/level2/marsa/characters/jomana/run/` and re-open the scene — the placeholder disappears automatically.

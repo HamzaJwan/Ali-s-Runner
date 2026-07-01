@@ -42,11 +42,24 @@ const CHECKPOINT_ARRIVAL_SPEED := 360.0
 const COUNTDOWN_DURATION      := 3.0
 const GAME_OVER_DELAY         := 0.45
 
-# ── Level 2 camera (slightly more cinematic than Level 1) ─────────────────
-const GAMEPLAY_ZOOM           := 1.18
-const CAM_SCREEN_X            := 230.0
-const CAM_SCREEN_Y            := 498.0
+# ── Level 2 camera tuning constants (all Level 2 local) ───────────────────
+# Increase GAMEPLAY_ZOOM to bring Jomana closer; safe range: 1.25–1.45.
+# At 1.38 the visible world width is 1152/1.38 ≈ 835 px, obstacles at
+# spawn X=1292 appear ~475 px ahead (world space) — comfortable react time.
+const GAMEPLAY_ZOOM           := 1.38   # was 1.18 — now visibly larger
+const CAMERA_REVEAL_FROM      := 0.95   # cinematic opening starts here
+const CAMERA_CHECKPOINT_BOOST := 0.05   # +5% zoom during checkpoint
+# Where Jomana lands on screen (px from left at gameplay zoom):
+const CAM_SCREEN_X            := 238.0  # left-third — enough look-ahead right
+const CAM_SCREEN_Y            := 498.0  # road surface screen Y (same as L1)
 const CAM_TRANSITION_TIME     := 0.38
+# Smooth look-ahead: camera slides slightly forward so players see more ahead.
+# In a fixed-X runner, look-ahead = horizontal offset applied every frame.
+const LOOKAHEAD_X             := 120.0  # extra px of look-ahead (world space)
+const FOLLOW_SPEED            := 5.5    # lerp speed for look-ahead correction
+# Vertical feel: slight upward shift keeps jump apex in frame without
+# showing empty sky. Negative = camera is higher, showing more below.
+const VERTICAL_OFFSET         := -18.0
 
 # ── Harbour palette (procedural — no external assets required) ────────────
 const C_SKY        := Color(0.38, 0.66, 0.90, 1.0)
@@ -114,6 +127,8 @@ var npc_arriving       := false
 var audio_manager    := AUDIO_MANAGER.new()
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
+var _look_x: float = 0.0          # smoothed look-ahead X target
+var _tracking_active: bool = false  # true during gameplay only
 var _boat_times: Array[float] = []
 
 # ── Boot ──────────────────────────────────────────────────────────────────
@@ -171,6 +186,12 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active:
 		_animate_boats(delta)
+		# Smooth look-ahead: slide camera position.x toward a target
+		# slightly ahead of the player so upcoming obstacles are visible.
+		if _tracking_active:
+			var desired_x: float = _gameplay_cam_pos.x - LOOKAHEAD_X / GAMEPLAY_ZOOM
+			_look_x = lerpf(_look_x, desired_x, FOLLOW_SPEED * delta)
+			game_camera.position.x = _look_x
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -427,28 +448,40 @@ func _on_retry_pressed() -> void:
 # ── Camera ────────────────────────────────────────────────────────────────
 
 func _calc_cam_pos() -> Vector2:
+	# Apply VERTICAL_OFFSET: negative shifts camera up, showing more sky above
+	# Jomana and keeping her jump arc in frame without cropping.
 	return Vector2(
 		PLAYER_START_X - (CAM_SCREEN_X - VIEW_W / 2.0) / GAMEPLAY_ZOOM,
-		ROAD_SURFACE_Y - (CAM_SCREEN_Y - VIEW_H / 2.0) / GAMEPLAY_ZOOM,
+		ROAD_SURFACE_Y - (CAM_SCREEN_Y - VIEW_H / 2.0) / GAMEPLAY_ZOOM + VERTICAL_OFFSET,
 	)
 
 
 func _apply_gameplay_cam() -> void:
+	_tracking_active = false
 	_tween_cam(_gameplay_cam_pos, Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM))
+	# Start look-ahead from current camera position, then enable tracking
+	_look_x = game_camera.position.x
+	await get_tree().create_timer(CAM_TRANSITION_TIME + 0.05).timeout
+	if started and not game_over and not checkpoint_active:
+		_tracking_active = true
 
 
 func _apply_default_cam() -> void:
+	_tracking_active = false
 	_tween_cam(Vector2(VIEW_W / 2.0, VIEW_H / 2.0), Vector2.ONE)
 
 
 func _apply_checkpoint_cam() -> void:
-	_tween_cam(_gameplay_cam_pos, Vector2(GAMEPLAY_ZOOM * 1.03, GAMEPLAY_ZOOM * 1.03))
+	_tracking_active = false
+	var boost: float = GAMEPLAY_ZOOM * (1.0 + CAMERA_CHECKPOINT_BOOST)
+	_tween_cam(_gameplay_cam_pos, Vector2(boost, boost))
 
 
 func _play_harbor_reveal() -> void:
-	game_camera.position = Vector2(VIEW_W / 2.0, VIEW_H / 2.0)
-	game_camera.zoom = Vector2(0.84, 0.84)
-	_tween_cam(_gameplay_cam_pos, Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM), 1.8)
+	# Soft reveal: start slightly zoomed out, settle into full gameplay framing
+	game_camera.position = Vector2(VIEW_W / 2.0, VIEW_H / 2.0 + 20.0)
+	game_camera.zoom = Vector2(CAMERA_REVEAL_FROM, CAMERA_REVEAL_FROM)
+	_tween_cam(_gameplay_cam_pos, Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM), 1.4)
 
 
 func _tween_cam(tpos: Vector2, tzoom: Vector2, dur := CAM_TRANSITION_TIME) -> void:
