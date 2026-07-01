@@ -50,6 +50,9 @@ func set_pose(pose: Pose) -> void:
 func is_using_placeholder() -> bool:
 	return _using_placeholder
 
+func get_pose() -> Pose:
+	return _current_pose
+
 
 func set_speed(speed: float) -> void:
 	if _anim == null:

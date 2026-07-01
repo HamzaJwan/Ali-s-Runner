@@ -12,11 +12,33 @@ var _loaded_count := 0
 var _missing: Array[String] = []
 
 
+## Approximate sky blue from bg_sky_marsa.png — used as solid backdrop fill
+## so any gap between layers shows sky color instead of white/black.
+const SKY_FILL_COLOR := Color(0.53, 0.78, 0.96, 1.0)
+
 ## Call once from Level2_Marsa_Playable._ready() with the $Background node.
 ## Returns true if at least one real layer was loaded.
 func setup(background_node: Node2D) -> bool:
 	_loaded_count = 0
 	_missing.clear()
+
+	# Add a sky-colored fill FIRST so any seam between layers shows sky, not white.
+	# This ColorRect is camera-relative; the parallax code repositions it each frame
+	# alongside the sky layer via the L2_SkyLayer node.
+	var sky_fill := background_node.get_node_or_null("L2_SkyFill")
+	if sky_fill == null:
+		var fill := ColorRect.new()
+		fill.name = "L2_SkyFill"
+		fill.color = SKY_FILL_COLOR
+		# Very large so it always covers even at zoom 0.95; sky layer re-positions it.
+		fill.size = Vector2(VIEW_W * 3.0, VIEW_H * 4.0)
+		fill.position = Vector2(-VIEW_W, -VIEW_H * 1.5)
+		fill.z_index = -10
+		var sky_node := background_node.get_node_or_null("L2_SkyLayer")
+		if sky_node != null:
+			sky_node.add_child(fill)
+		else:
+			background_node.add_child(fill)
 
 	var layers := MANIFEST.get_background_layers()
 	for node_name: String in layers:

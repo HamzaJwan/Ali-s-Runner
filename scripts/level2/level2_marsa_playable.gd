@@ -227,6 +227,12 @@ func _process(delta: float) -> void:
 	# Always update background positions (start screen, gameplay, checkpoint).
 	_update_background_parallax()
 
+	# If gameplay is active and Jomana is stuck in IDLE, push her to RUN.
+	# Catches any timing edge-case where set_pose(RUN) was missed.
+	if started and not game_over and not checkpoint_active and not countdown_active:
+		if is_instance_valid(_jomana_vis) and _jomana_vis.get_pose() == _jomana_vis.Pose.IDLE:
+			_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
+
 	if started and not game_over and not checkpoint_active and not countdown_active:
 		_animate_boats(delta)
 		# Smooth look-ahead: slide camera position.x toward a target
@@ -347,10 +353,13 @@ func _on_collectible_spawned(c: Node) -> void:
 
 
 func _apply_l2_collectible_visual(c: Node) -> void:
-	# Hide the Level 1 yellow diamond Polygon2D.
-	var poly := c.get_node_or_null("Polygon2D")
-	if poly != null:
-		poly.visible = false
+	# Hide ALL Level 1 collectible visuals:
+	# - Polygon2D (yellow star placeholder, visible when no texture found)
+	# - ShardSprite (Sprite2D with the hearts/stars animation sheet from collectible.gd)
+	for node_name in ["Polygon2D", "ShardSprite"]:
+		var n := c.get_node_or_null(node_name)
+		if n != null:
+			(n as Node2D).visible = false
 	# Load Level 2 أثر shard PNG.
 	var path := L2_MANIFEST.COL_SHARD_SINGLE
 	if not L2_MANIFEST.file_exists(path):
