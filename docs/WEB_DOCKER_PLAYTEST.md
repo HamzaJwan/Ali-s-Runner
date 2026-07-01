@@ -90,3 +90,143 @@ Official references:
 
 - https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html
 - https://docs.godotengine.org/en/stable/classes/class_editorexportplatformweb.html
+
+## Hosted internal HTTPS playtest
+
+The current hosted test is available at:
+
+```text
+https://game.juanspace.org
+```
+
+Architecture:
+
+```text
+Owner browser / phone
+        |
+        | HTTPS
+        v
+https://game.juanspace.org
+        |
+        | Cloudflare Tunnel connector: Adc1.71
+        v
+http://127.0.0.1:8088 on 172.31.1.71
+        |
+        | Docker published port 8088:80
+        v
+ali-runner-web container
+        |
+        | nginx
+        v
+Godot Web export files
+```
+
+Deployment details:
+
+```text
+Server: 172.31.1.71
+Host path: /opt/Appdata/ali_runner_web
+Compose project: ali-runner-web
+Container: ali-runner-web
+Port: 8088:80
+Cloudflare hostname: game.juanspace.org
+Cloudflare service: http://127.0.0.1:8088
+```
+
+### Why direct IP HTTP may fail but Cloudflare HTTPS works
+
+`http://172.31.1.71:8088` is useful for server and container diagnostics.
+Browser playtesting should use `https://game.juanspace.org`.
+
+Godot Web can require a browser Secure Context. A plain HTTP IP address is not
+a Secure Context, while the Cloudflare Tunnel provides HTTPS externally and
+forwards requests internally to `http://127.0.0.1:8088`. The direct-IP Secure
+Context message is expected and is not a Docker failure.
+
+### Rebuild and redeploy
+
+Local Windows export/build:
+
+```powershell
+cd D:\GODOT\test1\test-web-deploy
+.\scripts\deploy\build_web_docker.ps1
+```
+
+The current server bundle was prepared manually. It contains only:
+
+```text
+deploy_bundle/ali_runner_web/
+  Dockerfile
+  nginx.conf
+  docker-compose.yml
+  html/
+```
+
+The `html/` folder is copied from `builds/web_rc/`. Neither folder is committed.
+
+Server rebuild:
+
+```bash
+ssh jwan@172.31.1.71
+cd /opt/Appdata/ali_runner_web
+docker compose -p ali-runner-web up -d --build
+docker logs ali-runner-web --tail 100
+```
+
+Follow logs:
+
+```bash
+docker logs ali-runner-web --tail 100 -f
+```
+
+Stop this stack only:
+
+```bash
+cd /opt/Appdata/ali_runner_web
+docker compose -p ali-runner-web down
+```
+
+### Public release blockers
+
+This is an **internal HTTPS playtest**, not a public release.
+
+- Owner visual, audio, story, desktop, and mobile approval.
+- Confirm the embedded Arabic font source and redistribution license.
+- Confirm public asset/audio credits.
+- Confirm the license/source for `level1_exciting_loop.ogg`.
+- Complete final mobile QA.
+- Level 2 is not wired into the Web build yet.
+
+### How to add Level 2 later
+
+Phase 1:
+
+- Finish Level 2 in `D:\GODOT\test1\test`.
+- Use branch `level2/jomana-marsa-mvp-20260701`.
+- Obtain owner F6 approval with real art.
+- Confirm the Level 1 smoke test still passes.
+
+Phase 2:
+
+- Merge or cherry-pick the approved Level 2 commits into the deploy worktree.
+- Do not manually copy random Level 2 files into the deploy worktree.
+- Preserve Git history so the combined build is reviewable and reversible.
+
+Phase 3:
+
+- Wire Level 2 through one owner-approved entry point:
+  - level-select menu;
+  - internal debug route/button;
+  - transition after the Level 1 ending.
+
+Phase 4:
+
+- Re-export the Web build with Level 2 included.
+- Recreate the runtime bundle.
+- Deploy to a separate Level 2 staging hostname first.
+- Test desktop and phone.
+- Promote to `https://game.juanspace.org` only after approval.
+
+Level 2 must not enter the Web build until its F6 review passes, real character
+and background assets are confirmed, Arabic text/font rendering works, and Web
+performance has been checked.
