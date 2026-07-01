@@ -8,17 +8,19 @@
 
 config_version=5
 
+[autoload]
+
+MobileRotateOverlay="*res://scripts/ui/mobile_rotate_overlay.gd"
+
 [application]
 
 config/name="test"
+run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
-run/main_scene="res://scenes/Main.tscn"
 
 [display]
 
-window/size/viewport_width=1152
-window/size/viewport_height=648
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

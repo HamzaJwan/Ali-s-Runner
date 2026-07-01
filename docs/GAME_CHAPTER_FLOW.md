@@ -122,6 +122,20 @@ After local validation:
 
 ---
 
+## Mobile Landscape Gate (Shared UX)
+
+The mobile landscape overlay (`scripts/ui/mobile_rotate_overlay.gd`) is an autoload
+and therefore active in ALL chapters automatically:
+
+- Chapter 1 (Ali) — already in main scene via autoload ✅
+- Chapter 2 (Jomana) — also via autoload ✅
+- Future chapters — automatic, no per-chapter setup needed
+
+The overlay is the first UX layer every mobile player sees. It is chapter-agnostic
+and should be kept working at all times.
+
+---
+
 ## Safety Constraints
 
 - Level 1 must NEVER break during Level 2 development.
