@@ -79,12 +79,14 @@ const FAM_FATHER     := ROOT_FAMILY + "father_checkpoint_01.png"
 const FAM_ENDING     := ROOT_FAMILY + "family_marsa_ending_01.png"
 
 # ── Audio ───────────────────────────────────────────────────────────────────
-const AUD_SEA_AMB    := ROOT_AUDIO + "sea_ambience_loop.ogg"
-const AUD_THEME      := ROOT_AUDIO + "marsa_theme_loop.ogg"
+const AUD_SEA_AMB    := ROOT_AUDIO + "sea_ambience_loop.wav"
+const AUD_THEME      := ROOT_AUDIO + "marsa_theme_loop.wav"
 const AUD_SEAGULL    := ROOT_AUDIO + "seagull_distant_01.wav"
 const AUD_PICKUP     := ROOT_AUDIO + "athar_pickup_01.wav"
 const AUD_CHECKPOINT := ROOT_AUDIO + "checkpoint_chime_01.wav"
 const AUD_RETRY      := ROOT_AUDIO + "retry_soft_01.wav"
+const AUD_JUMP       := ROOT_AUDIO + "jomana_jump_01.wav"
+const AUD_FOOTSTEP   := ROOT_AUDIO + "footstep_stone_01.wav"
 
 # ── Helper methods ──────────────────────────────────────────────────────────
 
@@ -156,6 +158,8 @@ static func get_audio_path(audio_id: String) -> String:
 		"pickup":       AUD_PICKUP,
 		"checkpoint":   AUD_CHECKPOINT,
 		"retry":        AUD_RETRY,
+		"jump":         AUD_JUMP,
+		"footstep":     AUD_FOOTSTEP,
 	}
 	var path: String = map.get(audio_id, "")
 	if path.is_empty() or not file_exists(path):

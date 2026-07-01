@@ -89,6 +89,8 @@ func _init() -> void:
 		["Audio pickup SFX",    MANIFEST.AUD_PICKUP],
 		["Audio checkpoint",    MANIFEST.AUD_CHECKPOINT],
 		["Audio retry",         MANIFEST.AUD_RETRY],
+		["Audio jump (Jomana)", MANIFEST.AUD_JUMP],
+		["Audio footstep",      MANIFEST.AUD_FOOTSTEP],
 	]:
 		_report(info[0] as String, 1 if MANIFEST.file_exists(info[1]) else 0, 1)
 

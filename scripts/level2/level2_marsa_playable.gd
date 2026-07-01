@@ -26,9 +26,11 @@ const AUDIO_MANAGER       := preload("res://scripts/audio/audio_manager.gd")
 # ── Level 2 environment PNG auto-detector (non-fatal) ─────────────────────
 const L2_ENV        := preload("res://scripts/level2/environment/level2_environment_visual.gd")
 # ── Level 2 Jomana character visual (replaces Level 1 AliSprite) ──────────
-const L2_JOMANA_VIS := preload("res://scripts/level2/character/jomana_player_visual.gd")
+const L2_JOMANA_VIS  := preload("res://scripts/level2/character/jomana_player_visual.gd")
 # ── Level 2 obstacle visual skins (non-fatal, no shared code change) ──────
-const L2_OBS_VIS    := preload("res://scripts/level2/gameplay/level2_obstacle_visuals.gd")
+const L2_OBS_VIS     := preload("res://scripts/level2/gameplay/level2_obstacle_visuals.gd")
+# ── Level 2 Marsa audio (replaces Level 1 fallbacks where L2 files exist) ─
+const L2_AUDIO_MGR   := preload("res://scripts/level2/audio/level2_audio_manager.gd")
 
 # ── Level 2 encounter data ────────────────────────────────────────────────
 # Level2EncounterData is available globally via its class_name declaration.
@@ -133,6 +135,7 @@ var npc_arriving       := false
 
 var audio_manager    := AUDIO_MANAGER.new()
 var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
+var _l2_audio: Node   = null         # Level2AudioManager
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
@@ -154,9 +157,14 @@ func _ready() -> void:
 
 	audio_manager.setup(self)
 
-	# Position background layer nodes in world space so layers align with the
-	# gameplay zone. Camera sees world y≈149–619 (cam_y≈384, zoom=1.38).
-	_position_background_layers()
+	# Level 2 audio — all local to this scene, never touches Level 1 manager.
+	_l2_audio = L2_AUDIO_MGR.new()
+	_l2_audio.name = "L2AudioManager"
+	add_child(_l2_audio)
+	_l2_audio.setup(self, audio_manager)
+
+	# Initial background position before first _process tick.
+	_update_background_parallax()
 
 	# Try loading real PNG environment layers — falls back to procedural if missing.
 	var env_loader := L2_ENV.new()
@@ -178,7 +186,10 @@ func _ready() -> void:
 	if player.has_signal("landed"):
 		player.landed.connect(func(): audio_manager.play_land())
 	if player.has_signal("jumped"):
-		player.jumped.connect(func(): audio_manager.play_jump())
+		player.jumped.connect(func():
+			if is_instance_valid(_l2_audio): _l2_audio.play_jump()
+			else: audio_manager.play_jump()
+		)
 
 	_show_start_screen()
 	audio_manager.play_calm_music()
@@ -203,6 +214,9 @@ func _process(delta: float) -> void:
 			countdown_active = false
 			countdown_overlay.visible = false
 			_finish_countdown()
+
+	# Always update background positions (start screen, gameplay, checkpoint).
+	_update_background_parallax()
 
 	if started and not game_over and not checkpoint_active and not countdown_active:
 		_animate_boats(delta)
@@ -264,6 +278,8 @@ func _show_start_screen() -> void:
 
 func _on_play_pressed() -> void:
 	start_screen.visible = false
+	if is_instance_valid(_l2_audio):
+		_l2_audio.play_gameplay_music()
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
 	_play_harbor_reveal()
 
@@ -318,7 +334,10 @@ func _on_collectible_spawned(c: Node) -> void:
 func _on_collected() -> void:
 	collectible_count += 1
 	score_label.text = "الأثر: %d  ✦%d" % [score, collectible_count]
-	audio_manager.play_shard_pickup()
+	if is_instance_valid(_l2_audio):
+		_l2_audio.play_pickup()
+	else:
+		audio_manager.play_shard_pickup()
 
 
 # ── Checkpoint ────────────────────────────────────────────────────────────
@@ -338,7 +357,10 @@ func _start_checkpoint(char_id: int) -> void:
 	player.set_gameplay_active(false)
 	get_tree().paused = true
 	audio_manager.play_calm_music()
-	audio_manager.play_checkpoint()
+	if is_instance_valid(_l2_audio):
+		_l2_audio.play_checkpoint()
+	else:
+		audio_manager.play_checkpoint()
 	_apply_checkpoint_cam()
 	var enc := Level2EncounterData.get_encounter(char_id)
 	npc_label.text = enc.get("placeholder_text", "؟")
@@ -458,6 +480,8 @@ func _on_restart_pressed() -> void:
 
 
 func _on_retry_pressed() -> void:
+	if is_instance_valid(_l2_audio):
+		_l2_audio.play_retry()
 	if last_checkpoint == Level2EncounterData.NONE:
 		_begin_run(0, Level2EncounterData.NONE, 225.0)
 		return
@@ -526,17 +550,42 @@ func _setup_jomana_visual() -> void:
 		_tag_jomana()   # teal tint fallback while waiting for real art
 
 
-# ── Background layer world-Y positioning ─────────────────────────────────
-# Camera at cam_world_y≈384 (ROAD_SURFACE_Y - CAM_OFFSET) sees world y≈149–619.
-# These offsets place each layer so the correct part of each background image
-# is visible at the right depth in the screen composition.
+# ── Background parallax ───────────────────────────────────────────────────
+# Called every frame to keep every layer anchored relative to the camera so
+# backgrounds fill the full 1152×648 viewport at any zoom or camera position.
+# Formula: layer_pos.y = top + VIEW_H * screen_fraction / zoom
+#   → places layer at <fraction>% from screen top, zoom-independent.
+# Formula: layer_pos.x = left - cam_x * drift
+#   → left edge at screen-left, tiny drift creates subtle parallax depth.
 
-func _position_background_layers() -> void:
-	sky_layer.position.y       = 0.0    # sky fills upper viewport, above gameplay zone
-	sea_layer.position.y       = 294.0  # sea horizon at ~25% down the screen
-	buildings_layer.position.y = 345.0  # buildings at ~40% down
-	boats_layer.position.y     = 410.0  # boats above pier, ~55% down
-	foreground_layer.position.y = 446.0 # pier ground starts at ~65% down, covers gameplay floor
+func _update_background_parallax() -> void:
+	var cam_x := game_camera.position.x
+	var cam_y := game_camera.position.y
+	var zoom  := game_camera.zoom.x          # 0.95 on start screen → 1.38 gameplay
+	var hw    := VIEW_W / (2.0 * zoom)       # half-viewport width in world units
+	var hh    := VIEW_H / (2.0 * zoom)       # half-viewport height in world units
+	var left  := cam_x - hw                  # world X of screen left edge
+	var top   := cam_y - hh                  # world Y of screen top edge
+
+	# Sky: fully camera-fixed, stretched to cover entire backdrop.
+	sky_layer.position = Vector2(left, top)
+
+	# Sea: appears at 18% from screen top; tiny horizontal drift for parallax depth.
+	sea_layer.position.x = left - cam_x * 0.003
+	sea_layer.position.y = top + VIEW_H * 0.18 / zoom
+
+	# Harbor buildings: at 32% from top, slightly more drift.
+	buildings_layer.position.x = left - cam_x * 0.005
+	buildings_layer.position.y = top + VIEW_H * 0.32 / zoom
+
+	# Boats: at 50% from top (behind pier, above gameplay lane).
+	boats_layer.position.x = left - cam_x * 0.008
+	boats_layer.position.y = top + VIEW_H * 0.50 / zoom
+
+	# Pier ground: camera-fixed X, positioned so stone edge aligns with Jomana feet.
+	# Jomana's feet are at screen ~71% → pier top at 60% leaves clear visual floor.
+	foreground_layer.position.x = left
+	foreground_layer.position.y = top + VIEW_H * 0.60 / zoom
 
 
 # ── Level 2 obstacle visual skins ─────────────────────────────────────────

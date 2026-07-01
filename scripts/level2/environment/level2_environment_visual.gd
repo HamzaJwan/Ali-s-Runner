@@ -55,10 +55,16 @@ func _apply_layer(layer: Node2D, tex: Texture2D, node_name: String) -> void:
 	sprite.centered = false
 	sprite.position = Vector2.ZERO
 
-	# Scale to fill viewport width (preserve aspect).
 	var tw: float = float(tex.get_width())
-	if tw > 0.0:
-		var s := VIEW_W / tw
-		sprite.scale = Vector2(s, s)
+	var th: float = float(tex.get_height())
+	if tw > 0.0 and th > 0.0:
+		var s_x := VIEW_W / tw
+		if node_name == "L2_SkyLayer":
+			# Sky is the full-screen backdrop. Scale height to 2× viewport so it
+			# fills completely at any camera zoom level (0.95 start → 1.38 gameplay).
+			sprite.scale = Vector2(s_x, VIEW_H * 2.0 / th)
+		else:
+			# Other layers preserve aspect; the parallax loop positions them correctly.
+			sprite.scale = Vector2(s_x, s_x)
 
 	layer.add_child(sprite)

@@ -41,6 +41,14 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 | Multi-coder workflow | `MULTI_CODER_WORKFLOW.md` |
 | Level 1 untouched | Confirmed |
 | Docker/deploy untouched | Confirmed |
+| Jomana real art integrated | All 16 frames (run/idle/jump/land/story) normalized 384×512, auto-loaded |
+| Real backgrounds integrated | All 5 PNG layers loading, parallax positioning fixed |
+| Background viewport coverage | `_update_background_parallax()` runs every frame — no gray borders |
+| Obstacle visual skins | `level2_obstacle_visuals.gd` wired to `obstacle_spawned` signal |
+| Collectible manifest path | `col_light_shard_pink_01.png` correctly mapped |
+| Audio 8/8 files integrated | sea/theme/seagull/pickup/checkpoint/retry/jump/footstep |
+| Audio manager | `level2_audio_manager.gd` — all events wired, WAV loop support |
+| Game chapter flow doc | `docs/GAME_CHAPTER_FLOW.md` — one game, two chapters, future transition plan |
 
 ---
 
@@ -48,8 +56,9 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 
 | Item | Owner/Coder | Notes |
 |---|---|---|
-| Owner F6 camera review | **OWNER** | Open scene → F6 → evaluate camera feel |
-| Level 1 Web export | **Codex** (separate worktree `test-web-deploy`) | Web build works; Arabic font embedding is the remaining issue |
+| Owner F6 real-art + audio review | **OWNER** | Open Level2_Marsa_Playable.tscn → F6 → confirm Jomana, backgrounds, audio |
+| Chapter transition integration | **After F6 approval** | See docs/GAME_CHAPTER_FLOW.md — safe to implement after owner approves |
+| Level 1 Web deployed | **Codex** (separate worktree) | game.juanspace.org live — Level 2 NOT included until approved |
 
 ---
 
@@ -57,16 +66,10 @@ Quick reference for owner and coders. Open this file to know exactly where thing
 
 | Item | Blocked by | What's needed |
 |---|---|---|
-| Jomana real run animation | Character art | 8 PNG frames (see `JOMANA_IMAGE_REQUESTS.md`) |
-| Jomana idle animation | Character art | 4 PNG frames |
-| Jomana jump/land | Character art | 2 PNG frames |
-| Jomana story pose | Character art | 1–2 PNG frames |
-| 5 real background PNG layers | Environment art | See `LEVEL2_ENVIRONMENT_ASSET_REQUIREMENTS.md` |
-| 4 obstacle PNG skins | Obstacle art | See `LEVEL2_OBSTACLE_ASSET_REQUIREMENTS.md` |
-| Sea ambience audio | CC0 source | See `LEVEL2_AUDIO_ASSET_REQUIREMENTS.md` |
-| Harbour music | CC0 source | Same |
-| Seagull SFX | CC0 source | Same |
-| NPC sprites at checkpoints | Character art | Ali/Zainab/Fatima/Father harbour poses |
+| NPC sprites at checkpoints | Character art | ali_checkpoint_01.png, zainab_checkpoint_01.png, fatima_checkpoint_01.png, father_checkpoint_01.png |
+| Family ending image | Character art | family_marsa_ending_01.png |
+| Audio OGG conversion (optional) | Owner decision | WAV works; OGG smaller for web |
+| Level 1 → Level 2 transition | Owner F6 approval needed first | See docs/GAME_CHAPTER_FLOW.md |
 
 ---
 
