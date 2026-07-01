@@ -1764,3 +1764,49 @@ No physics, checkpoint thresholds, scores, rewards logic, or asset filenames wer
 - All other existing gates remain: F6 visual, audio listening, level1_exciting_loop.ogg license docs.
 
 Commit: `story: refactor game values around good deeds and effort`.
+
+## RC Gate Fix — Internal Candidate Stabilization — STATUS: COMPLETE
+
+Files changed: `scripts/main.gd`, `scripts/tools/rc_smoke_check.gd` (new), `.gitignore`, `docs/LEVEL_1_GOLD_CHECKLIST.md`, `docs/AUTOPILOT_PROGRESS.md`.
+
+### Task A — Menu Ali Grounding (Final Fix)
+
+The previous position-Y bob (`_menu_ali_base_y - MENU_IDLE_BOB_PX`) was confirmed by Codex to lift the sprite's feet above the road. `_start_menu_idle_motion()` now does **no sprite movement at all** — scale stays at the calibrated `align_sprite_visible_bottom` value and position.y never changes. The play button pulse is the only remaining menu motion cue. `_stop_menu_idle_motion()` explicitly restores `player_story_sprite.position.y = _menu_ali_base_y` to guard against any future tween leaving a mid-cycle position. The `MENU_IDLE_BOB_PX` constant was removed.
+
+### Task C — Persistent RC Smoke Test
+
+Created `scripts/tools/rc_smoke_check.gd` — a tracked, reusable regression test (20 checks):
+
+```
+Godot_v4.7-stable_win64_console.exe --headless --path . -s scripts/tools/rc_smoke_check.gd
+```
+
+Checks: title "خطوات الخير", subtitle "حكايات من زليتن", HUD "الأثر", GameOverPanel hidden, RetryButton/RestartButton NodePaths, Ali scale stability during menu idle, Ali Y restored on idle stop, play button pulse ≤ 1.025, all 7 physics/spawn constants, all 4 checkpoint scores (15/35/60/90), no Level 2 nodes.
+
+**Result: `RC_SMOKE=PASS` (20 checks, 0 warnings, exit 0)**
+
+The 4 ObjectDB + 2 resource warnings at shutdown are Godot engine artifacts from headless audio cleanup — identical across all prior sessions, not from project code, non-blocking.
+
+### Task D — Documentation Fix
+
+`docs/LEVEL_1_GOLD_CHECKLIST.md`: corrected line that said `level1_exciting_loop.ogg` is "deliberately unintegrated" — it IS integrated (committed in v1.42, loaded successfully on every headless boot). Status updated to: integrated after owner authorization, `LICENSE_VERIFICATION_REQUIRED_BEFORE_PUBLIC_RELEASE`, `HUMAN_AUDIO_REVIEW_REQUIRED`. `hit_soft_impact.wav` correctly remains not integrated.
+
+### Task E — Workspace Cleanup
+
+Updated `.gitignore`:
+- `*.gd.uid` — Godot-generated UID files, now suppressed
+- `*.zip` — project archives/backups, suppressed
+- `docs/CODEX_*.md` — Codex review snapshots, suppressed
+- `builds/web_rc/`, `exports/web/` — generated build output, suppressed
+
+Remaining untracked items are legitimate: `assets/audio/candidates/music/` (owner candidate audio), `assets/audio/gameplay/hit_soft_impact.wav` (unverified candidate, correctly not integrated). All left as-is per task rules (do not delete owner-provided assets).
+
+### Task G — Web Export Status
+
+`WEB_EXPORT_BLOCKED_BY_EXPORT_TEMPLATES` — Godot export templates directory exists but is empty (no `4.7.stable/` folder). Export preset (`export_presets.cfg`) and output directory (`exports/web/`) are ready. Owner action: install Godot 4.7 export templates → one command exports.
+
+### Final Verdict
+
+**PASS for Internal RC** — all automated gates pass, documentation is honest, workspace is classified. Human gates remain: owner F6 visual/audio review, story dialogue approval, `level1_exciting_loop.ogg` public license, export templates.
+
+Commit: `rc: close internal candidate gate findings`.

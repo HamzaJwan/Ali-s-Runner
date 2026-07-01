@@ -36,7 +36,7 @@ Status legend: ✅ code-verified (headless/automated test passed) · ⬜ HUMAN_T
 
 * ✅ v0.95A: 11 CC0 SFX integrated (button click, dialogue blip, jump, land, hit, checkpoint, 3 rewards, game over, victory) via `scripts/audio/audio_manager.gd`. Missing-file-safe, no crash if any sound is absent.
 * ⛔ BLOCKED / ⬜ HUMAN_TEST_REQUIRED — **all 11 integrated SFX remain `HUMAN_AUDIO_REVIEW_REQUIRED`.** This is the single most important open item for Gold: the owner must listen to and approve/remap/reject each one before this branch is treated as a release candidate.
-* ✅ / ⛔ **v0.95B PARTIAL_COMPLETE:** licensed `main_theme_soft_loop.ogg` is integrated, loops at `-22 dB`, and ducks during intro/checkpoints/Game Over. `hit_soft_impact.wav` and `level1_exciting_loop.ogg` remain deliberately unintegrated because their source/license entries are not verified. All music/SFX still require human tone approval.
+* ✅ / ⛔ **v0.95B/v0.95C PARTIAL_COMPLETE:** `main_theme_soft_loop.ogg` (license verified, CC0) is integrated as the calm music track. `level1_exciting_loop.ogg` is **integrated** as the active-gameplay running track after explicit owner authorization on 2026-06-29 — it loads successfully, switches state correctly (calm ↔ gameplay), and falls back to calm music if missing. However, its exact external source/license metadata is still unverified: status is `OWNER_AUTHORIZED_LOCAL_USE / LICENSE_VERIFICATION_REQUIRED_BEFORE_PUBLIC_RELEASE`. `hit_soft_impact.wav` remains **not integrated** (no credits entry, never added to audio_manager). All music/SFX still require owner human-tone approval.
 * ⛔ BLOCKED — ambience loops (city/birds/wind): no candidates sourced at all yet.
 
 ## 5. Arabic / Localization

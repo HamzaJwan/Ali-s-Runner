@@ -5,6 +5,19 @@
 export/
 builds/
 
+# Godot-generated UID files (engine manages these; not needed in version control)
+*.gd.uid
+
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# Owner project archives / local backups (not game assets)
+*.zip
+
+# Codex/AI-agent review snapshots (local reference only, not part of the project)
+docs/CODEX_*.md
+
+# Local web/android build outputs (generated, large, owner-runs-manually)
+builds/web_rc/
+exports/web/

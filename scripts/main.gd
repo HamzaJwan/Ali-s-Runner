@@ -58,7 +58,8 @@ const MENU_ALI_X := 320.0
 const MENU_ALI_VISUAL_HEIGHT := 190.0
 const MENU_HERO_ZOOM_IN_TIME := 0.5
 const MENU_IDLE_BOB_TIME := 1.2
-const MENU_IDLE_BOB_PX := 3.5
+# MENU_IDLE_BOB_PX was removed (RC fix): position-Y bob lifted the feet
+# above the road surface; play-button pulse is the only motion cue now.
 const MENU_FADE_IN_TIME := 0.5
 const INTRO_FADE_IN_TIME := 0.3
 const PLAY_BUTTON_PULSE_SCALE := 1.018
@@ -426,22 +427,10 @@ func _play_menu_hero_zoom_in() -> void:
 
 
 func _start_menu_idle_motion() -> void:
-	# Position-only Y bob: scale stays fixed at its calibrated value so
-	# the feet never lift off the road. The sprite rises MENU_IDLE_BOB_PX
-	# pixels (y decreases = up in Godot 2D) and returns, looping smoothly.
+	# No position or scale animation on the sprite — any Y movement lifts
+	# the feet off the road (the sprite scales from its center, not its
+	# feet). The play button pulse provides the only motion cue instead.
 	_stop_menu_idle_motion()
-	_menu_idle_tween = create_tween()
-	_menu_idle_tween.set_loops()
-	_menu_idle_tween.tween_property(
-		player_story_sprite, "position:y",
-		_menu_ali_base_y - MENU_IDLE_BOB_PX,
-		MENU_IDLE_BOB_TIME
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_menu_idle_tween.tween_property(
-		player_story_sprite, "position:y",
-		_menu_ali_base_y,
-		MENU_IDLE_BOB_TIME
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_start_play_button_pulse()
 
 
@@ -449,6 +438,10 @@ func _stop_menu_idle_motion() -> void:
 	if _menu_idle_tween != null and _menu_idle_tween.is_valid():
 		_menu_idle_tween.kill()
 	_menu_idle_tween = null
+	# Restore calibrated foot position in case any interrupted tween left
+	# the sprite at a mid-bob Y.
+	if _menu_ali_base_y != 0.0:
+		player_story_sprite.position.y = _menu_ali_base_y
 	_stop_play_button_pulse()
 
 
