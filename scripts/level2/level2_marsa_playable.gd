@@ -247,12 +247,9 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active:
 		_animate_boats(delta)
-		# Smooth look-ahead: slide camera position.x toward a target
-		# slightly ahead of the player so upcoming obstacles are visible.
-		if _tracking_active:
-			var desired_x: float = _gameplay_cam_pos.x - LOOKAHEAD_X / GAMEPLAY_ZOOM
-			_look_x = lerpf(_look_x, desired_x, FOLLOW_SPEED * delta)
-			game_camera.position.x = _look_x
+		# No per-frame horizontal tracking — camera is fixed.
+		# Look-ahead is baked into _gameplay_cam_pos once at _ready().
+		# _tracking_active and _look_x are kept for compatibility but unused.
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -313,6 +310,8 @@ func _on_play_pressed() -> void:
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
+	# ONE camera transition. _play_harbor_reveal tweens from open view → gameplay pos.
+	# _begin_run does NOT touch the camera to avoid a race condition.
 	_play_harbor_reveal()
 
 
@@ -338,7 +337,9 @@ func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
 	obstacle_spawner.start_spawning(current_speed)
 	collectible_spawner.clear_collectibles()
 	collectible_spawner.start_spawning(current_speed)
-	_apply_gameplay_cam()
+	# Camera is NOT set here to avoid the race with _play_harbor_reveal().
+	# Only _play_harbor_reveal() (on first play) or _apply_gameplay_cam() (on retry)
+	# should drive the camera transition.
 	audio_manager.play_gameplay_music()
 
 
@@ -366,19 +367,38 @@ func _on_collectible_spawned(c: Node) -> void:
 
 
 func _override_l2_collectible_lane(c: Node) -> void:
-	# Redirect collectible spawn Y to Level 2 defined lanes.
-	# The shared spawner uses Level 1 Y values; Level 2 has different visual scale.
-	# Pattern cycles: LOW_LINE → SMALL_ARC → FULL_ARC → repeat.
-	const PATTERNS: Array = [
-		[480.0, 480.0, 480.0, 480.0],           # LOW_LINE  (run to collect)
-		[480.0, 435.0, 400.0, 435.0, 480.0],    # SMALL_ARC (light jump)
-		[435.0, 400.0, 385.0, 400.0, 435.0],    # FULL_ARC  (full jump)
+	# Override Y of each Level-1-spawned collectible to form recognisable Level 2 patterns.
+	# State: _l2_col_idx tracks absolute spawn count.
+	# Each pattern has its own length; we accumulate until we finish a pattern,
+	# then move to the next one.
+	const PATTERNS: Array[Dictionary] = [
+		{"name": "LOW_LINE",  "y": [480.0, 480.0, 480.0, 480.0]},
+		{"name": "SMALL_ARC", "y": [480.0, 440.0, 415.0, 440.0, 480.0]},
+		{"name": "FULL_ARC",  "y": [455.0, 420.0, 385.0, 420.0, 455.0]},
 	]
-	var pat: Array = PATTERNS[(_l2_col_idx / 5) % PATTERNS.size()]
-	var pos_in_pat: int = _l2_col_idx % pat.size()
-	var target_y: float = pat[pos_in_pat]
+
+	# Determine which pattern and position within it based on raw index.
+	# Accumulate lengths: LOW=4, SMALL=5, FULL=5 → total cycle = 14 shards.
+	const CYCLE := 14   # 4 + 5 + 5
+	var pos_in_cycle: int = _l2_col_idx % CYCLE
+	var pat_name: String
+	var target_y: float
+
+	if pos_in_cycle < 4:
+		pat_name = "LOW_LINE"
+		target_y = (PATTERNS[0]["y"] as Array)[pos_in_cycle]
+	elif pos_in_cycle < 9:
+		pat_name = "SMALL_ARC"
+		target_y = (PATTERNS[1]["y"] as Array)[pos_in_cycle - 4]
+	else:
+		pat_name = "FULL_ARC"
+		target_y = (PATTERNS[2]["y"] as Array)[pos_in_cycle - 9]
+
 	(c as Node2D).global_position.y = target_y
 	_l2_col_idx += 1
+
+	if pos_in_cycle == 0 or pos_in_cycle == 4 or pos_in_cycle == 9:
+		print("[L2 collectible] starting pattern=%s  y=%.0f" % [pat_name, target_y])
 
 
 func _apply_l2_collectible_visual(c: Node) -> void:
@@ -583,6 +603,7 @@ func _show_level2_ending() -> void:
 
 func _on_restart_pressed() -> void:
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
+	_apply_gameplay_cam()
 
 
 func _on_retry_pressed() -> void:
@@ -598,22 +619,27 @@ func _on_retry_pressed() -> void:
 # ── Camera ────────────────────────────────────────────────────────────────
 
 func _calc_cam_pos() -> Vector2:
-	# Apply VERTICAL_OFFSET: negative shifts camera up, showing more sky above
-	# Jomana and keeping her jump arc in frame without cropping.
-	return Vector2(
-		PLAYER_START_X - (CAM_SCREEN_X - VIEW_W / 2.0) / GAMEPLAY_ZOOM,
-		ROAD_SURFACE_Y - (CAM_SCREEN_Y - VIEW_H / 2.0) / GAMEPLAY_ZOOM + VERTICAL_OFFSET,
-	)
+	# LOOKAHEAD_X is baked here so _gameplay_cam_pos is the ONE fixed camera
+	# position used throughout gameplay — no per-frame X updates needed.
+	# +LOOKAHEAD_X/ZOOM shifts camera RIGHT so we see more of the upcoming road.
+	var cam_x := PLAYER_START_X - (CAM_SCREEN_X - VIEW_W / 2.0) / GAMEPLAY_ZOOM \
+		+ LOOKAHEAD_X / GAMEPLAY_ZOOM
+	var cam_y := ROAD_SURFACE_Y - (CAM_SCREEN_Y - VIEW_H / 2.0) / GAMEPLAY_ZOOM \
+		+ VERTICAL_OFFSET
+	var pos := Vector2(cam_x, cam_y)
+	# Debug: show where Jomana appears on screen at this camera position
+	var player_screen_x := (PLAYER_START_X - cam_x) * GAMEPLAY_ZOOM + VIEW_W / 2.0
+	var road_screen_y   := (ROAD_SURFACE_Y   - cam_y) * GAMEPLAY_ZOOM + VIEW_H / 2.0
+	print("[L2 camera] player_screen_x=%.0f  road_screen_y=%.0f  zoom=%.2f" %
+		[player_screen_x, road_screen_y, GAMEPLAY_ZOOM])
+	return pos
 
 
 func _apply_gameplay_cam() -> void:
+	# Fixed camera — no tracking after transition. Look-ahead is baked into position.
 	_tracking_active = false
-	_tween_cam(_gameplay_cam_pos, Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM))
-	# Start look-ahead from current camera position, then enable tracking
-	_look_x = game_camera.position.x
-	await get_tree().create_timer(CAM_TRANSITION_TIME + 0.05).timeout
-	if started and not game_over and not checkpoint_active:
-		_tracking_active = true
+	game_camera.position = _gameplay_cam_pos
+	game_camera.zoom     = Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM)
 
 
 func _apply_default_cam() -> void:
@@ -706,23 +732,16 @@ func _update_background_parallax() -> void:
 	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
 	sky_layer.position = Vector2(left, top)
 
-	# ── Sea: distant, very slow parallax ─────────────────────────────────────
-	# 22% from top puts the sea horizon in the upper third of screen.
-	sea_layer.position.x = left - scroll * 0.012
-	sea_layer.position.y = top + VIEW_H * 0.22 / zoom
+	# Sea and Boats layers are DISABLED (opaque plates create seams — hidden by env_visual).
+	# Their Node2D references still exist but we don't position them here.
+	# If procedural fallback runs, they may have ColorRects which are harmless when hidden.
 
-	# ── Buildings: mid-far ────────────────────────────────────────────────────
-	# 32% — minaret and harbour walls visible behind the boats and pier.
-	buildings_layer.position.x = left - scroll * 0.022
-	buildings_layer.position.y = top + VIEW_H * 0.32 / zoom
+	# ── Buildings: fixed X, 30% down — harbor skyline behind the pier ────────
+	buildings_layer.position.x = left
+	buildings_layer.position.y = top + VIEW_H * 0.30 / zoom
 
-	# ── Boats: mid-near ───────────────────────────────────────────────────────
-	# 52% — fishing boats at sea level, behind the pier wall.
-	boats_layer.position.x = left - scroll * 0.035
-	boats_layer.position.y = top + VIEW_H * 0.52 / zoom
-
-	# ── Pier: camera-fixed (gameplay ground, no horizontal drift) ─────────────
-	# 68% matches CURB_TOP_Y in world coords (stone curb just above Jomana feet at 71%).
+	# ── Pier: camera-fixed to gameplay lane ───────────────────────────────────
+	# 68% from top aligns the stone curb with CURB_TOP_Y world position.
 	foreground_layer.position.x = left
 	foreground_layer.position.y = top + VIEW_H * 0.68 / zoom
 

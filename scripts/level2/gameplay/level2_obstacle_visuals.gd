@@ -42,10 +42,14 @@ func apply_skin(obstacle: Node2D, obstacle_type: String) -> bool:
 	if tex == null:
 		return false
 
-	# Hide Level 1 visual (Polygon2D placeholder).
-	var poly := obstacle.get_node_or_null("Polygon2D")
-	if poly != null:
-		(poly as Node2D).visible = false
+	# Hide ALL Level 1 obstacle visuals:
+	# - Polygon2D: procedural coloured rectangle
+	# - ObstacleSprite: Sprite2D that configure() loads with the L1 asset_path texture
+	for vname in ["Polygon2D", "ObstacleSprite"]:
+		var v := obstacle.get_node_or_null(vname)
+		if v != null:
+			(v as Node2D).visible = false
+			print("[L2 obstacle] hidden Level 1 node '%s' on type=%s" % [vname, obstacle_type])
 
 	var vis_h: float  = VISUAL_HEIGHTS.get(obstacle_type, 56.0)
 	var col_h: float  = COLLISION_HEIGHTS.get(obstacle_type, 50.0)
