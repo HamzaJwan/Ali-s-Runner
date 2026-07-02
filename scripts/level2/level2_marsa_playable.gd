@@ -54,7 +54,8 @@ const ENCOUNTER_TARGET_X      := 850.0
 const CHECKPOINT_ARRIVAL_SPEED := 360.0
 const COUNTDOWN_DURATION      := 3.0
 const GAME_OVER_DELAY         := 0.45
-const HARBOR_DRIFT_SPEED      := 3.0
+# Reserved for a future seamless panorama. Current harbor art is not tileable.
+const HARBOR_DRIFT_SPEED      := 0.0
 
 # ── Level 2 camera tuning constants (all Level 2 local) ───────────────────
 # Increase GAMEPLAY_ZOOM to bring Jomana closer; safe range: 1.25–1.45.
@@ -78,6 +79,7 @@ const VERTICAL_OFFSET         := -14.0
 const L2_RUN_PICKUP_Y  := ROAD_SURFACE_Y - 55.0 + VISUAL_LANE_Y_OFFSET
 const L2_LIGHT_JUMP_Y  := ROAD_SURFACE_Y - 105.0 + VISUAL_LANE_Y_OFFSET
 const L2_FULL_JUMP_Y   := ROAD_SURFACE_Y - 150.0 + VISUAL_LANE_Y_OFFSET
+const L2_COLLECTIBLE_VISUAL_HEIGHT := 48.0
 
 # ── Harbour palette (procedural — no external assets required) ────────────
 const C_SKY        := Color(0.38, 0.66, 0.90, 1.0)
@@ -156,7 +158,6 @@ var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
 var _tracking_active: bool = false  # true during gameplay only
 var _boat_times: Array[float] = []
-var _background_motion_time := 0.0
 
 # ── Boot ──────────────────────────────────────────────────────────────────
 
@@ -218,13 +219,12 @@ func _ready() -> void:
 
 	_show_start_screen()
 	audio_manager.play_calm_music()
-	print("[L2 parallax] mode=fixed_camera_ambient sky=fixed harbor_drift=%.1fpx/s boats=bob flags_rope=sway pier=fixed" % HARBOR_DRIFT_SPEED)
+	print("[L2 parallax] mode=fixed_camera_ambient sky=fixed harbor=fixed boats=bob flags=sway rope=disabled pier=fixed")
 
 
 # ── Frame ─────────────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
-	_background_motion_time += delta
 	# Suppress Level 1 Ali visual every frame.
 	# player.gd._physics_process() re-enables ali_sprite and placeholder_shape each frame.
 	# _process() runs after _physics_process(), so these are the final values before render.
@@ -432,7 +432,7 @@ func _apply_l2_collectible_visual(c: Node) -> void:
 	var sprite := Sprite2D.new()
 	sprite.name = "L2ShardSprite"
 	sprite.texture = tex
-	var s := 30.0 / float(tex.get_height())   # scale to ~30 px visual height
+	var s := L2_COLLECTIBLE_VISUAL_HEIGHT / float(tex.get_height())
 	sprite.scale = Vector2(s, s)
 	c.add_child(sprite)
 
@@ -834,9 +834,8 @@ func _update_background_parallax() -> void:
 	# If procedural fallback runs, they may have ColorRects which are harmless when hidden.
 
 	# ── Buildings: fixed X, 30% down — harbor skyline behind the pier ────────
-	# Two side-by-side copies make this tiny ambient drift gap-free.
-	var harbor_phase := fmod(_background_motion_time * HARBOR_DRIFT_SPEED, VIEW_W)
-	buildings_layer.position.x = left - harbor_phase
+	# Current opaque harbor plate is not tileable; horizontal drift exposes its seam.
+	buildings_layer.position.x = left
 	buildings_layer.position.y = top + VIEW_H * 0.30 / zoom
 
 	# ── Pier: camera-fixed to gameplay lane ───────────────────────────────────
@@ -851,7 +850,7 @@ func _on_obstacle_spawned_l2(definition: Dictionary, _pos: Vector2) -> void:
 	if _obs_vis == null or obstacle_spawner.get_child_count() == 0:
 		return
 	# The obstacle is already in the tree when the signal fires (spawner emits after add_child).
-	var obs_type: String = definition.get("type", "")
+	var obs_type: String = definition.get("id", definition.get("type", ""))
 	var newest: Node = obstacle_spawner.get_child(obstacle_spawner.get_child_count() - 1)
 	if newest is Node2D:
 		_obs_vis.apply_skin(newest as Node2D, obs_type, VISUAL_LANE_Y_OFFSET)
@@ -1031,10 +1030,9 @@ func _build_ambient_props() -> void:
 		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
 	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 458), 68.0,
 		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
-	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 458), 92.0,
+	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 435), 92.0,
 		"HarborFlags", "res://scripts/level2/ambient/harbor_ambient_sway.gd")
-	_add_ambient_sprite(L2_MANIFEST.AMB_ROPE, Vector2(1040, 468), 72.0,
-		"HarborRope", "res://scripts/level2/ambient/harbor_ambient_sway.gd")
+	# Rope disabled: the current transparent art has no visible posts/anchor context.
 	_add_ambient_sprite(L2_MANIFEST.AMB_DECO_NET, Vector2(1080, 490), 58.0,
 		"HarborNet", "")
 

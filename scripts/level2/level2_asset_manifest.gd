@@ -53,7 +53,7 @@ const OBS_PIER     := ROOT_OBS + "obs_broken_pier_chunk_01.png"
 const OBSTACLE_TEXTURE_MAP: Dictionary = {
 	"block":    OBS_CONCRETE,
 	"barrier":  OBS_BOLLARD,
-	"cone":     OBS_BOLLARD,   # reuse bollard visual until cone art exists
+	"cone":     OBS_PIER,      # reuse broken pier chunk until cone art exists
 	"crate":    OBS_CRATES,
 	"sign":     OBS_PIER,      # reuse pier chunk until sign art exists
 }
@@ -76,7 +76,7 @@ const FAM_ALI        := ROOT_FAMILY + "ali_checkpoint_01.png"
 const FAM_ZAINAB     := ROOT_FAMILY + "zainab_checkpoint_01.png"
 const FAM_FATIMA     := ROOT_FAMILY + "fatima_checkpoint_01.png"
 const FAM_FATHER     := ROOT_FAMILY + "father_checkpoint_01.png"
-const FAM_ENDING     := ROOT_FAMILY + "family_marsa_ending_01.png"
+const FAM_ENDING     := ROOT_FAMILY + "family_ending_01.png"
 
 # ── Audio ───────────────────────────────────────────────────────────────────
 const AUD_SEA_AMB    := ROOT_AUDIO + "sea_ambience_loop.wav"

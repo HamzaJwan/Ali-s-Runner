@@ -1,7 +1,7 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
 # Last updated: 2026-07-02 | Commit: 0da5f76
 
-**Gate: OWNER_REVIEW_NEEDED — fix 4 bugs first, then F6, then staging**
+**Gate: OWNER_REVIEW_READY — automated checks pass; F6 approval still required**
 
 Open this file to know where things stand in 30 seconds.
 
@@ -40,17 +40,16 @@ Open this file to know where things stand in 30 seconds.
 
 ---
 
-## Bugs — Codex Must Fix Before Owner F6
+## B1-B4 Fix Status
 
-| ID | Bug | Impact |
+| ID | Status | Result |
 |---|---|---|
-| B1 | Level 1 red/white road barrier still shows during gameplay | Showstopper — wrong obstacles |
-| B2 | Hard vertical seam in buildings layer appears ~60s into any run | Showstopper — visible composition break |
-| B3 | Pink collectible shard renders at 30px — too small for Jomana's scale | Polish — barely visible |
-| B4 | `rope_hanging_01.png` appears unsupported in air | Polish — disable it |
+| B1 obstacle skin | FIXED | Uses emitted `id`; runtime verifies harbor skin and hidden legacy nodes |
+| B2 buildings seam | FIXED | Opaque non-tileable harbor plate is fixed horizontally |
+| B3 shard scale | FIXED | Pink/gold shard target height is 48px |
+| B4 floating rope | FIXED | Rope disabled; flags placed at harbor anchor zone |
 
-Root causes and exact fixes documented in QA report (2026-07-02).
-Codex fix prompt is in the same report.
+Owner F6 must visually confirm these fixes before staging.
 
 ---
 
@@ -58,8 +57,8 @@ Codex fix prompt is in the same report.
 
 | Item | What Is Needed |
 |---|---|
-| Family portrait art at checkpoints | Generate ali/zainab/fatima/father checkpoint PNGs → drop in `assets/level2/marsa/characters/family/` |
-| Family ending image | Generate `family_marsa_ending_01.png` |
+| Family portrait art at checkpoints | PNGs detected locally but untracked; owner must approve provenance and commit them separately |
+| Family ending image | `family_ending_01.png` detected locally but untracked; source fallback remains safe |
 | True 5-layer parallax | Re-author bg_sea_breakwater + mg_boats_mid as transparent-channel images |
 | OGG audio conversion | Optional — WAV works; OGG smaller for web |
 
@@ -78,8 +77,7 @@ Codex fix prompt is in the same report.
 
 ## Next Actions in Order
 
-1. **Codex** — apply 4-bug patch from QA report (B1 obstacle skin arg, B2 buildings drift, B3 shard scale, B4 rope disable)
-2. **Owner** — F6 review: confirm no red barriers, no seam, shard visible, composition clean
+1. **Owner** — F6 review: confirm no red barriers, no seam, shard visible, composition clean
 3. **Owner decision** — approve or reject for internal staging
 4. **Codex** (if approved) — cherry-pick to test-web-deploy, export, deploy to internal staging URL
-5. **Owner** — generate family portrait PNGs to unlock styled checkpoint art
+5. **Owner** — approve/provenance-check the currently untracked family PNGs before committing them

@@ -1,7 +1,7 @@
 # Level 2 Playable Test Checklist — جمانة وأثر الكلمة
 # Last updated: 2026-07-02
 
-**Status: OWNER_REVIEW_NEEDED — run checklist after Codex applies B1-B4 patch**
+**Status: OWNER_REVIEW_READY — B1-B4 fixed; run this F6 checklist**
 
 ---
 
@@ -14,17 +14,16 @@
 
 ---
 
-## Known Bugs in Current Build (Before Codex Patch)
+## B1-B4 Patch Status
 
-These items WILL fail before the Codex 4-bug patch is applied.
-Do not judge the scene on these items until the patch is in.
+These source fixes are present; the checklist below is their owner visual gate.
 
 | Bug | What You See | Fix Status |
 |---|---|---|
-| B1 | Level 1 red/white road barrier during gameplay | Codex fix pending |
-| B2 | Hard vertical line in buildings background ~60s into run | Codex fix pending |
-| B3 | Pink shard collectible is tiny (30px) | Codex fix pending |
-| B4 | Rope prop appears floating in air | Codex fix pending |
+| B1 | Level 1 red/white road barrier during gameplay | FIXED - runtime verified |
+| B2 | Hard vertical line in buildings background | FIXED - drift disabled |
+| B3 | Pink shard collectible too small | FIXED - 48px |
+| B4 | Rope prop floating in air | FIXED - rope disabled |
 
 ---
 

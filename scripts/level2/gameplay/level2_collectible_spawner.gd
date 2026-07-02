@@ -8,6 +8,7 @@ const SPAWN_X := 1292.0
 const PATTERN_GAP_MIN := 2.8
 const PATTERN_GAP_MAX := 4.2
 const PATTERN_SPACING_X := 58.0
+const OBSTACLE_PATTERN_CLEARANCE_X := 420.0
 
 var current_speed := 225.0
 var _timer: Timer
@@ -99,7 +100,10 @@ func _obstacle_near_spawn_zone() -> bool:
 	if _obstacle_spawner == null:
 		return false
 	for obstacle in _obstacle_spawner.get_children():
-		if obstacle is Node2D and absf(obstacle.global_position.x - SPAWN_X) < 260.0:
+		if (
+			obstacle is Node2D
+			and absf(obstacle.global_position.x - SPAWN_X) < OBSTACLE_PATTERN_CLEARANCE_X
+		):
 			return true
 	return false
 

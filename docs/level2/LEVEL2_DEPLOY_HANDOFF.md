@@ -1,5 +1,5 @@
 # Level 2 Deploy Handoff — جمانة وأثر الكلمة
-# Status: OWNER_REVIEW_NEEDED
+# Status: OWNER_REVIEW_READY
 # Last updated: 2026-07-02
 
 ---
@@ -11,8 +11,8 @@
 Level 2 is not approved for public release. The production route `game.juanspace.org`
 must only serve Level 1 until the owner explicitly gives go-ahead.
 
-Two showstopper bugs (B1 obstacle skin, B2 buildings seam) must be fixed and
-owner F6 must pass before any staging deployment.
+The confirmed B1-B4 source bugs are fixed. Owner F6 must still pass before
+any staging deployment.
 
 ---
 
@@ -24,8 +24,8 @@ owner F6 must pass before any staging deployment.
 | Entry scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
 | Level 1 untouched | YES — confirmed across all commits |
 | Docker/deploy untouched | YES |
-| Playable in F6 | YES (with known bugs B1-B4) |
-| Owner F6 approval | PENDING (after Codex applies 4-bug patch) |
+| Playable in F6 | YES - automated runtime checks pass |
+| Owner F6 approval | PENDING - B1-B4 visual confirmation required |
 | Staging approved | NO |
 | Production approved | NO |
 
@@ -83,12 +83,13 @@ Drift on a non-seamless image creates a vertical seam at the copy-join after ~60
 |---|---|---|---|
 | block | Concrete block | obs_concrete_block_01.png | 88px |
 | barrier | Bollard+rope | obs_bollard_rope_01.png | 80px |
-| cone | Bollard+rope | obs_bollard_rope_01.png | 80px |
+| cone | Broken pier chunk | obs_broken_pier_chunk_01.png | 80px |
 | crate | Crate stack | obs_crate_stack_01.png | 96px |
 | sign | Pier chunk | obs_broken_pier_chunk_01.png | 72px |
 
-Level 1 visuals (ObstacleSprite + Polygon2D) hidden when L2 texture loads.
-B1 bug: skins not applied in current commit (3rd arg to apply_skin).
+Level 1 visuals (`ObstacleSprite` + `Polygon2D`) are hidden before the Level 2 texture is shown.
+The actual B1 root cause was the callback reading `definition.type` while the spawner emits `definition.id`.
+Runtime smoke now verifies `L2Skin` exists and both legacy visuals are hidden.
 
 ---
 
@@ -125,6 +126,8 @@ Pattern: LOW_LINE (4) then SMALL_ARC (5) then FULL_ARC (5) then repeat.
 | 60 | Fatima | Color-coded text card (pink) - portrait PNG not yet generated |
 | 90 | Father | Color-coded text card (deep blue) then ending panel |
 
+Dedicated family PNGs are currently detected in the local workspace but remain untracked owner files. They are not included in this source-only patch. The committed scene remains fallback-safe until the owner approves and commits those assets separately.
+
 ---
 
 ## Audio
@@ -133,14 +136,14 @@ Pattern: LOW_LINE (4) then SMALL_ARC (5) then FULL_ARC (5) then repeat.
 
 ---
 
-## Bugs to Fix Before Any Deployment
+## Confirmed Fixes Requiring Owner F6
 
-| ID | Bug | Fix Location |
+| ID | Fix | Automated evidence |
 |---|---|---|
-| B1 | L1 red barrier showing | Remove 3rd arg from apply_skin call in level2_marsa_playable.gd line 857 |
-| B2 | Buildings vertical seam at ~60s | Remove harbor_phase drift, set buildings_layer.position.x = left |
-| B3 | Shard 30px too small | Change 30.0 to 48.0 in _apply_l2_collectible_visual() |
-| B4 | Rope prop floating | Comment out AMB_ROPE line in _build_ambient_props() |
+| B1 | Read obstacle `id`, apply harbor skin, hide legacy visuals | Runtime smoke checks skin + hidden nodes |
+| B2 | Buildings fixed horizontally; non-tileable drift disabled | No modulo phase remains in source |
+| B3 | Level 2 shard visual height increased to 48px | Runtime smoke checks L2 visual + hidden legacy nodes |
+| B4 | Unsupported rope disabled; flags moved to anchored harbor zone | Source/asset policy check |
 
 ---
 
@@ -149,7 +152,7 @@ Pattern: LOW_LINE (4) then SMALL_ARC (5) then FULL_ARC (5) then repeat.
 DEPLOY_STATUS: DO NOT DEPLOY - OWNER_REVIEW_NEEDED
 
 Only proceed with staging after all of:
-1. Codex applies 4-bug patch
+1. Codex B1-B4 patch is present
 2. Owner completes F6 review and explicitly approves
 3. Staging RC smoke passes
 

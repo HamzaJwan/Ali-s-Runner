@@ -10,11 +10,11 @@ const MANIFEST := preload("res://scripts/level2/level2_asset_manifest.gd")
 
 # Target visual heights (px in world space) per obstacle type.
 const VISUAL_HEIGHTS: Dictionary = {
-	"block":   72.0,
-	"barrier": 70.0,
-	"cone":    70.0,
-	"crate":   88.0,
-	"sign":    64.0,
+	"block":   88.0,
+	"barrier": 80.0,
+	"cone":    80.0,
+	"crate":   96.0,
+	"sign":    72.0,
 }
 
 # Collision heights from Level 1 OBSTACLE_DEFINITIONS (obstacle_spawner.gd).
@@ -38,10 +38,6 @@ func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0
 	if old != null:
 		old.queue_free()
 
-	var tex := _get_texture(obstacle_type)
-	if tex == null:
-		return false
-
 	# Hide ALL Level 1 obstacle visuals:
 	# - Polygon2D: procedural coloured rectangle
 	# - ObstacleSprite: Sprite2D that configure() loads with the L1 asset_path texture
@@ -49,7 +45,11 @@ func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0
 		var v := obstacle.get_node_or_null(vname)
 		if v != null:
 			(v as Node2D).visible = false
-			print("[L2 obstacle] hidden Level 1 node '%s' on type=%s" % [vname, obstacle_type])
+
+	var tex := _get_texture(obstacle_type)
+	if tex == null:
+		push_warning("[L2 obstacle] type=%s texture missing; legacy visuals remain hidden" % obstacle_type)
+		return false
 
 	var vis_h: float  = VISUAL_HEIGHTS.get(obstacle_type, 56.0)
 	var col_h: float  = COLLISION_HEIGHTS.get(obstacle_type, 50.0)
@@ -69,8 +69,8 @@ func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0
 	skin.position.y = col_h / 2.0 - vis_h / 2.0 + visual_lane_offset
 
 	obstacle.add_child(skin)
-	print("[L2 obstacle] type=%s  tex=%s  vis_h=%.0fpx  bottom_y=%.1f" %
-		[obstacle_type, tex.resource_path.get_file(), vis_h, col_h / 2.0 + visual_lane_offset])
+	print("[L2 obstacle] type=%s texture=%s loaded=true legacy_hidden=true vis_h=%.0f visual_bottom_y=%.1f" %
+		[obstacle_type, tex.resource_path, vis_h, col_h / 2.0 + visual_lane_offset])
 	return true
 
 
