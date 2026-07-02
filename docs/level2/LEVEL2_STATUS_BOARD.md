@@ -1,7 +1,7 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
 # Last updated: 2026-07-02 | Commit: c8ce6e9
 
-**Gate: GAMEPLAY_FEEL_PASS_NEEDED — visual bugs fixed; 5 gamefeel issues remain before F6**
+**Gate: TWO_CODEX_PASSES_NEEDED — gameplay feel (P1-P5) + story/encounter (C1-C7) before F6**
 
 Open this file to know where things stand in 30 seconds.
 
@@ -65,6 +65,22 @@ See `docs/level2/LEVEL2_CODEX_GAMEPLAY_FEEL_PASS.md` for exact Codex instruction
 
 ---
 
+## C1–C7 — Story / Encounter Issues (Codex Fix Needed)
+
+| ID | Issue | Impact |
+|---|---|---|
+| C1 | Checkpoint dialogue panel covers both characters (card at Y=382-602 on 644px screen) | HIGH — breaks cinematic feel |
+| C2 | DimBG opacity 72% — scene completely obscured during encounter | HIGH |
+| C3 | Speaker name never updates for ROLE_JOMANA steps — always shows character name | HIGH — confusing |
+| C4 | Ali Step 2: Jomana teaches Ali instead of Ali teaching Jomana — logic is reversed | HIGH — story wrong |
+| C5 | NPC remains on pier after pressing "تابع" — visible during countdown and next gameplay | HIGH |
+| C6 | Dialogue text corrections for all 4 characters | MEDIUM |
+| C7 | أحسنت → أحسنتِ (feminine suffix for Jomana) in Father's line | LOW |
+
+See `docs/level2/LEVEL2_STORY_DIALOGUE_QA.md` for full corrected dialogue and root causes.
+
+---
+
 ## New Assets Ready to Commit
 
 Owner-generated family portraits are on disk but UNTRACKED:
@@ -105,7 +121,8 @@ Codex must `git add assets/level2/marsa/characters/family/` and commit.
 
 ## Next Actions in Order
 
-1. **Codex** — apply gameplay feel pass: P1 mouse jump, P2 IDLE delay, P3 obstacle width, P4 boats, P5 + commit family portraits
-2. **Owner** — F6 review: confirm mouse jump works, obstacles fair, portraits visible, ending image shows
-3. **Owner decision** — approve or reject for internal staging
-4. **Codex** (if approved) — cherry-pick to test-web-deploy, export, internal staging only
+1. **Codex** — gameplay feel pass (P1–P5): mouse jump, IDLE delay, obstacle width, boats, family portraits
+2. **Codex** — story/encounter pass (C1–C7): panel position, DimBG opacity, NPC off-screen, dialogue corrections
+3. **Owner** — F6 review: confirm mouse jump, portraits visible, panel does not cover characters, NPC leaves after "تابع"
+4. **Owner decision** — approve or reject for internal staging
+5. **Codex** (if approved) — cherry-pick to test-web-deploy, export, internal staging only
