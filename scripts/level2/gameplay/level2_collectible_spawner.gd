@@ -43,6 +43,10 @@ func stop_spawning() -> void:
 		_timer.stop()
 
 
+func is_spawning() -> bool:
+	return _timer != null and not _timer.is_stopped()
+
+
 func clear_collectibles() -> void:
 	for child in get_children():
 		child.queue_free()

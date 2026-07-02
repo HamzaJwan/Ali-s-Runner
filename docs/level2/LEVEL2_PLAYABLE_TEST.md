@@ -106,6 +106,18 @@ If the web build is deployed (see `docs/WEB_DOCKER_PLAYTEST.md`):
 - After Father, test both replay and return-to-menu buttons.
 - This gate is required before staging or deployment.
 
+### If Play Appears Frozen
+
+Look for a red breakpoint dot and the Debugger message `Breakpoint`. Remove the dot by clicking the left gutter, or press Continue (`F12` in the default Godot layout). The automated runtime test confirms the Play path itself starts normally. Do not commit `.godot/editor` breakpoint state.
+
+Run the same automated check with:
+
+```powershell
+Godot_v4.7-stable_win64_console.exe --headless --path . -s scripts/tools/level2_runtime_smoke.gd
+```
+
+Expected result: `LEVEL2_RUNTIME_SMOKE=PASS`.
+
 ## What Comes Next
 
 1. Owner approves gameplay feel → start character art sprint

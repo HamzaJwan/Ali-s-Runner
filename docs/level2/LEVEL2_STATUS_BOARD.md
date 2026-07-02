@@ -3,6 +3,8 @@
 **Current gate (2026-07-02): READY_FOR_OWNER_F6_FULL_ASSET_REVIEW**
 
 Codex structural cleanup completed the Level 2-local collectible pattern spawner, shared visual lane offset, harbor obstacle grounding, ambient transparent props, family-art checkpoint fallback, compact dialogue card, and explicit ending choices. Automated scene loading is green; owner visual/gameplay approval is still required. Do not deploy yet.
+
+**Start hotfix:** the reported freeze was an editor breakpoint, not a runtime deadlock. Play startup is now guarded and covered by `level2_runtime_smoke.gd`. Background depth uses fixed-camera ambient motion: harbor `3px/s`, boats bob, flags/rope sway, sky and pier fixed. Owner F6 confirmation remains required.
 # Last updated: 2026-07-01 | Commit: (see git log)
 
 Quick reference for owner and coders. Open this file to know exactly where things stand.

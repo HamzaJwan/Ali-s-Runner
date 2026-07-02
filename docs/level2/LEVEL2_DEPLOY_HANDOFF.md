@@ -156,6 +156,14 @@ Do NOT deploy Level 2 to the main public route until the owner explicitly approv
 - Checkpoint dialogue card is now 540x220 in the lower-left; the arriving character is staged on the right.
 - Level 2 ending offers both replay and return to the Level 2 menu.
 
+## Start Freeze Hotfix (2026-07-02)
+
+- Root cause in the owner screenshot: Godot was paused on an active editor breakpoint at the former collectible-spawner line. The source was not hung.
+- The Play path now rejects double clicks, explicitly unpauses the tree, and starts obstacle and collectible spawners independently with warnings instead of blocking the scene.
+- `scripts/tools/level2_runtime_smoke.gd` starts the scene programmatically and verifies gameplay state, player activation, and both timers.
+- Fixed-camera ambient motion is active: sky and pier remain fixed, the duplicated harbor plate drifts at `3px/s`, boats bob, flags/rope sway, and seagulls move independently.
+- Flags and rope were lowered to the harbor/pier anchor zone so they no longer read as floating in open sky.
+
 ## Active Living Harbor Assets
 
 | Asset | Runtime role |
