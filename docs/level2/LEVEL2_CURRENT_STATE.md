@@ -1,7 +1,7 @@
 # Level 2 Current State — جمانة وأثر الكلمة
-# Last updated: 2026-07-02 | Branch: level2/jomana-marsa-mvp-20260701 | Commit: 0da5f76
+# Last updated: 2026-07-02 | Branch: level2/jomana-marsa-mvp-20260701 | Commit: c8ce6e9
 
-**Status: OWNER_REVIEW_NEEDED — two showstopper bugs remain before visual approval**
+**Status: OWNER_REVIEW_NEEDED — visual/gameplay QA pending; do NOT deploy**
 
 ---
 
@@ -12,211 +12,119 @@
 | Level name | جمانة وأثر الكلمة |
 | Scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
 | Branch | `level2/jomana-marsa-mvp-20260701` |
-| Latest commit | `0da5f76` — level2: fix start flow and add ambient parallax smoke |
-| Visual status | Start screen: BEAUTIFUL. Gameplay: 2 showstoppers remain (obstacle skin, buildings seam) |
+| Latest Codex commit | `c8ce6e9` — level2: fix obstacle skins seam drift collectibles and ambient props |
+| Visual status | Start screen: BEAUTIFUL. Gameplay: improved; 5 gameplay-feel issues remain |
 | Deployed | NO — not wired to main menu, not on any public URL |
 | Production Level 1 | Fully untouched, live at game.juanspace.org |
 
 ---
 
-## 2. Gameplay Design
+## 2. What Works (Confirmed by Owner F6)
 
-Level 2 uses the **same physics engine as Level 1** (CharacterBody2D, shared `player.gd`).
-Nothing about the core gameplay feel was changed.
-
-| Rule | Value |
+| Item | Status |
 |---|---|
-| Runner type | Fixed side-scrolling (camera does not track horizontally) |
-| Jump | One-button only (Space / click / tap) |
-| Double jump | NO — by design |
-| Slide | NO — by design |
-| Enemies | NO — by design |
-| HP / lives | NO — by design |
-| Water death | NO — by design |
-| Hostile animals | NO — seagulls are decorative |
-| Starting speed | 225 px/s |
-| Speed after Ali | 240 px/s |
-| Speed after Zainab | 255 px/s |
-| Speed after Fatima | 270 px/s |
-| Ending trigger | Score 90 (after Father checkpoint) |
+| Start screen: harbor photograph, mosque, boats, flags | ✅ BEAUTIFUL |
+| Jomana real art (8-frame run, 4-frame idle, jump, land, wave) | ✅ WORKING |
+| Harbor obstacles (concrete block, bollard, crates, pier chunk) | ✅ WORKING — no red L1 barrier |
+| 3-plate background (sky + buildings + pier) | ✅ CLEAN — no seam bands |
+| Buildings layer: no horizontal drift, no vertical seam | ✅ FIXED |
+| Pink shard collectible (48px) | ✅ VISIBLE |
+| Rope prop disabled | ✅ CORRECT |
+| Seagulls flying | ✅ WORKING |
+| Boat bob | ✅ WORKING |
+| Flag sway | ✅ WORKING |
+| Story checkpoint flow (Ali/Zainab/Fatima/Father) | ✅ WORKING |
+| Game Over + Retry + Restart | ✅ WORKING |
+| Level 2 ending panel after Father | ✅ WORKING |
+| Audio 8/8 WAV files | ✅ WIRED |
+| Mobile landscape overlay | ✅ WORKING |
+| Level 1 unaffected | ✅ CONFIRMED |
 
 ---
 
-## 3. Story and Checkpoints
+## 3. Owner F6 Issues — Needs Codex Pass
 
-The family checkpoints pause gameplay and show a dialogue card with one family member.
-
-| Score | Character | Arabic Name | Value Theme | Status |
-|---|---|---|---|---|
-| 15 | Ali (brother) | علي | الكلمة الطيبة بين الأخوة | Card shows (text fallback — no portrait art yet) |
-| 35 | Zainab (sister) | زينب | الصبر والتفكير الهادئ | Card shows (text fallback) |
-| 60 | Fatima (mother) | فاطمة | الرفق والرحمة | Card shows (text fallback) |
-| 90 | Father | الأب | التوكل والعمل وخير العائلة | Card shows (text fallback) → triggers ending |
-
-After Father: ending panel shows "أحسنتِ يا جمانة" / "كل كلمة طيبة تترك أثرًا".
-Two buttons: Return to Menu / Replay Chapter 2. Both work correctly.
-
-**Family portrait PNGs** (`ali_checkpoint_01.png` etc.) are NOT yet generated.
-The styled color-coded text card is the intentional production fallback until art is created.
-
----
-
-## 4. Background Environment
-
-### Layer Stack (camera-relative, top to bottom)
-
-| Z | Layer Node | Asset | Status | Notes |
-|---|---|---|---|---|
-| -99 | ColorRect fill | solid sky blue | ACTIVE | Eliminates color gaps at any zoom |
-| -30 | L2_SkyLayer | bg_sky_marsa.png | ACTIVE | Camera-fixed, no drift |
-| -18 | L2_FarBuildingsLayer | bg_harbor_buildings.png | ACTIVE | Fixed X, no drift, top-fade shader (55px) |
-| -12 | AmbientLife boats | boat_blue_01.png, boat_small_02.png | ACTIVE | Bob animation, z=-8 |
-| -8 | AmbientLife flags | small_flags_line_01.png | ACTIVE | Sway animation |
-| -8 | AmbientLife net | deco_fishing_net_pile_01.png | ACTIVE | Static |
-| -8 | AmbientLife seagulls | seagull_fly_sheet_4f.png | ACTIVE | 3 birds, looping flight |
-| -5 | L2_ForegroundPierLayer | fg_pier_ground.png | ACTIVE | Aligned to CURB_TOP_Y=470 (72% screen height) |
-
-### Disabled Plates
-
-| Asset | Reason |
-|---|---|
-| bg_sea_breakwater.png | Opaque 24-bit RGB — stacking creates visible horizontal seam |
-| mg_boats_mid.png | Opaque 24-bit RGB — same issue; replaced by transparent boat props |
-| rope_hanging_01.png | No anchor context visible → appears floating; disabled by QA |
-
-### Parallax / Motion Strategy
-
-The gameplay camera is **fixed** — no horizontal tracking during play.
-All motion is **ambient-only**:
-- Seagulls: cross-screen flight (SeagullLoop script)
-- Boats: vertical bob (HarborAmbientBob script, amplitude 3.5px, period 2.6s)
-- Flags: gentle sway (HarborAmbientSway script)
-- Sky / buildings / pier: fully static (no horizontal drift)
-
-**IMPORTANT:** `HARBOR_DRIFT_SPEED = 3.0` is currently active for the buildings layer.
-This is a known bug (B2 below) that creates a vertical seam. Codex must fix it.
-
----
-
-## 5. Jomana Character
-
-### Asset Status
-
-| Asset | Path | Frames | Status |
-|---|---|---|---|
-| Run animation | `assets/level2/marsa/characters/jomana/run/jomana_run_01-08.png` | 8 | ACTIVE ✅ |
-| Idle animation | `assets/level2/marsa/characters/jomana/idle/jomana_idle_01-04.png` | 4 | ACTIVE ✅ |
-| Jump pose | `assets/level2/marsa/characters/jomana/jump/jomana_jump_01.png` | 1 | ACTIVE ✅ |
-| Land pose | `assets/level2/marsa/characters/jomana/jump/jomana_land_01.png` | 1 | ACTIVE ✅ |
-| Story/wave | `assets/level2/marsa/characters/jomana/story/jomana_smile_wave_01.png` | 1 | ACTIVE ✅ |
-| Dialogue closeup | `assets/level2/marsa/characters/jomana/story/jomana_dialogue_closeup_01.png` | 1 | Available, not yet wired |
-
-### Animation State Machine
-
-| Pose | When | Script |
+| # | Issue | Impact |
 |---|---|---|
-| IDLE | Menu (start screen) | jomana_player_visual.gd |
-| RUN | During gameplay | jomana_player_visual.gd |
-| JUMP | On jump input | jomana_player_visual.gd |
-| LAND | On landing | Returns to RUN after 0.2s |
-| STORY | During checkpoints | jomana_player_visual.gd |
-
-Ali ghost suppression runs every `_process()` tick (after physics) to counteract
-`player.gd._physics_process()` re-enabling the Level 1 Ali sprite each frame.
+| P1 | Mouse click does not trigger jump (keyboard works) | HIGH — breaks Web/mobile feel |
+| P2 | IDLE → RUN transition is abrupt / snaps | MEDIUM — feels unpolished |
+| P3 | Some obstacles visually wider than their collision box | MEDIUM — feels unfair |
+| P4 | Boats appear partially sunk under pier edge | LOW — visual composition |
+| P5 | Flags lack visible anchor context | LOW — visual coherence |
 
 ---
 
-## 6. Obstacles
+## 4. New Owner Assets (Not Yet Committed)
 
-### Type Mapping
+All 5 family portrait PNGs exist on disk but are UNTRACKED (not in git):
 
-| Level 1 Type | Level 2 Visual | PNG Asset | Visual Height |
+| File | Size | Format | Status |
 |---|---|---|---|
-| block | Concrete harbor block | obs_concrete_block_01.png | 88px (was 72) |
-| barrier | Bollard with rope | obs_bollard_rope_01.png | 80px (was 70) |
-| cone | Bollard with rope | obs_bollard_rope_01.png | 80px (was 70) |
-| crate | Stacked crates | obs_crate_stack_01.png | 96px (was 88) |
-| sign | Broken pier chunk | obs_broken_pier_chunk_01.png | 72px (was 64) |
+| ali_checkpoint_01.png | 642×1254 | RGBA | On disk, untracked |
+| zainab_checkpoint_01.png | 639×1254 | RGBA | On disk, untracked |
+| fatima_checkpoint_01.png | 738×1254 | RGBA | On disk, untracked |
+| father_checkpoint_01.png | 660×1254 | RGBA | On disk, untracked |
+| family_ending_01.png | 1008×1003 | RGBA | On disk, untracked |
 
-**NOTE:** These updated heights are the Codex target. Current commit still has the old values.
-Skin application is also broken (B1 below) — current F6 shows Level 1 red barriers.
-
-### Suppression Logic
-
-`level2_obstacle_visuals.gd::apply_skin()` hides both:
-- `Polygon2D` — Level 1 procedural rectangle
-- `ObstacleSprite` — Sprite2D loaded by `obstacle.gd configure()` with L1 asset
-
-Then adds an `L2Skin` Sprite2D child with the harbor PNG, bottom-aligned using:
-`skin.position.y = collision_height/2 - visual_height/2`
+The code in `level2_family_checkpoint_visuals.gd` already handles these —
+it will auto-load them if present. Codex must commit them and verify the scaling/positioning.
 
 ---
 
-## 7. Collectibles
+## 5. Background Plate Status
 
-| Item | Value |
-|---|---|
-| Asset | `col_light_shard_pink_01.png` |
-| Animated sheet | `col_athar_shard_sheet_6f.png` (available, not animated yet) |
-| Visual height | 30px (current, too small) → 48px target (Codex fix needed) |
-| Level 1 visual suppression | Hides both `Polygon2D` and `ShardSprite` nodes |
-
-### Lane Patterns (per-cycle of 14 collectibles)
-
-| Pattern | Count | Y (world) | Requires |
-|---|---|---|---|
-| LOW_LINE | 4 | ROAD_SURFACE_Y - 25px | Running — no jump needed |
-| SMALL_ARC | 5 | ROAD_SURFACE_Y - 75px | Light jump |
-| FULL_ARC | 5 | ROAD_SURFACE_Y - 120px | Full jump |
-
----
-
-## 8. Audio
-
-All 8 Level 2 audio files are present and wired. WAV loop mode is set at runtime.
-
-| File | Event | Format |
+| Asset | Status | Notes |
 |---|---|---|
-| sea_ambience_loop.wav | Menu/background | WAV, loops |
-| marsa_theme_loop.wav | Gameplay music | WAV, loops |
-| seagull_distant_01.wav | Ambient seagull call | WAV |
-| athar_pickup_01.wav | Collectible collected | WAV |
-| checkpoint_chime_01.wav | Checkpoint reached | WAV |
-| retry_soft_01.wav | Retry button pressed | WAV |
-| jomana_jump_01.wav | Jump input | WAV |
-| footstep_stone_01.wav | Footstep on pier | WAV |
-
-OGG conversion is an optional future optimization for smaller web bundle size.
+| bg_sky_marsa.png | ACTIVE | 1058×371 RGB. Camera-fixed. |
+| bg_harbor_buildings.png | ACTIVE | 1058×253 RGB. Fixed X (no drift). Top-fade shader 55px. |
+| fg_pier_ground.png | ACTIVE | 1058×282 RGB. Aligned to CURB_TOP_Y=470. |
+| bg_sea_breakwater.png | DISABLED | Opaque — creates seam. Rich harbor photo covers this zone. |
+| mg_boats_mid.png | DISABLED | Opaque — same. Transparent boat props cover this zone. |
 
 ---
 
-## 9. Mobile / Web
+## 6. Obstacle Mapping
 
-- The mobile landscape rotate overlay (`mobile_rotate_overlay.gd`) is an autoload that shows
-  "اقلب الهاتف بالعرض" when `height > width`. It applies to the whole project including Level 1.
-- Level 2 is **NOT in the web build** — not wired to main menu, not deployed.
-- Level 1 at `game.juanspace.org` is unaffected by all Level 2 work.
+All 4 harbor PNG obstacles are ACTIVE. Collision unchanged from Level 1.
 
----
+| Level 1 Type | Level 2 PNG | PNG Dimensions | Col Width | Visual Width at 88/80/96/72px |
+|---|---|---|---|---|
+| block | obs_concrete_block_01.png | 303×193 RGBA | 30px | ~138px (landscape — wide) |
+| barrier | obs_bollard_rope_01.png | 402×218 RGBA | 68px | ~147px (landscape — very wide) |
+| cone | obs_broken_pier_chunk_01.png | 309×161 RGBA | 30px | ~154px (landscape — too wide) |
+| crate | obs_crate_stack_01.png | 283×316 RGBA | 48px | ~86px (portrait — proportional) |
+| sign | obs_broken_pier_chunk_01.png | 309×161 RGBA | 38px | ~138px (landscape — wide) |
 
-## 10. Known Bugs (Codex Fix Required)
-
-| ID | Bug | Root Cause | Fix Location |
-|---|---|---|---|
-| B1 | Level 1 red obstacle barrier still showing | `apply_skin` called with 3 args, takes 2 — Godot 4.x throws "Invalid call", skin never applies | `level2_marsa_playable.gd` line ~857 |
-| B2 | Hard vertical seam in buildings layer ~60s into gameplay | `harbor_phase` drifts buildings left; non-seamless image shows copy-join | `level2_marsa_playable.gd` `_update_background_parallax()` |
-| B3 | Pink shard collectible too small (30px) | Scale constant `30.0` calibrated for L1 Ali, too small for L2 Jomana | `level2_marsa_playable.gd` `_apply_l2_collectible_visual()` |
-| B4 | `rope_hanging_01.png` appears floating | No visible anchor context | `level2_marsa_playable.gd` `_build_ambient_props()` |
-
-See the QA report (produced 2026-07-02) for detailed root cause and exact Codex fix prompt.
+**Obstacle width issue**: Landscape images scaled by height become 3-5x wider than collision box.
+Crate is fine (portrait format). Others need per-obstacle max-width clamping. See QA report.
 
 ---
 
-## 11. Known Limitations (Not Bugs)
+## 7. Family Portraits Status
 
-1. Family checkpoint portraits → styled text card fallback (intentional — art not generated)
-2. True 5-layer parallax → needs transparent/seamless asset versions (authoring task for owner)
-3. Animated shard (6-frame sheet) → not yet wired; single PNG is active
-4. `jomana_dialogue_closeup_01.png` → available but not wired to dialogue UI
-5. Level 1 → Level 2 chapter transition → documented in `docs/GAME_CHAPTER_FLOW.md`, not implemented
-6. OGG audio → WAV works; OGG is a future web-optimization
+Auto-load code in `level2_family_checkpoint_visuals.gd` is ready.
+Color-coded text card fallback still shows because portrait PNGs are untracked.
+Codex must `git add` the family PNG directory and commit them.
+
+---
+
+## 8. Input Status
+
+| Input | Status |
+|---|---|
+| Space bar → jump | ✅ Works |
+| Keyboard tap → jump | ✅ Works |
+| Mouse click → jump | ❌ Not working (UI may be consuming events) |
+| Touch/tap (mobile) | Not tested — web build not deployed |
+
+---
+
+## 9. Deployment Gate
+
+**DO NOT DEPLOY.** Gates in order:
+
+1. Codex applies gameplay-feel pass (P1–P5 + family portraits)
+2. Owner F6 review confirms fix
+3. Owner explicitly approves internal staging
+4. Codex cherry-picks to test-web-deploy only
+5. Owner confirms staging, then approves production

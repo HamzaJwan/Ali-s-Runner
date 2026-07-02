@@ -1,7 +1,7 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
-# Last updated: 2026-07-02 | Commit: 0da5f76
+# Last updated: 2026-07-02 | Commit: c8ce6e9
 
-**Gate: OWNER_REVIEW_READY — automated checks pass; F6 approval still required**
+**Gate: GAMEPLAY_FEEL_PASS_NEEDED — visual bugs fixed; 5 gamefeel issues remain before F6**
 
 Open this file to know where things stand in 30 seconds.
 
@@ -13,43 +13,72 @@ Open this file to know where things stand in 30 seconds.
 |---|---|
 | Scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
 | Branch | `level2/jomana-marsa-mvp-20260701` |
-| Commit | `0da5f76` |
+| Commit | `c8ce6e9` |
 | Deployed | NO |
 | Level 1 | UNTOUCHED — live at game.juanspace.org |
 
 ---
 
-## What Works Right Now
+## What Works (Owner F6 Confirmed)
 
 | Item | Evidence |
 |---|---|
-| Start screen — beautiful harbor | Owner screenshot confirmed: mosque, boats, flags, Jomana idle ✅ |
-| Jomana real art running (8 frames) | Screenshot shows real art, correct animation ✅ |
-| 3-plate background (sky + buildings + pier) | No horizontal band seams ✅ |
-| Seagulls flying | 3 birds visible in gameplay screenshots ✅ |
-| Boat bob animation | Boats behind pier wall ✅ |
-| Flag sway animation | Flags visible in harbor ✅ |
-| Pink shard collectibles spawning | Pink shards visible in screenshots (too small, see B3) ✅ |
-| Collectible patterns cycling (LOW/ARC) | Pattern logic implemented ✅ |
-| Story checkpoint flow | Text card appears, advance with tap, ends after Father ✅ |
-| Game Over panel (Arabic) | Animated, Retry/Restart work ✅ |
-| Fixed camera (no race condition) | No sliding/race condition since commit 524ffda ✅ |
-| Audio 8/8 files integrated | sea/theme/seagull/pickup/checkpoint/retry/jump/footstep ✅ |
-| Mobile landscape overlay | "اقلب الهاتف بالعرض" shows on portrait ✅ |
-| Level 1 completely unaffected | Confirmed across all commits ✅ |
+| Start screen — beautiful harbor | Screenshot confirmed: mosque, boats, flags, Jomana idle ✅ |
+| Jomana real art running (8 frames) | Real art working correctly ✅ |
+| Harbor obstacles — NO red L1 barrier | Concrete block, bollard, crates, pier chunk showing ✅ |
+| Background clean — no seam bands | 3-plate composition working ✅ |
+| Buildings fixed — no vertical seam | Drift disabled ✅ |
+| Pink shard (48px) visible | Correct size ✅ |
+| Rope prop disabled | No floating rope ✅ |
+| Seagulls, boat bob, flag sway | Ambient life working ✅ |
+| Story checkpoints (Ali/Zainab/Fatima/Father) | Text card flow works ✅ |
+| Game Over / Retry / Restart | All working ✅ |
+| Level 2 ending after Father | Panel + buttons working ✅ |
+| Audio 8/8 WAV files | All wired ✅ |
+| Mobile landscape overlay | Working ✅ |
+| Level 1 completely unaffected | Confirmed ✅ |
 
 ---
 
-## B1-B4 Fix Status
+## B1–B4 Bug Status (All Fixed)
 
-| ID | Status | Result |
+| ID | Status | Fix |
 |---|---|---|
-| B1 obstacle skin | FIXED | Uses emitted `id`; runtime verifies harbor skin and hidden legacy nodes |
-| B2 buildings seam | FIXED | Opaque non-tileable harbor plate is fixed horizontally |
-| B3 shard scale | FIXED | Pink/gold shard target height is 48px |
-| B4 floating rope | FIXED | Rope disabled; flags placed at harbor anchor zone |
+| B1 obstacle skin | FIXED | Uses `definition["id"]`; harbor PNG applied; L1 visuals hidden first |
+| B2 buildings seam | FIXED | HARBOR_DRIFT_SPEED=0; buildings X is fixed |
+| B3 shard scale | FIXED | L2_COLLECTIBLE_VISUAL_HEIGHT=48px |
+| B4 rope prop | FIXED | Rope disabled (no anchor context) |
 
-Owner F6 must visually confirm these fixes before staging.
+---
+
+## P1–P5 — Gameplay Feel Issues (Codex Fix Needed)
+
+| ID | Issue | Impact |
+|---|---|---|
+| P1 | Mouse click does not trigger jump | HIGH — breaks Web/mobile experience |
+| P2 | IDLE → RUN transition is abrupt | MEDIUM — jarring when play pressed |
+| P3 | Some obstacles too wide (landscape PNG scaled by height only) | MEDIUM — unfair feel |
+| P4 | Boats partially sunk below pier edge | LOW — visual polish |
+| P5 | Flags have no visible anchor posts | LOW — visual coherence |
+
+See `docs/level2/LEVEL2_CODEX_GAMEPLAY_FEEL_PASS.md` for exact Codex instructions.
+
+---
+
+## New Assets Ready to Commit
+
+Owner-generated family portraits are on disk but UNTRACKED:
+
+| File | Status |
+|---|---|
+| ali_checkpoint_01.png (642×1254 RGBA) | On disk — untracked |
+| zainab_checkpoint_01.png (639×1254 RGBA) | On disk — untracked |
+| fatima_checkpoint_01.png (738×1254 RGBA) | On disk — untracked |
+| father_checkpoint_01.png (660×1254 RGBA) | On disk — untracked |
+| family_ending_01.png (1008×1003 RGBA) | On disk — untracked |
+
+Code in `level2_family_checkpoint_visuals.gd` will auto-load them once committed.
+Codex must `git add assets/level2/marsa/characters/family/` and commit.
 
 ---
 
@@ -57,10 +86,9 @@ Owner F6 must visually confirm these fixes before staging.
 
 | Item | What Is Needed |
 |---|---|
-| Family portrait art at checkpoints | PNGs detected locally but untracked; owner must approve provenance and commit them separately |
-| Family ending image | `family_ending_01.png` detected locally but untracked; source fallback remains safe |
-| True 5-layer parallax | Re-author bg_sea_breakwater + mg_boats_mid as transparent-channel images |
-| OGG audio conversion | Optional — WAV works; OGG smaller for web |
+| True 5-layer parallax | Re-author sea + boats plates as transparent RGBA cutouts |
+| OGG audio | Optional optimization for smaller web bundle |
+| Seamless foreground tile | For optional foreground scroll enhancement |
 
 ---
 
@@ -68,16 +96,16 @@ Owner F6 must visually confirm these fixes before staging.
 
 - `scenes/Main.tscn` — Level 1 scene
 - `scripts/main.gd` — Level 1 controller
-- `scripts/obstacle.gd` — Level 1 obstacle (shared, no changes allowed)
+- `scripts/obstacle.gd` — Level 1 obstacle (shared)
 - `D:\GODOT\test1\test-web-deploy` — Docker web deploy directory
 - Docker / Web export / Deployment scripts
-- Main menu scene (Level 2 must NOT be wired to main menu yet)
+- Main menu scene (Level 2 must NOT be wired yet)
 
 ---
 
 ## Next Actions in Order
 
-1. **Owner** — F6 review: confirm no red barriers, no seam, shard visible, composition clean
+1. **Codex** — apply gameplay feel pass: P1 mouse jump, P2 IDLE delay, P3 obstacle width, P4 boats, P5 + commit family portraits
+2. **Owner** — F6 review: confirm mouse jump works, obstacles fair, portraits visible, ending image shows
 3. **Owner decision** — approve or reject for internal staging
-4. **Codex** (if approved) — cherry-pick to test-web-deploy, export, deploy to internal staging URL
-5. **Owner** — approve/provenance-check the currently untracked family PNGs before committing them
+4. **Codex** (if approved) — cherry-pick to test-web-deploy, export, internal staging only
