@@ -164,6 +164,7 @@ var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
 var _tracking_active: bool = false  # true during gameplay only
 var _boat_times: Array[float] = []
+var _sea_drift_x: float = 0.0  # slow left-drift for the sea/boats mid layer
 
 # ── Boot ──────────────────────────────────────────────────────────────────
 
@@ -268,6 +269,12 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		_animate_boats(delta)
+		# Advance sea-layer drift — gives the sea band a sense of motion.
+		# 1.8 px/s means the image copy-join enters the viewport after ~98 seconds,
+		# which is well beyond any normal gameplay session length.
+		_sea_drift_x += 1.8 * delta
+		if _sea_drift_x > VIEW_W:
+			_sea_drift_x -= VIEW_W
 		# No per-frame horizontal tracking — camera is fixed.
 		# Look-ahead is baked into _gameplay_cam_pos once at _ready().
 		# _tracking_active and _look_x are kept for compatibility but unused.
@@ -316,6 +323,7 @@ func _input(event: InputEvent) -> void:
 func _show_start_screen() -> void:
 	started = false
 	_harbor_reveal_active = false
+	_sea_drift_x = 0.0
 	game_over = false
 	ending_active = false
 	score = 0
@@ -958,9 +966,14 @@ func _update_background_parallax() -> void:
 	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
 	sky_layer.position = Vector2(left, top)
 
-	# Sea and Boats layers are DISABLED (opaque plates create seams — hidden by env_visual).
-	# Their Node2D references still exist but we don't position them here.
-	# If procedural fallback runs, they may have ColorRects which are harmless when hidden.
+	# Sea layer: boats_mid plate drifts slowly left to give the harbour a living feel.
+	# Two side-by-side copies cover 2×VIEW_W; at 1.8 px/s the copy-join enters
+	# the viewport only after ~98 s, well beyond a typical run.
+	# The sea layer sits at 48% from screen top — the water band between the
+	# harbour buildings (30%) and the pier wall (72%).
+	sea_layer.visible = true
+	sea_layer.position.x = left - _sea_drift_x
+	sea_layer.position.y = top + VIEW_H * 0.48 / zoom
 
 	# ── Buildings: fixed X, 30% down — harbor skyline behind the pier ────────
 	# Current opaque harbor plate is not tileable; horizontal drift exposes its seam.
@@ -1155,9 +1168,9 @@ func _build_ambient() -> void:
 
 
 func _build_ambient_props() -> void:
-	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_BLUE, Vector2(520, 418), 92.0,
+	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_BLUE, Vector2(520, 438), 92.0,
 		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
-	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 424), 68.0,
+	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 444), 68.0,
 		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
 	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 435), 92.0,
 		"HarborFlags", "res://scripts/level2/ambient/harbor_ambient_sway.gd")

@@ -188,6 +188,7 @@ const GROUND_TEXTURE_PATH := "res://assets/backgrounds/mantarha/ground_mantarha.
 @onready var game_over_light_count: Label = $UI/GameOverPanel/GameOverCard/GameOverLightCount
 @onready var retry_button: Button = $UI/GameOverPanel/GameOverCard/RetryButton
 @onready var restart_button: Button = $UI/GameOverPanel/GameOverCard/RestartButton
+@onready var chapter2_button: Button = $UI/GameOverPanel/GameOverCard/Chapter2Button
 @onready var start_screen: Control = $UI/StartScreen
 @onready var menu_title_label: Label = $UI/StartScreen/TitleLabel
 @onready var menu_subtitle_label: Label = $UI/StartScreen/SubtitleLabel
@@ -227,6 +228,7 @@ var game_over := false
 var checkpoint_active := false
 var current_obstacle_speed := DIFFICULTY_MANAGER.BASE_SPEED
 var last_reached_checkpoint := StoryCheckpoint.NONE
+var _level1_completed := false   # true after Father ending dialogue finishes
 var checkpoint_encounter_started := false
 var checkpoint_arriving := false
 var checkpoint_cinematic_active := false
@@ -279,6 +281,8 @@ func _ready() -> void:
 		restart_button.pressed.connect(_on_restart_pressed)
 	if not retry_button.pressed.is_connected(_on_retry_pressed):
 		retry_button.pressed.connect(_on_retry_pressed)
+	if not chapter2_button.pressed.is_connected(_on_chapter2_pressed):
+		chapter2_button.pressed.connect(_on_chapter2_pressed)
 	if not continue_button.pressed.is_connected(_on_checkpoint_continue_pressed):
 		continue_button.pressed.connect(_on_checkpoint_continue_pressed)
 	if not intro_next_button.pressed.is_connected(_on_intro_next_pressed):
@@ -762,6 +766,7 @@ func _finish_intro() -> void:
 
 
 func _start_run() -> void:
+	_level1_completed = false
 	_begin_run(0, StoryCheckpoint.NONE, DIFFICULTY_MANAGER.BASE_SPEED)
 
 
@@ -911,6 +916,9 @@ func _show_game_over_options() -> void:
 
 	game_over_light_count.text = "الأثر الذي تركته: %d" % collectible_count
 
+	# Chapter 2 button is only shown via _show_level1_completion() — never during mid-run game over.
+	chapter2_button.visible = false
+
 	var card: Node = game_over_panel.get_node("GameOverCard")
 	game_over_panel.modulate.a = 0.0
 	card.scale = Vector2(0.92, 0.92)
@@ -932,6 +940,8 @@ func _show_game_over_options() -> void:
 
 
 func _on_restart_pressed() -> void:
+	_level1_completed = false
+	game_over_panel.visible = false
 	_start_run()
 
 
@@ -942,6 +952,41 @@ func _on_retry_pressed() -> void:
 		retry_config["checkpoint"],
 		retry_config["speed"]
 	)
+
+
+func _show_level1_completion() -> void:
+	# Called when the Father (Level 1 ending) dialogue is acknowledged.
+	# Hides the checkpoint panel and shows a completion card with the Chapter 2 button.
+	_level1_completed = true
+	checkpoint_panel.visible = false
+	checkpoint_active = false
+	get_tree().paused = false
+
+	game_over_label.text = "أحسنت يا علي!"
+	game_over_message.text = EncounterData.rtl_safe(
+		"اكتملت رحلة علي في المنطرحة.\nكل خطوة طيبة تتركُ أثرًا."
+	)
+	game_over_light_count.text = "الأثر الذي تركته: %d" % collectible_count
+
+	chapter2_button.visible = true
+	retry_button.visible = false
+	restart_button.visible = true
+
+	var card: Node = game_over_panel.get_node("GameOverCard")
+	game_over_panel.modulate.a = 0.0
+	card.scale = Vector2(0.92, 0.92)
+	card.pivot_offset = card.size / 2.0
+	game_over_panel.visible = true
+	var t := create_tween().set_parallel()
+	t.tween_property(game_over_panel, "modulate:a", 1.0, 0.45).set_trans(Tween.TRANS_SINE)
+	t.tween_property(card, "scale", Vector2.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	chapter2_button.grab_focus()
+
+
+func _on_chapter2_pressed() -> void:
+	# Transition from Level 1 (Ali) to Level 2 (Jomana).
+	# Level 2 is a fully self-contained scene; we simply change the active scene.
+	get_tree().change_scene_to_file("res://scenes/level2/Level2_Marsa_Playable.tscn")
 
 
 func _get_retry_state_config(checkpoint: int) -> Dictionary:
@@ -1258,8 +1303,8 @@ func _on_checkpoint_continue_pressed() -> void:
 
 	audio_manager.play_button_click()
 	if encounter_controller.character_id == EncounterCharacter.FATHER:
-		print("[encounter] Father ending complete; restarting from beginning")
-		_start_run()
+		print("[encounter] Father ending complete; showing Level 1 completion panel")
+		_show_level1_completion()
 		return
 
 	if not _apply_checkpoint_state(encounter_controller.character_id):

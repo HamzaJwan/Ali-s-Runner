@@ -31,11 +31,15 @@ const SKY_FILL_COLOR := Color(0.53, 0.78, 0.96, 1.0)
 const LAYER_Z: Dictionary = {
 	"L2_SkyLayer":            -30,
 	"L2_FarBuildingsLayer":   -18,   # buildings between sky and pier
+	"L2_BoatsMidLayer":       -12,   # sea/boats strip, drifts slowly for motion feel
 	"L2_ForegroundPierLayer": -5,
 }
 
-## Layers skipped in this release (opaque, create seams when stacked).
-const SKIPPED_LAYERS := ["L2_SeaBreakwaterLayer", "L2_BoatsMidLayer"]
+## bg_sea_breakwater is still skipped (too tall, wrong colour register for current stack).
+## mg_boats_mid is now handled by level2_marsa_playable.gd via sea_layer.position
+## — it drifts slowly and is positioned at the 48% sea band.  Hidden here so the
+## env_visual setup does not double-apply it.
+const SKIPPED_LAYERS := ["L2_SeaBreakwaterLayer"]
 
 var _loaded_count := 0
 var _missing: Array[String] = []
@@ -77,10 +81,14 @@ func setup(background_node: Node2D) -> bool:
 		if node != null:
 			(node as Node2D).visible = false
 
-	# Load the three active plates.
+	# Load the four active plates.
+	# L2_BoatsMidLayer (sea/boats mid) is loaded here so its texture is ready
+	# but its X/Y position is driven every frame by level2_marsa_playable.gd
+	# to create a slow sea-drift effect.
 	var active_map := {
 		"L2_SkyLayer":            MANIFEST.BG_SKY,
 		"L2_FarBuildingsLayer":   MANIFEST.BG_BUILDINGS,
+		"L2_BoatsMidLayer":       MANIFEST.BG_BOATS,
 		"L2_ForegroundPierLayer": MANIFEST.BG_PIER,
 	}
 	for node_name: String in active_map:
