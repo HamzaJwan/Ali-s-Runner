@@ -121,12 +121,22 @@ Pattern: LOW_LINE (4) then SMALL_ARC (5) then FULL_ARC (5) then repeat.
 
 | Score | Character | Status |
 |---|---|---|
-| 15 | Ali | Color-coded text card (blue) - portrait PNG not yet generated |
-| 35 | Zainab | Color-coded text card (orange) - portrait PNG not yet generated |
-| 60 | Fatima | Color-coded text card (pink) - portrait PNG not yet generated |
-| 90 | Father | Color-coded text card (deep blue) then ending panel |
+| 15 | Ali | Owner portrait integrated; 165px target height; fallback-safe |
+| 35 | Zainab | Owner portrait integrated; 155px target height; fallback-safe |
+| 60 | Fatima | Owner portrait integrated; 140px target height; remains smallest |
+| 90 | Father | Owner portrait integrated; 205px target height; family ending art follows |
 
-Dedicated family PNGs are currently detected in the local workspace but remain untracked owner files. They are not included in this source-only patch. The committed scene remains fallback-safe until the owner approves and commits those assets separately.
+Dedicated family PNGs and `family_ending_01.png` are included in the encounter
+cinematic patch. The loader still preserves the generated-card fallback if any PNG
+is missing or fails to import.
+
+The checkpoint panel now sits in the upper-middle of the viewport with a softer
+dim layer. Jomana and the helper are framed on opposite sides. Continue removes
+all encounter visuals before the 3-2-1 countdown, restores the fixed gameplay
+camera, and restarts obstacle and collectible spawning with a short safety delay.
+
+Mouse click, touch, and keyboard jump remain available only during active
+gameplay. Checkpoint and menu UI input is gated from the jump path.
 
 ---
 
@@ -209,7 +219,7 @@ If staging breaks Level 1 or causes any regression:
 ## Known Limitations
 
 1. Background seams: fully resolved for 3-plate composition. True 5-layer parallax needs transparent re-authored assets.
-2. Family checkpoint portraits: text card fallback (intentional - art pending).
+2. Family checkpoint portraits: integrated; owner F6 composition review pending.
 3. Ambient rope: disabled (no anchor context).
 4. OGG audio: WAV works; OGG smaller for web.
 5. Level 1 to Level 2 chapter transition: documented in docs/GAME_CHAPTER_FLOW.md, not yet implemented.

@@ -74,6 +74,34 @@ func _run_smoke() -> void:
 	if camera == null or camera.position.distance_to(target_position) > 1.0:
 		failures.append("camera reveal did not complete")
 
+	# Checkpoint lifecycle: enter Ali encounter, complete reward, then resume.
+	if not scene.has_method("debug_trigger_ali_checkpoint_for_smoke"):
+		failures.append("missing checkpoint smoke helper")
+	else:
+		scene.debug_trigger_ali_checkpoint_for_smoke()
+		await process_frame
+		var npc := scene.get_node_or_null("EncounterNPC")
+		if not bool(scene.get("checkpoint_active")):
+			failures.append("Ali checkpoint did not activate")
+		if npc == null or not npc.visible:
+			failures.append("Ali checkpoint NPC is not visible")
+		elif npc.get_node_or_null("CheckpointArt") == null and npc.get_node_or_null("NPCCard") == null:
+			failures.append("Ali checkpoint has neither portrait nor fallback card")
+		scene.debug_complete_checkpoint_for_smoke()
+		await create_timer(0.55).timeout
+		if bool(scene.get("checkpoint_active")) or bool(scene.get("countdown_active")):
+			failures.append("checkpoint/countdown did not finish")
+		if npc != null and npc.visible:
+			failures.append("checkpoint NPC remained visible after resume")
+		if player == null or not bool(player.get("_gameplay_active")):
+			failures.append("player did not resume after checkpoint")
+		if obstacle_timer == null or obstacle_timer.is_stopped():
+			failures.append("obstacles did not resume after checkpoint")
+		if collectible_spawner == null or not collectible_spawner.is_spawning():
+			failures.append("collectibles did not resume after checkpoint")
+		if camera == null or camera.position.distance_to(target_position) > 1.0:
+			failures.append("gameplay camera was not restored after checkpoint")
+
 	if failures.is_empty():
 		print("LEVEL2_RUNTIME_SMOKE=PASS")
 		quit(0)

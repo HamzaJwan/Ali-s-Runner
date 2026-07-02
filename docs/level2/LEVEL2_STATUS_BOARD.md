@@ -1,7 +1,7 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
-# Last updated: 2026-07-02 | Commit: c8ce6e9
+# Last updated: 2026-07-02 | Encounter cinematic patch pending commit
 
-**Gate: TWO_CODEX_PASSES_NEEDED — gameplay feel (P1-P5) + story/encounter (C1-C7) before F6**
+**Gate: OWNER_F6_REVIEW_REQUIRED — automated encounter and resume checks pass**
 
 Open this file to know where things stand in 30 seconds.
 
@@ -51,50 +51,49 @@ Open this file to know where things stand in 30 seconds.
 
 ---
 
-## P1–P5 — Gameplay Feel Issues (Codex Fix Needed)
+## P1–P5 — Gameplay Feel Status
 
 | ID | Issue | Impact |
 |---|---|---|
-| P1 | Mouse click does not trigger jump | HIGH — breaks Web/mobile experience |
-| P2 | IDLE → RUN transition is abrupt | MEDIUM — jarring when play pressed |
-| P3 | Some obstacles too wide (landscape PNG scaled by height only) | MEDIUM — unfair feel |
-| P4 | Boats partially sunk below pier edge | LOW — visual polish |
-| P5 | Flags have no visible anchor posts | LOW — visual coherence |
+| P1 | IMPLEMENTED / CODE VERIFIED | Mouse, touch, and keyboard jump are gameplay-gated; UI clicks do not enter the gameplay branch |
+| P2 | IMPLEMENTED / F6 REVIEW | Start changes to RUN with a short 0.18s alpha settle |
+| P3 | OWNER F6 REVIEW | Confirm every harbor obstacle remains fair at gameplay scale |
+| P4 | OWNER F6 REVIEW | Confirm ambient boat baseline across the full loop |
+| P5 | OWNER F6 REVIEW | Flags remain enabled only where the harbor composition reads as anchored |
 
 See `docs/level2/LEVEL2_CODEX_GAMEPLAY_FEEL_PASS.md` for exact Codex instructions.
 
 ---
 
-## C1–C7 — Story / Encounter Issues (Codex Fix Needed)
+## C1–C7 — Story / Encounter Status
 
 | ID | Issue | Impact |
 |---|---|---|
-| C1 | Checkpoint dialogue panel covers both characters (card at Y=382-602 on 644px screen) | HIGH — breaks cinematic feel |
-| C2 | DimBG opacity 72% — scene completely obscured during encounter | HIGH |
-| C3 | Speaker name never updates for ROLE_JOMANA steps — always shows character name | HIGH — confusing |
-| C4 | Ali Step 2: Jomana teaches Ali instead of Ali teaching Jomana — logic is reversed | HIGH — story wrong |
-| C5 | NPC remains on pier after pressing "تابع" — visible during countdown and next gameplay | HIGH |
-| C6 | Dialogue text corrections for all 4 characters | MEDIUM |
-| C7 | أحسنت → أحسنتِ (feminine suffix for Jomana) in Father's line | LOW |
+| C1 | IMPLEMENTED / F6 REVIEW | Card moved to upper-middle so Jomana and helper remain visible |
+| C2 | IMPLEMENTED / F6 REVIEW | Dim overlay reduced to 52% |
+| C3 | IMPLEMENTED / AUTOMATED PASS | Speaker changes between helper, Jomana, and reward |
+| C4 | IMPLEMENTED / TEXT REVIEW | Ali now teaches Jomana about kind words |
+| C5 | IMPLEMENTED / AUTOMATED PASS | NPC and encounter art are removed before countdown |
+| C6 | IMPLEMENTED / OWNER TEXT REVIEW | All four family dialogues corrected |
+| C7 | PRESERVED | Feminine-address ending wording remains in the existing ending flow |
 
 See `docs/level2/LEVEL2_STORY_DIALOGUE_QA.md` for full corrected dialogue and root causes.
 
 ---
 
-## New Assets Ready to Commit
+## Family Assets Integrated by This Patch
 
-Owner-generated family portraits are on disk but UNTRACKED:
+Owner-generated family portraits are loaded by the encounter helper and staged with this patch:
 
 | File | Status |
 |---|---|
-| ali_checkpoint_01.png (642×1254 RGBA) | On disk — untracked |
-| zainab_checkpoint_01.png (639×1254 RGBA) | On disk — untracked |
-| fatima_checkpoint_01.png (738×1254 RGBA) | On disk — untracked |
-| father_checkpoint_01.png (660×1254 RGBA) | On disk — untracked |
-| family_ending_01.png (1008×1003 RGBA) | On disk — untracked |
+| ali_checkpoint_01.png | Integrated; target height 165px |
+| zainab_checkpoint_01.png | Integrated; target height 155px |
+| fatima_checkpoint_01.png | Integrated; target height 140px and remains smallest |
+| father_checkpoint_01.png | Integrated; target height 205px |
+| family_ending_01.png | Integrated into the Level 2 ending |
 
-Code in `level2_family_checkpoint_visuals.gd` will auto-load them once committed.
-Codex must `git add assets/level2/marsa/characters/family/` and commit.
+Missing files remain fallback-safe through the existing generated NPC card.
 
 ---
 
@@ -121,8 +120,7 @@ Codex must `git add assets/level2/marsa/characters/family/` and commit.
 
 ## Next Actions in Order
 
-1. **Codex** — gameplay feel pass (P1–P5): mouse jump, IDLE delay, obstacle width, boats, family portraits
-2. **Codex** — story/encounter pass (C1–C7): panel position, DimBG opacity, NPC off-screen, dialogue corrections
-3. **Owner** — F6 review: confirm mouse jump, portraits visible, panel does not cover characters, NPC leaves after "تابع"
-4. **Owner decision** — approve or reject for internal staging
-5. **Codex** (if approved) — cherry-pick to test-web-deploy, export, internal staging only
+1. **Codex** — commit and push the tested encounter cinematic patch.
+2. **Owner** — F6 review: portraits, framing, dialogue, countdown cleanup, and resumed spawning.
+3. **Owner decision** — approve or reject for internal staging.
+4. **Codex** (only if approved) — prepare an isolated staging build. Do not deploy from this task.

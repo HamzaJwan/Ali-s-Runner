@@ -111,6 +111,10 @@ These were verified by code review. Owner F6 confirms them visually:
 
 ## Story Checkpoints — Family Portraits
 
+Automated runtime coverage now verifies the Ali checkpoint opens, displays real art
+or its safe fallback, cleans the NPC before countdown, restores the gameplay camera,
+and resumes both obstacle and collectible spawners. The checks below remain visual.
+
 Reach each score milestone to test:
 
 - [ ] Score 15 → gameplay pauses → **Ali portrait appears** (young boy in white thobe)
@@ -118,6 +122,9 @@ Reach each score milestone to test:
 - [ ] Dialogue text readable, not covering portrait
 - [ ] Tap/Space to advance → Jomana response → reward text → "متابعة"
 - [ ] "متابعة" → countdown 3-2-1 → run resumes at 240 speed
+- [ ] Jomana returns to the fixed gameplay position before countdown
+- [ ] No helper portrait or NPC remains visible after Continue
+- [ ] Obstacles and collectibles resume after the countdown safety window
 
 - [ ] Score 35 → **Zainab portrait** (young girl in pink dress)
 - [ ] Score 60 → **Fatima portrait** (baby in pink — smallest character)

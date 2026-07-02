@@ -9,10 +9,10 @@ const MANIFEST := preload("res://scripts/level2/level2_asset_manifest.gd")
 const ASSET_UTILS := preload("res://scripts/asset_utils.gd")
 
 const NPC_VISUAL_HEIGHTS := {
-	1: 150.0, # Ali
-	2: 140.0, # Zainab
-	3: 105.0, # Fatima remains the smallest
-	4: 190.0, # Father
+	1: 165.0, # Ali
+	2: 155.0, # Zainab
+	3: 140.0, # Fatima remains the smallest
+	4: 205.0, # Father
 }
 
 

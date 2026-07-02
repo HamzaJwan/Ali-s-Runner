@@ -39,6 +39,12 @@ func start_spawning(speed: float) -> void:
 	_schedule_next()
 
 
+func restart_after_checkpoint(speed: float) -> void:
+	current_speed = speed
+	# Predictable, child-friendly return after the 3-2-1 countdown.
+	_timer.start(2.5)
+
+
 func stop_spawning() -> void:
 	if _timer != null:
 		_timer.stop()

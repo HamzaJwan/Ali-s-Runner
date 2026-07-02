@@ -50,7 +50,10 @@ const CURB_TOP_Y              := 470.0
 const GROUND_COLLISION_HEIGHT := 70.0
 const GROUND_CENTER_Y         := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION   := Vector2(PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_H)
-const ENCOUNTER_TARGET_X      := 850.0
+const ENCOUNTER_TARGET_X      := 780.0
+const ENCOUNTER_PLAYER_POSITION := Vector2(300.0, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_H)
+const ENCOUNTER_CAMERA_POSITION := Vector2(540.0, 334.0)
+const ENCOUNTER_CAMERA_ZOOM   := 1.05
 const CHECKPOINT_ARRIVAL_SPEED := 360.0
 const COUNTDOWN_DURATION      := 3.0
 const GAME_OVER_DELAY         := 0.45
@@ -313,6 +316,7 @@ func _show_start_screen() -> void:
 	obstacle_spawner.clear_obstacles()
 	collectible_spawner.stop_spawning()
 	collectible_spawner.clear_collectibles()
+	_cleanup_encounter(false)
 	player.reset_player(START_PLAYER_POSITION)
 	_apply_default_cam()
 	# Show idle/story pose on the menu — not running.
@@ -329,7 +333,9 @@ func _on_play_pressed() -> void:
 	if is_instance_valid(_l2_audio):
 		_l2_audio.play_gameplay_music()
 	if is_instance_valid(_jomana_vis):
+		_jomana_vis.modulate.a = 0.78
 		_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
+		create_tween().tween_property(_jomana_vis, "modulate:a", 1.0, 0.18)
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
 	# ONE camera transition. _play_harbor_reveal tweens from open view → gameplay pos.
 	# _begin_run does NOT touch the camera to avoid a race condition.
@@ -339,6 +345,21 @@ func _on_play_pressed() -> void:
 
 func debug_start_gameplay_for_smoke() -> void:
 	_on_play_pressed()
+
+
+func debug_trigger_ali_checkpoint_for_smoke() -> void:
+	_start_checkpoint(Level2EncounterData.ALI)
+
+
+func debug_complete_checkpoint_for_smoke() -> void:
+	if not checkpoint_active:
+		return
+	var enc := Level2EncounterData.get_encounter(current_enc_id)
+	var steps: Array = enc.get("dialogue_steps", [])
+	enc_step = maxi(steps.size() - 1, 0)
+	_show_enc_step()
+	_on_continue_pressed()
+	countdown_remaining = 0.05
 
 
 func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
@@ -371,18 +392,23 @@ func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
 	audio_manager.play_gameplay_music()
 
 
-func _start_runtime_spawners() -> void:
+func _start_runtime_spawners(after_checkpoint := false) -> void:
 	var obstacle_started := false
 	var collectible_started := false
 	if is_instance_valid(obstacle_spawner) and obstacle_spawner.has_method("start_spawning"):
 		obstacle_spawner.clear_obstacles()
+		if after_checkpoint and obstacle_spawner.has_method("grant_safety_window"):
+			obstacle_spawner.grant_safety_window(1)
 		obstacle_spawner.start_spawning(current_speed)
 		obstacle_started = true
 	else:
 		push_warning("[L2 play] obstacle spawner unavailable; gameplay continues")
 	if is_instance_valid(collectible_spawner) and collectible_spawner.has_method("start_spawning"):
 		collectible_spawner.clear_collectibles()
-		collectible_spawner.start_spawning(current_speed)
+		if after_checkpoint and collectible_spawner.has_method("restart_after_checkpoint"):
+			collectible_spawner.restart_after_checkpoint(current_speed)
+		else:
+			collectible_spawner.start_spawning(current_speed)
 		collectible_started = true
 	else:
 		push_warning("[L2 play] collectible spawner unavailable; gameplay continues")
@@ -460,6 +486,7 @@ func _start_checkpoint(char_id: int) -> void:
 	obstacle_spawner.clear_obstacles()
 	collectible_spawner.stop_spawning()
 	collectible_spawner.clear_collectibles()
+	player.reset_player(ENCOUNTER_PLAYER_POSITION)
 	player.set_gameplay_active(false)
 	get_tree().paused = true
 	audio_manager.play_calm_music()
@@ -472,10 +499,12 @@ func _start_checkpoint(char_id: int) -> void:
 	_apply_checkpoint_cam()
 	var enc := Level2EncounterData.get_encounter(char_id)
 	npc_label.text = enc.get("placeholder_text", "؟")
-	encounter_npc.position.x = 1300.0
+	encounter_npc.visible = true
+	encounter_npc.position.x = 1050.0
 	encounter_npc.position.y = ROAD_SURFACE_Y + VISUAL_LANE_Y_OFFSET
 	_build_npc_card(char_id, enc)
 	npc_arriving = true
+	print("[L2 encounter] start id=%d" % char_id)
 	_show_enc_step()
 
 
@@ -491,26 +520,49 @@ func _show_enc_step() -> void:
 	var text: String = Level2EncounterData.rtl_safe(step.get("text", ""))
 
 	checkpoint_panel.visible = true
-	cp_speaker.text = enc.get("speaker_name", "")
 
 	match role:
 		Level2EncounterData.ROLE_HELPER:
+			cp_speaker.text = enc.get("speaker_name", "")
 			cp_char_line.text = text
 			cp_jomana_line.text = ""
 			cp_reward.visible = false
 			cp_continue.visible = false
 		Level2EncounterData.ROLE_JOMANA:
+			cp_speaker.text = Level2EncounterData.rtl_safe("جمانة")
 			cp_char_line.text = ""
 			cp_jomana_line.text = text
 			cp_reward.visible = false
 			cp_continue.visible = false
 		Level2EncounterData.ROLE_REWARD:
+			cp_speaker.text = Level2EncounterData.rtl_safe("الأثر")
 			cp_char_line.text = ""
 			cp_jomana_line.text = ""
 			cp_reward.text = text
 			cp_reward.visible = true
 			cp_continue.visible = true
 			audio_manager.play_reward_star()
+
+
+func _cleanup_encounter(log_cleanup := true) -> void:
+	npc_arriving = false
+	encounter_npc.visible = false
+	npc_label.visible = false
+	for child in encounter_npc.get_children():
+		if child != npc_label:
+			child.queue_free()
+	cp_speaker.text = ""
+	cp_char_line.text = ""
+	cp_jomana_line.text = ""
+	cp_reward.text = ""
+	cp_reward.visible = false
+	cp_continue.visible = false
+	player.reset_player(START_PLAYER_POSITION)
+	player.set_gameplay_active(false)
+	if is_instance_valid(_jomana_vis):
+		_jomana_vis.set_pose(_jomana_vis.Pose.IDLE)
+	if log_cleanup:
+		print("[L2 encounter] cleanup id=%d" % current_enc_id)
 
 
 func _on_continue_pressed() -> void:
@@ -520,6 +572,7 @@ func _on_continue_pressed() -> void:
 	checkpoint_panel.visible = false
 	get_tree().paused = false
 	checkpoint_active = false
+	_cleanup_encounter(true)
 
 	if current_enc_id == Level2EncounterData.FATHER:
 		_show_level2_ending()
@@ -531,16 +584,17 @@ func _on_continue_pressed() -> void:
 	countdown_remaining = COUNTDOWN_DURATION
 	countdown_label.text = "3"
 	countdown_overlay.visible = true
+	_apply_gameplay_cam_tween()
 
 
 func _finish_countdown() -> void:
 	player.set_gameplay_active(true)
-	obstacle_spawner.start_spawning(current_speed)
-	collectible_spawner.start_spawning(current_speed)
+	_start_runtime_spawners(true)
 	_apply_gameplay_cam()
 	audio_manager.play_gameplay_music()
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
+	print("[L2 encounter] resume gameplay obstacles=true collectibles=true")
 
 
 # ── Game Over ─────────────────────────────────────────────────────────────
@@ -598,6 +652,10 @@ func _show_level2_ending() -> void:
 	collectible_spawner.stop_spawning()
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.set_pose(_jomana_vis.Pose.STORY)
+	encounter_npc.visible = true
+	encounter_npc.position = Vector2(780.0, 390.0)
+	if _family_vis != null:
+		_family_vis.apply_ending_art(encounter_npc)
 	game_over_title.text = Level2EncounterData.rtl_safe("أحسنتِ يا جمانة!")
 	game_over_msg.text   = Level2EncounterData.rtl_safe("كل كلمة طيبة تترك أثرًا")
 	game_over_count.text = "الأثر الذي تركتِه: %d" % collectible_count
@@ -671,8 +729,20 @@ func _apply_default_cam() -> void:
 
 func _apply_checkpoint_cam() -> void:
 	_tracking_active = false
-	var boost: float = GAMEPLAY_ZOOM * (1.0 + CAMERA_CHECKPOINT_BOOST)
-	_tween_cam(_gameplay_cam_pos, Vector2(boost, boost))
+	_tween_cam(
+		ENCOUNTER_CAMERA_POSITION,
+		Vector2(ENCOUNTER_CAMERA_ZOOM, ENCOUNTER_CAMERA_ZOOM),
+		0.45
+	)
+
+
+func _apply_gameplay_cam_tween() -> void:
+	_tracking_active = false
+	_tween_cam(
+		_gameplay_cam_pos,
+		Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM),
+		0.35
+	)
 
 
 func _play_harbor_reveal() -> void:
