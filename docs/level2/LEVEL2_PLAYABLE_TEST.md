@@ -120,7 +120,9 @@ Reach each score milestone to test:
 - [ ] Score 15 → gameplay pauses → **Ali portrait appears** (young boy in white thobe)
 - [ ] Ali Arabic name "علي" visible on card
 - [ ] Dialogue text readable, not covering portrait
-- [ ] Tap/Space to advance → Jomana response → reward text → "متابعة"
+- [ ] Card remains at the top (Y=12–160) and the 30% dim keeps both faces readable
+- [ ] Speaker label follows each step, including Ali's two lines and Jomana's replies
+- [ ] Tap/Space to advance → Ali's second line → reward text → "متابعة"
 - [ ] "متابعة" → countdown 3-2-1 → run resumes at 240 speed
 - [ ] Jomana returns to the fixed gameplay position before countdown
 - [ ] No helper portrait or NPC remains visible after Continue
@@ -135,8 +137,9 @@ Reach each score milestone to test:
 ## Ending
 
 - [ ] Father checkpoint → "متابعة" → **family ending image** appears (family group photo)
+- [ ] Family ending image appears to the left of the ending card and is not hidden behind it
 - [ ] Title: "أحسنتِ يا جمانة!"
-- [ ] Message: "كل كلمة طيبة تترك أثرًا"
+- [ ] Message: "كل كلمة طيبة تترك أثرًا."
 - [ ] "الأثر الذي تركتِه: N" count shown
 - [ ] "العودة إلى القائمة" → returns to start screen
 - [ ] "إعادة الفصل الثاني" → restarts from score 0

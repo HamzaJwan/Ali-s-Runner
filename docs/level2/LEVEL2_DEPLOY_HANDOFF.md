@@ -130,10 +130,13 @@ Dedicated family PNGs and `family_ending_01.png` are included in the encounter
 cinematic patch. The loader still preserves the generated-card fallback if any PNG
 is missing or fails to import.
 
-The checkpoint panel now sits in the upper-middle of the viewport with a softer
-dim layer. Jomana and the helper are framed on opposite sides. Continue removes
+The checkpoint panel is now a 720×148 subtitle card at screen Y=12–160 with a
+30% dim layer. Jomana and the helper are framed on opposite sides. Continue removes
 all encounter visuals before the 3-2-1 countdown, restores the fixed gameplay
 camera, and restarts obstacle and collectible spawning with a short safety delay.
+
+Every dialogue step now carries its explicit speaker. The Level 2 ending uses a
+dedicated UI image area for `family_ending_01.png`, separate from the ending card.
 
 Mouse click, touch, and keyboard jump remain available only during active
 gameplay. Checkpoint and menu UI input is gated from the jump path.

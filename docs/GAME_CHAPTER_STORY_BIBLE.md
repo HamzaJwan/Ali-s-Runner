@@ -85,6 +85,12 @@ When Level 1 → Level 2 transition is built:
 **Button:** "ابدئي رحلة جمانة"
 
 Do NOT implement this transition until Level 2 passes owner F6 approval.
+
+### Story synchronization status (2026-07-02)
+
+- Level 1 dialogue improvements from commit `0b457e9` are the preserved Chapter 1 baseline.
+- Level 2 uses explicit speaker labels for every Ali, Zainab, Fatima, Jomana, and Father step.
+- Chapter 2 remains editor/F6-only until owner approval; this story pass does not wire or deploy the chapter transition.
 See `docs/GAME_CHAPTER_FLOW.md` for implementation plan.
 
 ---

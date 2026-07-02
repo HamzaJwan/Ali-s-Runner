@@ -116,6 +116,7 @@ const C_PIER_EDGE  := Color(0.54, 0.48, 0.38, 1.0)
 @onready var npc_label: Label              = $EncounterNPC/NPCLabel
 @onready var score_label: Label            = $UI/ScoreLabel
 @onready var game_over_panel: Control      = $UI/GameOverPanel
+@onready var ending_image: TextureRect     = $UI/GameOverPanel/EndingImage
 @onready var game_over_title: Label        = $UI/GameOverPanel/Card/Title
 @onready var game_over_msg: Label          = $UI/GameOverPanel/Card/Message
 @onready var game_over_count: Label        = $UI/GameOverPanel/Card/CountLabel
@@ -308,6 +309,7 @@ func _show_start_screen() -> void:
 	start_screen.visible = true
 	score_label.visible = false
 	game_over_panel.visible = false
+	ending_image.visible = false
 	retry_button.text = "إعادة المحاولة من آخر نقطة"
 	restart_button.text = "إعادة البدء"
 	checkpoint_panel.visible = false
@@ -362,6 +364,10 @@ func debug_complete_checkpoint_for_smoke() -> void:
 	countdown_remaining = 0.05
 
 
+func debug_show_ending_for_smoke() -> void:
+	_show_level2_ending()
+
+
 func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
 	score = initial_score
 	current_speed = speed
@@ -381,6 +387,7 @@ func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
 	score_label.visible = true
 	score_label.text = "الأثر: %d" % score
 	game_over_panel.visible = false
+	ending_image.visible = false
 	checkpoint_panel.visible = false
 	countdown_overlay.visible = false
 	player.reset_player(START_PLAYER_POSITION)
@@ -518,24 +525,23 @@ func _show_enc_step() -> void:
 	var step: Dictionary = steps[enc_step]
 	var role: int = step.get("role", 0)
 	var text: String = Level2EncounterData.rtl_safe(step.get("text", ""))
+	var speaker: String = step.get("speaker", enc.get("speaker_name", ""))
 
 	checkpoint_panel.visible = true
+	cp_speaker.text = Level2EncounterData.rtl_safe(speaker)
 
 	match role:
 		Level2EncounterData.ROLE_HELPER:
-			cp_speaker.text = enc.get("speaker_name", "")
 			cp_char_line.text = text
 			cp_jomana_line.text = ""
 			cp_reward.visible = false
 			cp_continue.visible = false
 		Level2EncounterData.ROLE_JOMANA:
-			cp_speaker.text = Level2EncounterData.rtl_safe("جمانة")
 			cp_char_line.text = ""
 			cp_jomana_line.text = text
 			cp_reward.visible = false
 			cp_continue.visible = false
 		Level2EncounterData.ROLE_REWARD:
-			cp_speaker.text = Level2EncounterData.rtl_safe("الأثر")
 			cp_char_line.text = ""
 			cp_jomana_line.text = ""
 			cp_reward.text = text
@@ -563,6 +569,7 @@ func _cleanup_encounter(log_cleanup := true) -> void:
 		_jomana_vis.set_pose(_jomana_vis.Pose.IDLE)
 	if log_cleanup:
 		print("[L2 encounter] cleanup id=%d" % current_enc_id)
+		print("[L2 encounter] npc_removed=true")
 
 
 func _on_continue_pressed() -> void:
@@ -619,6 +626,7 @@ func _end_run() -> void:
 
 
 func _show_game_over() -> void:
+	ending_image.visible = false
 	var enc := Level2EncounterData.get_encounter(last_checkpoint)
 	if enc.is_empty():
 		game_over_msg.text = Level2EncounterData.rtl_safe(Level2EncounterData.GAME_OVER_BEFORE_CHECKPOINT)
@@ -652,12 +660,14 @@ func _show_level2_ending() -> void:
 	collectible_spawner.stop_spawning()
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.set_pose(_jomana_vis.Pose.STORY)
-	encounter_npc.visible = true
-	encounter_npc.position = Vector2(780.0, 390.0)
-	if _family_vis != null:
-		_family_vis.apply_ending_art(encounter_npc)
+	encounter_npc.visible = false
+	ending_image.visible = false
+	ending_image.texture = null
+	if L2_MANIFEST.file_exists(L2_MANIFEST.FAM_ENDING):
+		ending_image.texture = load(L2_MANIFEST.FAM_ENDING) as Texture2D
+		ending_image.visible = ending_image.texture != null
 	game_over_title.text = Level2EncounterData.rtl_safe("أحسنتِ يا جمانة!")
-	game_over_msg.text   = Level2EncounterData.rtl_safe("كل كلمة طيبة تترك أثرًا")
+	game_over_msg.text   = Level2EncounterData.rtl_safe("كل كلمة طيبة تترك أثرًا.")
 	game_over_count.text = "الأثر الذي تركتِه: %d" % collectible_count
 	retry_button.visible   = true
 	restart_button.visible = true

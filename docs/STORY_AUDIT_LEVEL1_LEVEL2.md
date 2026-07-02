@@ -5,7 +5,7 @@
 ---
 
 ## Verdict: PARTIAL
-Level 1 dialogue improved and committed. Level 2 dialogue improved by Codex (uncommitted).
+Level 1 dialogue improved in `0b457e9` and preserved. Level 2 dialogue uses explicit per-step speakers in the final cinematic pass.
 Visual/encounter issues documented in LEVEL2_STORY_DIALOGUE_QA.md.
 
 ---
@@ -183,11 +183,11 @@ They require Codex scene/code changes, not dialogue changes.
 
 | Issue | Status | Who fixes |
 |---|---|---|
-| Checkpoint dialogue panel covers characters | NOT FIXED — needs scene edit | Codex |
-| DimBG 72% opacity obscures scene | NOT FIXED | Codex |
-| Speaker name never updates for ROLE_JOMANA steps | NOT FIXED | Codex |
-| NPC stays on screen after "تابع" | NOT FIXED | Codex |
-| Family portraits (RGBA PNGs) are untracked in git | NOT COMMITTED | Codex |
+| Checkpoint dialogue panel covers characters | FIXED IN CODE — top 720×148 card; owner F6 review pending | Owner |
+| DimBG opacity obscures scene | FIXED IN CODE — reduced to 30% | Owner |
+| Speaker name per dialogue step | FIXED — explicit `speaker` field | Automated pass |
+| NPC stays on screen after "تابع" | FIXED — hidden and dynamic children freed before countdown | Automated pass |
+| Family portraits (RGBA PNGs) | TRACKED AND INTEGRATED | Automated asset check |
 
 ---
 

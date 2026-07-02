@@ -14,6 +14,22 @@ func _run_smoke() -> void:
 	await process_frame
 
 	var failures: Array[String] = []
+	var expected_step_counts := {
+		Level2EncounterData.ALI: 3,
+		Level2EncounterData.ZAINAB: 3,
+		Level2EncounterData.FATIMA: 3,
+		Level2EncounterData.FATHER: 4,
+	}
+	for encounter_id: int in expected_step_counts:
+		var encounter := Level2EncounterData.get_encounter(encounter_id)
+		var dialogue_steps: Array = encounter.get("dialogue_steps", [])
+		if dialogue_steps.size() != expected_step_counts[encounter_id]:
+			failures.append("unexpected dialogue step count for encounter %d" % encounter_id)
+		for step: Dictionary in dialogue_steps:
+			if String(step.get("speaker", "")).is_empty():
+				failures.append("missing explicit speaker for encounter %d" % encounter_id)
+			if String(step.get("text", "")).is_empty():
+				failures.append("missing dialogue text for encounter %d" % encounter_id)
 	if not scene.has_method("debug_start_gameplay_for_smoke"):
 		failures.append("missing debug start helper")
 	else:
@@ -83,6 +99,9 @@ func _run_smoke() -> void:
 		var npc := scene.get_node_or_null("EncounterNPC")
 		if not bool(scene.get("checkpoint_active")):
 			failures.append("Ali checkpoint did not activate")
+		var speaker_label := scene.get_node_or_null("UI/CheckpointPanel/Card/SpeakerName") as Label
+		if speaker_label == null or not speaker_label.text.contains("علي"):
+			failures.append("Ali checkpoint speaker label is incorrect")
 		if npc == null or not npc.visible:
 			failures.append("Ali checkpoint NPC is not visible")
 		elif npc.get_node_or_null("CheckpointArt") == null and npc.get_node_or_null("NPCCard") == null:
@@ -101,6 +120,19 @@ func _run_smoke() -> void:
 			failures.append("collectibles did not resume after checkpoint")
 		if camera == null or camera.position.distance_to(target_position) > 1.0:
 			failures.append("gameplay camera was not restored after checkpoint")
+
+	if not scene.has_method("debug_show_ending_for_smoke"):
+		failures.append("missing ending smoke helper")
+	else:
+		scene.debug_show_ending_for_smoke()
+		await process_frame
+		var ending_image := scene.get_node_or_null("UI/GameOverPanel/EndingImage") as TextureRect
+		if ending_image == null or not ending_image.visible or ending_image.texture == null:
+			failures.append("family ending image is not visible")
+		var retry_button := scene.get_node_or_null("UI/GameOverPanel/Card/RetryButton") as Button
+		var restart_button := scene.get_node_or_null("UI/GameOverPanel/Card/RestartButton") as Button
+		if retry_button == null or restart_button == null or not retry_button.visible or not restart_button.visible:
+			failures.append("ending replay/menu buttons are unavailable")
 
 	if failures.is_empty():
 		print("LEVEL2_RUNTIME_SMOKE=PASS")

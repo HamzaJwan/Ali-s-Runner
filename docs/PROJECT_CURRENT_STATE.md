@@ -6,7 +6,7 @@
 ## One-Line Summary
 
 Level 1 (Ali) is live and stable. Level 2 (Jomana) is in internal F6 testing with visual and story
-encounter improvements pending Codex implementation before owner approval.
+encounter improvements implemented and awaiting owner F6 approval.
 
 ---
 
@@ -43,9 +43,9 @@ encounter improvements pending Codex implementation before owner approval.
 | Background: sky + buildings + pier (no seam) | ✅ |
 | Seagulls, boat bob, flag sway | ✅ |
 | Pink shard collectible (48px) | ✅ |
-| Story checkpoint flow (text cards) | ✅ |
-| Family portraits on disk (RGBA, all 5 files) | ✅ On disk — uncommitted |
-| Family portraits loading at checkpoints | ✅ Code ready — needs git add |
+| Story checkpoint flow (top cinematic card) | ✅ automated / owner F6 visual review pending |
+| Family portraits (RGBA, all 5 files) | ✅ tracked and integrated |
+| Family portraits loading at checkpoints | ✅ tracked and integrated |
 | Game Over / Retry / Restart | ✅ |
 | Level 2 ending after Father | ✅ |
 | Audio 8/8 WAV | ✅ |
@@ -98,15 +98,15 @@ encounter improvements pending Codex implementation before owner approval.
 | `docs/PROJECT_CURRENT_STATE.md` | NEW — this file |
 | `docs/STORY_PLAN.md` | Updated — reflects new approved L1 dialogue |
 
-### Level 2 Dialogue (UNCOMMITTED — Codex changes pending commit)
+### Level 2 Dialogue (final cinematic pass pending this commit)
 
 | File | Status |
 |---|---|
 | `scripts/level2/level2_encounter_data.gd` | Modified by Codex — improved dialogue, uncommitted |
 | `scripts/level2/level2_marsa_playable.gd` | Modified by Codex — gameplay fixes, uncommitted |
 | `scripts/level2/gameplay/level2_collectible_spawner.gd` | Modified by Codex — uncommitted |
-| `scripts/level2/story/level2_family_checkpoint_visuals.gd` | Modified by Codex — uncommitted |
-| `assets/level2/marsa/characters/family/` | 5 RGBA PNGs — untracked (needs git add) |
+| `scripts/level2/story/level2_family_checkpoint_visuals.gd` | Integrated and fallback-safe |
+| `assets/level2/marsa/characters/family/` | 5 RGBA PNGs tracked since `c8bd6be` |
 
 ---
 

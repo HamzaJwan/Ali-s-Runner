@@ -157,23 +157,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.03, 0.015, 0.52)
+color = Color(0.04, 0.03, 0.015, 0.30)
 
 [node name="Card" type="Panel" parent="UI/CheckpointPanel"]
 layout_mode = 0
 offset_left = 216.0
-offset_top = 105.0
+offset_top = 12.0
 offset_right = 936.0
-offset_bottom = 275.0
+offset_bottom = 160.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("2")
 
 [node name="SpeakerName" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
 offset_left = 0.0
-offset_top = 8.0
+offset_top = 4.0
 offset_right = 720.0
-offset_bottom = 36.0
+offset_bottom = 30.0
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1.0, 0.82, 0.38, 1.0)
 theme_override_constants/outline_size = 3
@@ -186,9 +186,9 @@ language = "ar"
 [node name="CharacterLine" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
 offset_left = 24.0
-offset_top = 36.0
+offset_top = 28.0
 offset_right = 696.0
-offset_bottom = 112.0
+offset_bottom = 100.0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_colors/font_color = Color(0.95, 0.92, 0.84, 1.0)
@@ -203,9 +203,9 @@ language = "ar"
 [node name="JomanaLine" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
 offset_left = 24.0
-offset_top = 36.0
+offset_top = 28.0
 offset_right = 696.0
-offset_bottom = 112.0
+offset_bottom = 100.0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_colors/font_color = Color(0.78, 0.94, 0.85, 1.0)
@@ -220,9 +220,9 @@ language = "ar"
 [node name="RewardLabel" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
 offset_left = 0.0
-offset_top = 40.0
+offset_top = 28.0
 offset_right = 720.0
-offset_bottom = 108.0
+offset_bottom = 96.0
 theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(1.0, 0.88, 0.38, 1.0)
 theme_override_constants/outline_size = 3
@@ -236,9 +236,9 @@ visible = false
 [node name="ContinueButton" type="Button" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
 offset_left = 230.0
-offset_top = 118.0
+offset_top = 102.0
 offset_right = 490.0
-offset_bottom = 160.0
+offset_bottom = 142.0
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("3")
 theme_override_styles/hover = SubResource("3")
@@ -267,6 +267,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.04, 0.03, 0.015, 0.80)
+
+[node name="EndingImage" type="TextureRect" parent="UI/GameOverPanel"]
+visible = false
+layout_mode = 0
+offset_left = 18.0
+offset_top = 184.0
+offset_right = 246.0
+offset_bottom = 466.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Card" type="Panel" parent="UI/GameOverPanel"]
 layout_mode = 0

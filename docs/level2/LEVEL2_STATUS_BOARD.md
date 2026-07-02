@@ -33,7 +33,7 @@ Open this file to know where things stand in 30 seconds.
 | Seagulls, boat bob, flag sway | Ambient life working ✅ |
 | Story checkpoints (Ali/Zainab/Fatima/Father) | Text card flow works ✅ |
 | Game Over / Retry / Restart | All working ✅ |
-| Level 2 ending after Father | Panel + buttons working ✅ |
+| Level 2 ending after Father | Family image + panel + replay/menu buttons working in code; F6 review pending |
 | Audio 8/8 WAV files | All wired ✅ |
 | Mobile landscape overlay | Working ✅ |
 | Level 1 completely unaffected | Confirmed ✅ |
@@ -69,12 +69,12 @@ See `docs/level2/LEVEL2_CODEX_GAMEPLAY_FEEL_PASS.md` for exact Codex instruction
 
 | ID | Issue | Impact |
 |---|---|---|
-| C1 | IMPLEMENTED / F6 REVIEW | Card moved to upper-middle so Jomana and helper remain visible |
-| C2 | IMPLEMENTED / F6 REVIEW | Dim overlay reduced to 52% |
+| C1 | IMPLEMENTED / F6 REVIEW | Subtitle card is 720×148 at screen Y=12–160 |
+| C2 | IMPLEMENTED / F6 REVIEW | Dim overlay reduced to 30% |
 | C3 | IMPLEMENTED / AUTOMATED PASS | Speaker changes between helper, Jomana, and reward |
 | C4 | IMPLEMENTED / TEXT REVIEW | Ali now teaches Jomana about kind words |
 | C5 | IMPLEMENTED / AUTOMATED PASS | NPC and encounter art are removed before countdown |
-| C6 | IMPLEMENTED / OWNER TEXT REVIEW | All four family dialogues corrected |
+| C6 | IMPLEMENTED / OWNER TEXT REVIEW | Final dialogue and explicit speaker stored per step |
 | C7 | PRESERVED | Feminine-address ending wording remains in the existing ending flow |
 
 See `docs/level2/LEVEL2_STORY_DIALOGUE_QA.md` for full corrected dialogue and root causes.

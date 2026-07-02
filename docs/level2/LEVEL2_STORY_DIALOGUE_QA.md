@@ -1,7 +1,27 @@
 # Level 2 Story and Encounter QA — جمانة وأثر الكلمة
 # Reviewer: Sonnet | Date: 2026-07-02
 
-**Verdict: PARTIAL — 3 code issues; dialogue needs correction; layout needs redesign**
+**Historical QA verdict: PARTIAL**
+
+**Implementation update (2026-07-02): AUTOMATED PASS / OWNER F6 REVIEW REQUIRED**
+
+The issues documented below were the input to the cinematic pass. The current
+implementation now uses a 720×148 top card, 30% dim, explicit per-step speakers,
+tracked family portraits, deterministic NPC cleanup, and tested obstacle/
+collectible resume. The historical analysis remains below for traceability.
+
+### Final dialogue source of truth
+
+| Checkpoint | Speaker sequence | Final intent |
+|---|---|---|
+| Ali 15 | علي → علي → علي | Greeting, then Ali teaches that kind words open hearts, then reward |
+| Zainab 35 | زينب → جمانة → زينب | Patience, Jomana's thanks, then reward |
+| Fatima 60 | فاطمة → جمانة → فاطمة | Childlike greeting, Jomana reflects on gentleness, then reward |
+| Father 90 | الأب → جمانة → الأب → الأب | Good actions leave أثر, Jomana reflects, Father closes the lesson and journey |
+
+Exact Arabic strings live in `scripts/level2/level2_encounter_data.gd`; every
+step contains both `speaker` and `text`, and rendering passes both through the
+existing RTL-safe path.
 
 ---
 
