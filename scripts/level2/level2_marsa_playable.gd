@@ -57,14 +57,18 @@ const GAME_OVER_DELAY         := 0.45
 # Increase GAMEPLAY_ZOOM to bring Jomana closer; safe range: 1.25–1.45.
 # At 1.38 the visible world width is 1152/1.38 ≈ 835 px, obstacles at
 # spawn X=1292 appear ~475 px ahead (world space) — comfortable react time.
-const GAMEPLAY_ZOOM           := 1.18   # balanced: Jomana ≈ 188px on screen
+const GAMEPLAY_ZOOM           := 1.18
 const CAMERA_REVEAL_FROM      := 0.88
 const CAMERA_CHECKPOINT_BOOST := 0.05
-const CAM_SCREEN_X            := 255.0  # left-third, enough road ahead visible
+# CAM_SCREEN_X: where Jomana appears on screen (px from left at gameplay zoom).
+# 200 gives ≈17% from left — plenty of road ahead visible, feels like Level 1.
+const CAM_SCREEN_X            := 200.0
 const CAM_SCREEN_Y            := 498.0
 const CAM_TRANSITION_TIME     := 0.38
-const LOOKAHEAD_X             := 150.0
+# LOOKAHEAD_X = 0: lookahead is baked directly into CAM_SCREEN_X (≤200 = leftward = more road shown).
+const LOOKAHEAD_X             := 0.0
 const FOLLOW_SPEED            := 5.5
+# VERTICAL_OFFSET = -14: camera slightly high, keeps jump arc visible + reduces ground share.
 const VERTICAL_OFFSET         := -14.0
 
 # ── Level 2 collectible lane Y values (world coords) ─────────────────────
@@ -463,6 +467,7 @@ func _start_checkpoint(char_id: int) -> void:
 	npc_label.text = enc.get("placeholder_text", "؟")
 	encounter_npc.position.x = 1300.0
 	encounter_npc.position.y = ROAD_SURFACE_Y - enc.get("visual_height", 80.0)
+	_build_npc_card(char_id, enc)
 	npc_arriving = true
 	_show_enc_step()
 
@@ -627,11 +632,13 @@ func _calc_cam_pos() -> Vector2:
 	var cam_y := ROAD_SURFACE_Y - (CAM_SCREEN_Y - VIEW_H / 2.0) / GAMEPLAY_ZOOM \
 		+ VERTICAL_OFFSET
 	var pos := Vector2(cam_x, cam_y)
-	# Debug: show where Jomana appears on screen at this camera position
+	# Debug: verify framing once at startup
 	var player_screen_x := (PLAYER_START_X - cam_x) * GAMEPLAY_ZOOM + VIEW_W / 2.0
-	var road_screen_y   := (ROAD_SURFACE_Y   - cam_y) * GAMEPLAY_ZOOM + VIEW_H / 2.0
-	print("[L2 camera] player_screen_x=%.0f  road_screen_y=%.0f  zoom=%.2f" %
-		[player_screen_x, road_screen_y, GAMEPLAY_ZOOM])
+	var road_screen_y   := (ROAD_SURFACE_Y  - cam_y) * GAMEPLAY_ZOOM + VIEW_H / 2.0
+	var pier_screen_pct := 72.0  # hardcoded to match parallax update
+	var ground_share    := 100.0 - pier_screen_pct
+	print("[L2 framing] player_screen_x=%.0f  road_screen_y=%.0f  ground_share=%.0f%%  zoom=%.2f" %
+		[player_screen_x, road_screen_y, ground_share, GAMEPLAY_ZOOM])
 	return pos
 
 
@@ -690,6 +697,65 @@ func _setup_jomana_visual() -> void:
 	vis.set_pose(vis.Pose.IDLE)
 
 
+# ── NPC checkpoint card ───────────────────────────────────────────────────
+
+func _build_npc_card(char_id: int, enc: Dictionary) -> void:
+	# Remove previous card children (keep NPCLabel for fallback).
+	for child in encounter_npc.get_children():
+		if child.name != "NPCLabel":
+			child.queue_free()
+	npc_label.visible = false   # replaced by the card below
+
+	# Character colour palette — each family member gets a distinct warm tone.
+	var char_color: Color
+	match char_id:
+		Level2EncounterData.ALI:    char_color = Color(0.20, 0.58, 0.78, 0.95)   # teal-blue
+		Level2EncounterData.ZAINAB: char_color = Color(0.78, 0.42, 0.18, 0.95)   # warm orange
+		Level2EncounterData.FATIMA: char_color = Color(0.72, 0.28, 0.48, 0.95)   # rose-pink
+		Level2EncounterData.FATHER: char_color = Color(0.25, 0.38, 0.55, 0.95)   # deep blue
+		_:                          char_color = Color(0.35, 0.35, 0.40, 0.95)
+
+	# Card background
+	var card := Panel.new()
+	card.name = "NPCCard"
+	card.size = Vector2(130, 160)
+	card.position = Vector2(-65, -170)
+	var sty := StyleBoxFlat.new()
+	sty.bg_color = char_color
+	sty.corner_radius_top_left = 14
+	sty.corner_radius_top_right = 14
+	sty.corner_radius_bottom_right = 14
+	sty.corner_radius_bottom_left = 14
+	sty.shadow_color = Color(0, 0, 0, 0.4)
+	sty.shadow_size = 8
+	sty.shadow_offset = Vector2(0, 4)
+	card.add_theme_stylebox_override("panel", sty)
+	encounter_npc.add_child(card)
+
+	# Character Arabic name — large and centred
+	var speaker: String = enc.get("speaker_name", "")
+	var name_lbl := Label.new()
+	name_lbl.text = speaker if not speaker.is_empty() else enc.get("placeholder_text", "؟")
+	name_lbl.set("text_direction", TextServer.DIRECTION_RTL)
+	name_lbl.set("language", "ar")
+	name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	name_lbl.add_theme_font_size_override("font_size", 34)
+	name_lbl.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	name_lbl.add_theme_constant_override("outline_size", 3)
+	name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+	name_lbl.size = Vector2(130, 100)
+	name_lbl.position = Vector2(0, 30)
+	card.add_child(name_lbl)
+
+	# Decorative bottom strip with character accent color
+	var strip := ColorRect.new()
+	strip.color = Color(1, 1, 1, 0.15)
+	strip.size = Vector2(130, 18)
+	strip.position = Vector2(0, 140)
+	card.add_child(strip)
+
+
 # ── Player event handlers ─────────────────────────────────────────────────
 
 func _on_player_jumped() -> void:
@@ -743,7 +809,7 @@ func _update_background_parallax() -> void:
 	# ── Pier: camera-fixed to gameplay lane ───────────────────────────────────
 	# 68% from top aligns the stone curb with CURB_TOP_Y world position.
 	foreground_layer.position.x = left
-	foreground_layer.position.y = top + VIEW_H * 0.68 / zoom
+	foreground_layer.position.y = top + VIEW_H * 0.72 / zoom  # 72% = CURB_TOP_Y≈470
 
 
 # ── Level 2 obstacle visual skins ─────────────────────────────────────────
