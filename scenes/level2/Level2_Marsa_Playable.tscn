@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/level2/level2_marsa_playable.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2"]
 [ext_resource type="Script" path="res://scripts/gameplay/obstacle_spawner.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/gameplay/collectible_spawner.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/level2/gameplay/level2_collectible_spawner.gd" id="4"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(2000, 70)
@@ -161,10 +161,10 @@ color = Color(0.04, 0.03, 0.015, 0.72)
 
 [node name="Card" type="Panel" parent="UI/CheckpointPanel"]
 layout_mode = 0
-offset_left = 276.0
-offset_top = 155.0
-offset_right = 876.0
-offset_bottom = 470.0
+offset_left = 70.0
+offset_top = 382.0
+offset_right = 610.0
+offset_bottom = 602.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("2")
 
@@ -172,8 +172,8 @@ theme_override_styles/panel = SubResource("2")
 layout_mode = 0
 offset_left = 0.0
 offset_top = 14.0
-offset_right = 600.0
-offset_bottom = 44.0
+offset_right = 540.0
+offset_bottom = 42.0
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1.0, 0.82, 0.38, 1.0)
 theme_override_constants/outline_size = 3
@@ -185,11 +185,11 @@ language = "ar"
 
 [node name="CharacterLine" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 52.0
-offset_right = 572.0
-offset_bottom = 160.0
-theme_override_font_sizes/font_size = 24
+offset_left = 24.0
+offset_top = 44.0
+offset_right = 516.0
+offset_bottom = 142.0
+theme_override_font_sizes/font_size = 22
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_colors/font_color = Color(0.95, 0.92, 0.84, 1.0)
 theme_override_constants/outline_size = 4
@@ -202,10 +202,10 @@ language = "ar"
 
 [node name="JomanaLine" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 170.0
-offset_right = 572.0
-offset_bottom = 240.0
+offset_left = 24.0
+offset_top = 44.0
+offset_right = 516.0
+offset_bottom = 142.0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
 theme_override_colors/font_color = Color(0.78, 0.94, 0.85, 1.0)
@@ -220,9 +220,9 @@ language = "ar"
 [node name="RewardLabel" type="Label" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
 offset_left = 0.0
-offset_top = 248.0
-offset_right = 600.0
-offset_bottom = 284.0
+offset_top = 60.0
+offset_right = 540.0
+offset_bottom = 120.0
 theme_override_font_sizes/font_size = 19
 theme_override_colors/font_color = Color(1.0, 0.88, 0.38, 1.0)
 theme_override_constants/outline_size = 3
@@ -235,10 +235,10 @@ visible = false
 
 [node name="ContinueButton" type="Button" parent="UI/CheckpointPanel/Card"]
 layout_mode = 0
-offset_left = 165.0
-offset_top = 274.0
-offset_right = 435.0
-offset_bottom = 304.0
+offset_left = 150.0
+offset_top = 160.0
+offset_right = 390.0
+offset_bottom = 204.0
 theme_override_font_sizes/font_size = 17
 theme_override_styles/normal = SubResource("3")
 theme_override_styles/hover = SubResource("3")

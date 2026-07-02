@@ -16,7 +16,7 @@ extends Node2D
 
 # ── Shared Level 1 systems (unmodified) ───────────────────────────────────
 const OBSTACLE_SPAWNER    := preload("res://scripts/gameplay/obstacle_spawner.gd")
-const COLLECTIBLE_SPAWNER := preload("res://scripts/gameplay/collectible_spawner.gd")
+const COLLECTIBLE_SPAWNER := preload("res://scripts/level2/gameplay/level2_collectible_spawner.gd")
 const AUDIO_MANAGER       := preload("res://scripts/audio/audio_manager.gd")
 # BACKGROUND_MOTION is not used in the procedural MVP — the procedural
 # background layers are Node2D containers, not Sprite2D, so they are
@@ -31,6 +31,7 @@ const L2_JOMANA_VIS  := preload("res://scripts/level2/character/jomana_player_vi
 const L2_OBS_VIS     := preload("res://scripts/level2/gameplay/level2_obstacle_visuals.gd")
 # ── Level 2 Marsa audio (replaces Level 1 fallbacks where L2 files exist) ─
 const L2_AUDIO_MGR   := preload("res://scripts/level2/audio/level2_audio_manager.gd")
+const L2_FAMILY_VIS  := preload("res://scripts/level2/story/level2_family_checkpoint_visuals.gd")
 # ── Level 2 manifest for collectible path ─────────────────────────────────
 const L2_MANIFEST    := preload("res://scripts/level2/level2_asset_manifest.gd")
 
@@ -42,13 +43,14 @@ const L2_MANIFEST    := preload("res://scripts/level2/level2_asset_manifest.gd")
 const VIEW_W                  := 1152.0
 const VIEW_H                  := 648.0
 const ROAD_SURFACE_Y          := 510.0
+const VISUAL_LANE_Y_OFFSET    := 30.0
 const PLAYER_START_X          := 220.0
 const PLAYER_COLLISION_HALF_H := 24.0
 const CURB_TOP_Y              := 470.0
 const GROUND_COLLISION_HEIGHT := 70.0
 const GROUND_CENTER_Y         := ROAD_SURFACE_Y + GROUND_COLLISION_HEIGHT / 2.0
 const START_PLAYER_POSITION   := Vector2(PLAYER_START_X, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_H)
-const ENCOUNTER_TARGET_X      := 610.0
+const ENCOUNTER_TARGET_X      := 850.0
 const CHECKPOINT_ARRIVAL_SPEED := 360.0
 const COUNTDOWN_DURATION      := 3.0
 const GAME_OVER_DELAY         := 0.45
@@ -72,9 +74,9 @@ const FOLLOW_SPEED            := 5.5
 const VERTICAL_OFFSET         := -14.0
 
 # ── Level 2 collectible lane Y values (world coords) ─────────────────────
-const L2_RUN_PICKUP_Y  := 480.0  # grab while running (near feet)
-const L2_LIGHT_JUMP_Y  := 435.0  # small hop required
-const L2_FULL_JUMP_Y   := 385.0  # full jump arc
+const L2_RUN_PICKUP_Y  := ROAD_SURFACE_Y - 55.0 + VISUAL_LANE_Y_OFFSET
+const L2_LIGHT_JUMP_Y  := ROAD_SURFACE_Y - 105.0 + VISUAL_LANE_Y_OFFSET
+const L2_FULL_JUMP_Y   := ROAD_SURFACE_Y - 150.0 + VISUAL_LANE_Y_OFFSET
 
 # ── Harbour palette (procedural — no external assets required) ────────────
 const C_SKY        := Color(0.38, 0.66, 0.90, 1.0)
@@ -138,14 +140,15 @@ var last_checkpoint    := Level2EncounterData.NONE
 var current_enc_id     := Level2EncounterData.NONE
 var enc_step           := 0
 var npc_arriving       := false
+var ending_active      := false
 
 var audio_manager    := AUDIO_MANAGER.new()
 var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
+var _family_vis       = null         # Level2 family checkpoint visual helper
 var _l2_audio: Node   = null         # Level2AudioManager
 var _jomana_vis: Node    = null   # JomanaPlayerVisual (the active instance)
 var _ali_polygon: Node2D = null   # cached $Player/Polygon2D — hidden every frame
 var _init_cam_x: float   = 0.0   # camera X at scene start, for scroll-based parallax
-var _l2_col_idx: int     = 0      # cycles through Level 2 collectible lane patterns
 var _ground_base: Node2D = null   # $Ground/GroundBase — hidden when pier PNG loads
 var _cam_tween: Tween
 var _gameplay_cam_pos: Vector2
@@ -165,6 +168,7 @@ func _ready() -> void:
 	obstacle_spawner.obstacle_passed.connect(_on_obstacle_passed)
 	obstacle_spawner.obstacle_hit.connect(_on_obstacle_hit)
 	collectible_spawner.setup(col_spawn_timer, obstacle_spawner)
+	collectible_spawner.configure_lanes(ROAD_SURFACE_Y, VISUAL_LANE_Y_OFFSET)
 	collectible_spawner.collectible_spawned.connect(_on_collectible_spawned)
 
 	audio_manager.setup(self)
@@ -192,10 +196,12 @@ func _ready() -> void:
 		_ground_base.visible = not L2_MANIFEST.file_exists(L2_MANIFEST.BG_PIER)
 
 	_build_ambient()
+	_build_ambient_props()
 	_setup_jomana_visual()
 
 	# Level 2 obstacle visual skins (RefCounted helper — not a Node).
 	_obs_vis = L2_OBS_VIS.new()
+	_family_vis = L2_FAMILY_VIS.new()
 	obstacle_spawner.obstacle_spawned.connect(_on_obstacle_spawned_l2)
 
 	play_button.pressed.connect(_on_play_pressed)
@@ -287,6 +293,7 @@ func _input(event: InputEvent) -> void:
 func _show_start_screen() -> void:
 	started = false
 	game_over = false
+	ending_active = false
 	score = 0
 	collectible_count = 0
 	col_snapshot = 0
@@ -294,6 +301,8 @@ func _show_start_screen() -> void:
 	start_screen.visible = true
 	score_label.visible = false
 	game_over_panel.visible = false
+	retry_button.text = "إعادة المحاولة من آخر نقطة"
+	restart_button.text = "إعادة البدء"
 	checkpoint_panel.visible = false
 	countdown_overlay.visible = false
 	obstacle_spawner.stop_spawning()
@@ -322,6 +331,11 @@ func _on_play_pressed() -> void:
 func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
 	score = initial_score
 	current_speed = speed
+	last_checkpoint = checkpoint
+	ending_active = false
+	game_over_title.text = Level2EncounterData.rtl_safe("انتهت المحاولة")
+	retry_button.text = "إعادة المحاولة من آخر نقطة"
+	restart_button.text = "إعادة البدء"
 	collectible_count = (col_snapshot if checkpoint != Level2EncounterData.NONE else 0)
 	if checkpoint == Level2EncounterData.NONE:
 		col_snapshot = 0
@@ -366,43 +380,7 @@ func _on_obstacle_hit() -> void:
 
 func _on_collectible_spawned(c: Node) -> void:
 	c.collected.connect(_on_collected)
-	_override_l2_collectible_lane(c)
 	_apply_l2_collectible_visual(c)
-
-
-func _override_l2_collectible_lane(c: Node) -> void:
-	# Override Y of each Level-1-spawned collectible to form recognisable Level 2 patterns.
-	# State: _l2_col_idx tracks absolute spawn count.
-	# Each pattern has its own length; we accumulate until we finish a pattern,
-	# then move to the next one.
-	const PATTERNS: Array[Dictionary] = [
-		{"name": "LOW_LINE",  "y": [480.0, 480.0, 480.0, 480.0]},
-		{"name": "SMALL_ARC", "y": [480.0, 440.0, 415.0, 440.0, 480.0]},
-		{"name": "FULL_ARC",  "y": [455.0, 420.0, 385.0, 420.0, 455.0]},
-	]
-
-	# Determine which pattern and position within it based on raw index.
-	# Accumulate lengths: LOW=4, SMALL=5, FULL=5 → total cycle = 14 shards.
-	const CYCLE := 14   # 4 + 5 + 5
-	var pos_in_cycle: int = _l2_col_idx % CYCLE
-	var pat_name: String
-	var target_y: float
-
-	if pos_in_cycle < 4:
-		pat_name = "LOW_LINE"
-		target_y = (PATTERNS[0]["y"] as Array)[pos_in_cycle]
-	elif pos_in_cycle < 9:
-		pat_name = "SMALL_ARC"
-		target_y = (PATTERNS[1]["y"] as Array)[pos_in_cycle - 4]
-	else:
-		pat_name = "FULL_ARC"
-		target_y = (PATTERNS[2]["y"] as Array)[pos_in_cycle - 9]
-
-	(c as Node2D).global_position.y = target_y
-	_l2_col_idx += 1
-
-	if pos_in_cycle == 0 or pos_in_cycle == 4 or pos_in_cycle == 9:
-		print("[L2 collectible] starting pattern=%s  y=%.0f" % [pat_name, target_y])
 
 
 func _apply_l2_collectible_visual(c: Node) -> void:
@@ -466,7 +444,7 @@ func _start_checkpoint(char_id: int) -> void:
 	var enc := Level2EncounterData.get_encounter(char_id)
 	npc_label.text = enc.get("placeholder_text", "؟")
 	encounter_npc.position.x = 1300.0
-	encounter_npc.position.y = ROAD_SURFACE_Y - enc.get("visual_height", 80.0)
+	encounter_npc.position.y = ROAD_SURFACE_Y + VISUAL_LANE_Y_OFFSET
 	_build_npc_card(char_id, enc)
 	npc_arriving = true
 	_show_enc_step()
@@ -585,6 +563,7 @@ func _show_game_over() -> void:
 
 func _show_level2_ending() -> void:
 	started = false
+	ending_active = true
 	player.set_gameplay_active(false)
 	obstacle_spawner.stop_spawning()
 	collectible_spawner.stop_spawning()
@@ -593,8 +572,10 @@ func _show_level2_ending() -> void:
 	game_over_title.text = Level2EncounterData.rtl_safe("أحسنتِ يا جمانة!")
 	game_over_msg.text   = Level2EncounterData.rtl_safe("كل كلمة طيبة تترك أثرًا")
 	game_over_count.text = "الأثر الذي تركتِه: %d" % collectible_count
-	retry_button.visible   = false
+	retry_button.visible   = true
 	restart_button.visible = true
+	retry_button.text = "العودة إلى القائمة"
+	restart_button.text = "إعادة الفصل الثاني"
 	var card: Panel = $UI/GameOverPanel/Card
 	game_over_panel.modulate.a = 0.0
 	card.scale = Vector2(0.92, 0.92)
@@ -607,11 +588,16 @@ func _show_level2_ending() -> void:
 
 
 func _on_restart_pressed() -> void:
+	ending_active = false
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
 	_apply_gameplay_cam()
 
 
 func _on_retry_pressed() -> void:
+	if ending_active:
+		ending_active = false
+		_show_start_screen()
+		return
 	if is_instance_valid(_l2_audio):
 		_l2_audio.play_retry()
 	if last_checkpoint == Level2EncounterData.NONE:
@@ -683,6 +669,13 @@ func _setup_jomana_visual() -> void:
 	vis.name = "JomanaVisual"
 	player.add_child(vis)
 	_jomana_vis = vis
+	vis.set_visual_lane_offset(VISUAL_LANE_Y_OFFSET)
+	var visual_baseline := ROAD_SURFACE_Y + VISUAL_LANE_Y_OFFSET
+	var feet_screen_y := (visual_baseline - _gameplay_cam_pos.y) * GAMEPLAY_ZOOM + VIEW_H / 2.0
+	var pickup_screen_y := (L2_RUN_PICKUP_Y - _gameplay_cam_pos.y) * GAMEPLAY_ZOOM + VIEW_H / 2.0
+	print("[L2 lane] visual_offset=%.0f player_feet_screen_y=%.0f obstacle_base_screen_y=%.0f collectible_low_y=%.0f collectible_low_screen_y=%.0f" % [
+		VISUAL_LANE_Y_OFFSET, feet_screen_y, feet_screen_y, L2_RUN_PICKUP_Y, pickup_screen_y
+	])
 
 	# Cache Level 1 visual nodes for per-frame suppression.
 	# player.gd._physics_process() calls _set_visual_pose() every frame which
@@ -705,6 +698,10 @@ func _build_npc_card(char_id: int, enc: Dictionary) -> void:
 		if child.name != "NPCLabel":
 			child.queue_free()
 	npc_label.visible = false   # replaced by the card below
+	if _family_vis != null and _family_vis.apply_npc_art(
+		encounter_npc, char_id, String(enc.get("asset_path", ""))
+	):
+		return
 
 	# Character colour palette — each family member gets a distinct warm tone.
 	var char_color: Color
@@ -821,7 +818,7 @@ func _on_obstacle_spawned_l2(definition: Dictionary, _pos: Vector2) -> void:
 	var obs_type: String = definition.get("type", "")
 	var newest: Node = obstacle_spawner.get_child(obstacle_spawner.get_child_count() - 1)
 	if newest is Node2D:
-		_obs_vis.apply_skin(newest as Node2D, obs_type)
+		_obs_vis.apply_skin(newest as Node2D, obs_type, VISUAL_LANE_Y_OFFSET)
 
 
 # ── Jomana visual tag (legacy placeholder fallback) ───────────────────────
@@ -991,6 +988,43 @@ func _build_ambient() -> void:
 		g.set("from_right", (i % 2) == 1)
 		g.set("wing_beat_hz", 1.2 + i * 0.2)
 		ambient_layer.add_child(g)
+
+
+func _build_ambient_props() -> void:
+	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_BLUE, Vector2(520, 452), 92.0,
+		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
+	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 458), 68.0,
+		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
+	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 405), 92.0,
+		"HarborFlags", "res://scripts/level2/ambient/harbor_ambient_sway.gd")
+	_add_ambient_sprite(L2_MANIFEST.AMB_ROPE, Vector2(1040, 420), 72.0,
+		"HarborRope", "res://scripts/level2/ambient/harbor_ambient_sway.gd")
+	_add_ambient_sprite(L2_MANIFEST.AMB_DECO_NET, Vector2(1080, 475), 58.0,
+		"HarborNet", "")
+
+
+func _add_ambient_sprite(
+		path: String, world_pos: Vector2, target_height: float,
+		node_name: String, motion_script_path: String
+) -> void:
+	var tex := load(path) as Texture2D
+	if tex == null or tex.get_height() <= 0:
+		push_warning("[L2 ambient] missing %s" % path)
+		return
+	var holder := Node2D.new()
+	holder.name = node_name
+	holder.position = world_pos
+	holder.z_index = -8
+	if not motion_script_path.is_empty():
+		var motion_script := load(motion_script_path)
+		if motion_script != null:
+			holder.set_script(motion_script)
+	var sprite := Sprite2D.new()
+	sprite.texture = tex
+	sprite.scale = Vector2.ONE * (target_height / float(tex.get_height()))
+	holder.add_child(sprite)
+	ambient_layer.add_child(holder)
+	print("[L2 ambient] active=%s path=%s" % [node_name, path])
 
 
 # ── UI pop ────────────────────────────────────────────────────────────────

@@ -6,14 +6,20 @@
 extends RefCounted
 
 const MANIFEST := preload("res://scripts/level2/level2_asset_manifest.gd")
+const ASSET_UTILS := preload("res://scripts/asset_utils.gd")
 
-const NPC_VISUAL_HEIGHT := 90.0   # target height for checkpoint NPC on screen
+const NPC_VISUAL_HEIGHTS := {
+	1: 150.0, # Ali
+	2: 140.0, # Zainab
+	3: 105.0, # Fatima remains the smallest
+	4: 190.0, # Father
+}
 
 
 ## Apply art to encounter_npc_node for the given character_id.
 ## Adds a Sprite2D child; removes any previous one.
 ## Returns true if real art was applied; false = placeholder text stays.
-func apply_npc_art(npc_node: Node2D, character_id: int) -> bool:
+func apply_npc_art(npc_node: Node2D, character_id: int, fallback_path := "") -> bool:
 	if npc_node == null:
 		return false
 
@@ -23,6 +29,8 @@ func apply_npc_art(npc_node: Node2D, character_id: int) -> bool:
 		old.queue_free()
 
 	var tex := MANIFEST.get_family_checkpoint_texture(character_id)
+	if tex == null and not fallback_path.is_empty():
+		tex = ASSET_UTILS.load_texture_with_fallback(fallback_path)
 	if tex == null:
 		return false
 
@@ -32,14 +40,19 @@ func apply_npc_art(npc_node: Node2D, character_id: int) -> bool:
 	sprite.centered = true
 
 	# Scale to visual height target.
-	var raw_h := float(tex.get_height())
-	if raw_h > 0.0:
-		var s := NPC_VISUAL_HEIGHT / raw_h
+	var visual_height: float = NPC_VISUAL_HEIGHTS.get(character_id, 130.0)
+	var visible_rect := ASSET_UTILS.get_texture_visible_rect(tex)
+	if visible_rect.size.y > 0.0:
+		var s := visual_height / visible_rect.size.y
 		sprite.scale = Vector2(s, s)
-		# Align bottom to y=0 on the npc node (feet on pier).
-		sprite.position.y = -(NPC_VISUAL_HEIGHT / 2.0)
+		# Align the non-transparent feet, not the source canvas, to y=0.
+		var visible_center_x := visible_rect.position.x + visible_rect.size.x / 2.0
+		var visible_bottom_y := visible_rect.position.y + visible_rect.size.y
+		sprite.position.x = -(visible_center_x - float(tex.get_width()) / 2.0) * s
+		sprite.position.y = -(visible_bottom_y - float(tex.get_height()) / 2.0) * s
 
 	npc_node.add_child(sprite)
+	print("[L2 story] character=%d art=%s height=%.0f" % [character_id, tex.resource_path, visual_height])
 	return true
 
 

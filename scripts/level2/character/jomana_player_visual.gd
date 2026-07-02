@@ -28,6 +28,7 @@ var _anim: AnimatedSprite2D = null
 var _placeholder: Node2D    = null
 var _using_placeholder := true
 var _current_pose: Pose = Pose.IDLE
+var _visual_lane_offset := 0.0
 
 
 func _ready() -> void:
@@ -58,6 +59,11 @@ func set_speed(speed: float) -> void:
 	if _anim == null:
 		return
 	_anim.speed_scale = clampf(speed / BASELINE_SPEED, MIN_SPD_SCALE, MAX_SPD_SCALE)
+
+
+func set_visual_lane_offset(offset_y: float) -> void:
+	_visual_lane_offset = offset_y
+	_apply_visual_lane_offset()
 
 
 # ── Asset loading via manifest ────────────────────────────────────────────
@@ -112,6 +118,7 @@ func _try_load_real_frames() -> void:
 	# Position: top-left X centred horizontally, Y such that feet land at local y=FOOT_OFFSET_Y
 	# (matching Player CharacterBody2D half-collision so feet appear on the ground).
 	_anim.position = Vector2(-(CANVAS_WIDTH * s) / 2.0, -VISUAL_HEIGHT + FOOT_OFFSET_Y)
+	_apply_visual_lane_offset()
 
 	_play_anim(Pose.RUN)
 
@@ -146,6 +153,7 @@ func _build_placeholder() -> void:
 	_placeholder = Node2D.new()
 	_placeholder.name = "JomanaPlaceholder"
 	add_child(_placeholder)
+	_apply_visual_lane_offset()
 
 	var body := Polygon2D.new()
 	body.color = Color(0.28, 0.72, 0.58, 1.0)  # teal dress
@@ -203,3 +211,11 @@ func _placeholder_pose(pose: Pose) -> void:
 		Pose.JUMP:  _placeholder.rotation_degrees = -12.0
 		Pose.LAND:  _placeholder.rotation_degrees = 5.0
 		_:          _placeholder.rotation_degrees = 0.0
+
+
+func _apply_visual_lane_offset() -> void:
+	if _anim != null:
+		var s := VISUAL_HEIGHT / CANVAS_HEIGHT
+		_anim.position.y = -VISUAL_HEIGHT + FOOT_OFFSET_Y + _visual_lane_offset
+	if _placeholder != null:
+		_placeholder.position.y = _visual_lane_offset

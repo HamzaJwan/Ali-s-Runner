@@ -1,7 +1,7 @@
 # Level 2 Playable Foundation — Owner Test Guide
 # جمانة وأثر الكلمة — مرسى زليتن
 
-**Status:** MVP Foundation — Internal Testing Only
+**Status:** READY_FOR_OWNER_F6_FULL_ASSET_REVIEW - Internal Testing Only
 **Not wired into main menu.  Not default boot scene.  Not public release.**
 
 ---
@@ -95,6 +95,17 @@ If the web build is deployed (see `docs/WEB_DOCKER_PLAYTEST.md`):
 
 ---
 
+## 2026-07-02 Owner F6 Gate
+
+- Confirm Jomana feet and every obstacle base sit at the same visual lane.
+- Confirm `LOW_LINE` works while running, `SMALL_ARC` with a light jump, and `FULL_ARC` with a full jump.
+- Confirm no Level 1 obstacle or collectible visual appears underneath Level 2 art.
+- Confirm boats, flags, rope, net, and seagulls stay behind the lane and never look interactive.
+- Reach score 15/35/60/90 and confirm Ali/Zainab/Fatima/Father are visibly distinct.
+- Confirm the smaller dialogue card does not cover the arriving character.
+- After Father, test both replay and return-to-menu buttons.
+- This gate is required before staging or deployment.
+
 ## What Comes Next
 
 1. Owner approves gameplay feel → start character art sprint
@@ -163,4 +174,3 @@ Drop the PNGs in `assets/level2/marsa/characters/jomana/run/` and re-open the sc
 - [ ] seagulls/boats/flags are decorative only
 - [ ] checkpoint order still Ali → Zainab → Fatima → Father
 - [ ] game still runs with missing optional assets
-

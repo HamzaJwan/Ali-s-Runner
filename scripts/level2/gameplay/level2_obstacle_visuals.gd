@@ -29,7 +29,7 @@ const COLLISION_HEIGHTS: Dictionary = {
 var _tex_cache: Dictionary = {}
 
 
-func apply_skin(obstacle: Node2D, obstacle_type: String) -> bool:
+func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0.0) -> bool:
 	if obstacle == null:
 		return false
 
@@ -66,11 +66,11 @@ func apply_skin(obstacle: Node2D, obstacle_type: String) -> bool:
 	skin.centered = true
 	skin.scale = Vector2(s, s)
 	# Align bottom of visual with bottom of collision box.
-	skin.position.y = col_h / 2.0 - vis_h / 2.0
+	skin.position.y = col_h / 2.0 - vis_h / 2.0 + visual_lane_offset
 
 	obstacle.add_child(skin)
 	print("[L2 obstacle] type=%s  tex=%s  vis_h=%.0fpx  bottom_y=%.1f" %
-		[obstacle_type, tex.resource_path.get_file(), vis_h, col_h / 2.0])
+		[obstacle_type, tex.resource_path.get_file(), vis_h, col_h / 2.0 + visual_lane_offset])
 	return true
 
 

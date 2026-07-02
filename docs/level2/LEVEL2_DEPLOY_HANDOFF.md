@@ -1,5 +1,5 @@
 # Level 2 Deploy Handoff — جمانة وأثر الكلمة
-# Status: PARTIAL_OWNER_REVIEW_NEEDED
+# Status: READY_FOR_OWNER_F6_FULL_ASSET_REVIEW
 # Last updated: 2026-07-02
 
 ---
@@ -54,11 +54,11 @@
 | Asset | Status | Role |
 |---|---|---|
 | seagull_fly_sheet_4f.png | ACTIVE | Animated seagulls in sky area |
-| boat_blue_01.png | Available | Not yet wired to ambient system |
-| boat_small_02.png | Available | Not yet wired |
-| small_flags_line_01.png | Available | Not yet wired |
-| rope_hanging_01.png | Available | Not yet wired |
-| deco_fishing_net_pile_01.png | Available | Not yet wired |
+| boat_blue_01.png | ACTIVE | Gentle background bob; no collision |
+| boat_small_02.png | ACTIVE | Gentle background bob; no collision |
+| small_flags_line_01.png | ACTIVE | Subtle sway behind gameplay |
+| rope_hanging_01.png | ACTIVE | Subtle sway behind gameplay |
+| deco_fishing_net_pile_01.png | ACTIVE | Static decoration behind lane; no collision |
 
 ---
 
@@ -143,6 +143,29 @@ When deploying to internal staging:
 Do NOT deploy Level 2 to the main public route until the owner explicitly approves.
 
 ---
+
+## Codex Structural Cleanup (2026-07-02)
+
+- Level 2 now owns `scripts/level2/gameplay/level2_collectible_spawner.gd`; it no longer rewrites random Level 1 collectible Y positions after spawn.
+- One pattern is active at a time: `LOW_LINE`, `SMALL_ARC`, then `FULL_ARC`.
+- Visual-only lane offset is `30px`. Physics, gravity, jump, collision, and Level 1 files are unchanged.
+- Gameplay camera is fixed at zoom `1.18`, with Jomana at screen X `200`.
+- Jomana and harbor obstacle art share visual screen baseline Y `550`.
+- Collectible world lanes are `485 / 435 / 390`.
+- Existing Level 1 family art is used as checkpoint fallback when dedicated Level 2 portraits are absent.
+- Checkpoint dialogue card is now 540x220 in the lower-left; the arriving character is staged on the right.
+- Level 2 ending offers both replay and return to the Level 2 menu.
+
+## Active Living Harbor Assets
+
+| Asset | Runtime role |
+|---|---|
+| seagull_fly_sheet_4f.png | independent sky motion |
+| boat_blue_01.png | transparent background boat with gentle bob |
+| boat_small_02.png | transparent background boat with gentle bob |
+| small_flags_line_01.png | subtle wind sway behind gameplay |
+| rope_hanging_01.png | subtle wind sway behind gameplay |
+| deco_fishing_net_pile_01.png | non-collision background decoration |
 
 ## Known Limitations
 

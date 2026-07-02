@@ -1,4 +1,8 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
+
+**Current gate (2026-07-02): READY_FOR_OWNER_F6_FULL_ASSET_REVIEW**
+
+Codex structural cleanup completed the Level 2-local collectible pattern spawner, shared visual lane offset, harbor obstacle grounding, ambient transparent props, family-art checkpoint fallback, compact dialogue card, and explicit ending choices. Automated scene loading is green; owner visual/gameplay approval is still required. Do not deploy yet.
 # Last updated: 2026-07-01 | Commit: (see git log)
 
 Quick reference for owner and coders. Open this file to know exactly where things stand.
