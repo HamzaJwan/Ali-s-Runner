@@ -26,6 +26,14 @@ const COLLISION_HEIGHTS: Dictionary = {
 	"sign":    56.0,
 }
 
+const MAX_VISUAL_WIDTHS: Dictionary = {
+	"block":   76.0,
+	"barrier": 90.0,
+	"cone":    66.0,
+	"crate":   88.0,
+	"sign":    70.0,
+}
+
 var _tex_cache: Dictionary = {}
 
 
@@ -54,23 +62,29 @@ func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0
 	var vis_h: float  = VISUAL_HEIGHTS.get(obstacle_type, 56.0)
 	var col_h: float  = COLLISION_HEIGHTS.get(obstacle_type, 50.0)
 
-	# Scale skin so its visual height matches vis_h.
+	# Respect both height and width so landscape PNGs never become unfair walls.
 	var raw_h := float(tex.get_height())
-	if raw_h <= 0.0:
+	var raw_w := float(tex.get_width())
+	if raw_h <= 0.0 or raw_w <= 0.0:
 		return false
-	var s := vis_h / raw_h
+	var fair_height := minf(vis_h, col_h + 20.0)
+	var height_scale := fair_height / raw_h
+	var width_scale := float(MAX_VISUAL_WIDTHS.get(obstacle_type, vis_h * 1.5)) / raw_w
+	var s := minf(height_scale, width_scale)
+	var drawn_height := raw_h * s
+	var drawn_width := raw_w * s
 
 	var skin := Sprite2D.new()
 	skin.name = "L2Skin"
 	skin.texture = tex
 	skin.centered = true
 	skin.scale = Vector2(s, s)
-	# Align bottom of visual with bottom of collision box.
-	skin.position.y = col_h / 2.0 - vis_h / 2.0 + visual_lane_offset
+	# Align the actual scaled bottom, not the pre-width-limit target height.
+	skin.position.y = col_h / 2.0 - drawn_height / 2.0 + visual_lane_offset
 
 	obstacle.add_child(skin)
-	print("[L2 obstacle] type=%s texture=%s loaded=true legacy_hidden=true vis_h=%.0f visual_bottom_y=%.1f" %
-		[obstacle_type, tex.resource_path, vis_h, col_h / 2.0 + visual_lane_offset])
+	print("[L2 obstacle] type=%s texture=%s loaded=true size=%.0fx%.0f visual_bottom_y=%.1f" %
+		[obstacle_type, tex.resource_path, drawn_width, drawn_height, col_h / 2.0 + visual_lane_offset])
 	return true
 
 

@@ -36,6 +36,7 @@ These were verified by code review. Owner F6 confirms them visually:
 - [ ] "ابدئي الرحلة" button visible and clickable
 - [ ] Seagulls visible in sky
 - [ ] Boats visible behind pier wall (not sinking below pier edge)
+- [ ] Boats remain visibly in water through their full bob cycle
 - [ ] Flags hanging in harbor area (no rope visible)
 - [ ] No horizontal seam bands in background
 - [ ] No vertical seam in buildings layer
@@ -47,7 +48,7 @@ These were verified by code review. Owner F6 confirms them visually:
 - [ ] Click "ابدئي الرحلة" → harbor reveal animation plays (~1.4s)
 - [ ] Jomana stays IDLE during the camera reveal
 - [ ] After reveal settles → Jomana transitions to RUN smoothly (not abrupt snap)
-- [ ] Score "الأثر: 0" visible in top-left
+- [ ] HUD "الأثر: 0   ✦ 0" visible in top-left
 - [ ] No Ali ghost during gameplay
 
 ---
@@ -56,6 +57,9 @@ These were verified by code review. Owner F6 confirms them visually:
 
 - [ ] **Space bar** → jump triggers ✅
 - [ ] **Left mouse click** during gameplay → jump triggers (MUST work)
+- [ ] Repeat mouse jump at least 10 times — no missed grounded clicks
+- [ ] Touch/tap also jumps during gameplay
+- [ ] Menu/dialogue/ending button clicks never trigger a jump
 - [ ] **Click/tap on background** (not on UI) → jump triggers
 - [ ] Jump does NOT advance dialogue when not in checkpoint mode
 - [ ] Tap/click on "متابعة" button works correctly during checkpoint
@@ -82,6 +86,7 @@ These were verified by code review. Owner F6 confirms them visually:
 - [ ] SMALL_ARC: shards in a gentle arc — requires light jump
 - [ ] FULL_ARC: shards in high arc — requires full jump
 - [ ] Collecting increments "✦N" counter
+- [ ] Passing an obstacle updates الأثر without erasing the ✦ count
 - [ ] No Level 1 star/heart visible
 - [ ] Shards do NOT appear directly inside obstacle collision zones
 
@@ -96,6 +101,7 @@ These were verified by code review. Owner F6 confirms them visually:
 - [ ] Boats visible and bobbing
 - [ ] Flags swaying
 - [ ] Scene feels alive without being distracting
+- [ ] Sandy dust follows Jomana's feet while running and stops while airborne
 
 ---
 
@@ -105,6 +111,7 @@ These were verified by code review. Owner F6 confirms them visually:
 - [ ] Jump animation plays during ascent
 - [ ] Land animation plays briefly on landing
 - [ ] Returns to RUN after landing (within 0.2s)
+- [ ] LAND contact is brief (~0.10s) and never switches to RUN while airborne
 - [ ] No lingering LAND pose during next obstacle
 
 ---

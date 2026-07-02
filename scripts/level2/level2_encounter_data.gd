@@ -32,7 +32,7 @@ const ENCOUNTERS := {
 		"post_speed": 240.0,
 		"speaker_name": "علي",
 		"asset_path": "res://assets/characters/ali/ali_idle.png",
-		"placeholder_text": "علي 👟",
+		"placeholder_text": "علي",
 		"visual_height": 88.0,
 		"dialogue_steps": [
 			{
@@ -57,7 +57,7 @@ const ENCOUNTERS := {
 		"post_speed": 255.0,
 		"speaker_name": "زينب",
 		"asset_path": "res://assets/characters/zainab/zainab_companion.png",
-		"placeholder_text": "زينب ❤️",
+		"placeholder_text": "زينب",
 		"visual_height": 80.0,
 		"dialogue_steps": [
 			{
@@ -82,7 +82,7 @@ const ENCOUNTERS := {
 		"post_speed": 270.0,
 		"speaker_name": "فاطمة",
 		"asset_path": "res://assets/characters/fatima/fatima_companion.png",
-		"placeholder_text": "فاطمة ⭐",
+		"placeholder_text": "فاطمة",
 		"visual_height": 60.0,
 		"dialogue_steps": [
 			{"role": ROLE_HELPER, "speaker": "فاطمة", "text": "آآ جمانة!"},
@@ -103,7 +103,7 @@ const ENCOUNTERS := {
 		"post_speed": 270.0,
 		"speaker_name": "الأب",
 		"asset_path": "res://assets/characters/father/father_left.png",
-		"placeholder_text": "بابا 🏠",
+		"placeholder_text": "بابا",
 		"visual_height": 215.0,
 		"dialogue_steps": [
 			{

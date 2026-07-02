@@ -1,7 +1,7 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
-# Last updated: 2026-07-02 | Commit: 5a491f3
+# Last updated: 2026-07-02 | Gameplay-feel base: 5a491f3
 
-**Gate: PASS_FOR_OWNER_F6 — automated checks pass; visual confirmation required**
+**Gate: GAMEPLAY_FEEL_PASS_IMPLEMENTED — automated checks pass; owner F6 feel review required**
 
 Open this file to know where things stand in 30 seconds.
 
@@ -55,11 +55,11 @@ Open this file to know where things stand in 30 seconds.
 
 | ID | Issue | Impact |
 |---|---|---|
-| P1 | IMPLEMENTED / CODE VERIFIED | Mouse, touch, and keyboard jump are gameplay-gated; UI clicks do not enter the gameplay branch |
+| P1 | IMPLEMENTED / RUNTIME PASS | Mouse 10/10, touch, and Space use gameplay-only paths; UI states block jumps |
 | P2 | IMPLEMENTED / F6 REVIEW | Start changes to RUN with a short 0.18s alpha settle |
-| P3 | OWNER F6 REVIEW | Confirm every harbor obstacle remains fair at gameplay scale |
-| P4 | OWNER F6 REVIEW | Confirm ambient boat baseline across the full loop |
-| P5 | OWNER F6 REVIEW | Flags remain enabled only where the harbor composition reads as anchored |
+| P3 | IMPLEMENTED / F6 REVIEW | All five skins pass width/height/bottom checks; collision unchanged |
+| P4 | IMPLEMENTED / F6 REVIEW | Transparent boats raised 34px and retain gentle bob motion |
+| P5 | IMPLEMENTED / F6 REVIEW | Foot-aligned dust plus flags, boats, and seagulls provide honest motion |
 
 See `docs/level2/LEVEL2_CODEX_GAMEPLAY_FEEL_PASS.md` for exact Codex instructions.
 
@@ -101,7 +101,7 @@ Missing files remain fallback-safe through the existing generated NPC card.
 
 | Item | What Is Needed |
 |---|---|
-| True 5-layer parallax | Re-author sea + boats plates as transparent RGBA cutouts |
+| True 5-layer parallax | Buildings stay fixed and seam-safe; re-author sea/buildings/boats as transparent RGBA cutouts |
 | OGG audio | Optional optimization for smaller web bundle |
 | Seamless foreground tile | For optional foreground scroll enhancement |
 
@@ -123,7 +123,7 @@ Missing files remain fallback-safe through the existing generated NPC card.
 1. **Owner** — F6 review: run checklist in `docs/level2/LEVEL2_PLAYABLE_TEST.md`
 2. **Owner decision** — approve or reject for internal staging
 3. **Codex** (if approved) — cherry-pick to test-web-deploy, export, deploy to internal staging
-4. **Post-F6 polish (LOW priority)** — obstacle visual width constraint, boat Y position
+4. **Post-F6 polish (only if requested)** — tune width caps, dust strength, or boat baseline from F6 evidence
 
 ## Level 1 → Level 2 Transition Status
 

@@ -57,6 +57,7 @@ const ENCOUNTER_CAMERA_ZOOM   := 1.05
 const CHECKPOINT_ARRIVAL_SPEED := 360.0
 const COUNTDOWN_DURATION      := 3.0
 const GAME_OVER_DELAY         := 0.45
+const L2_LAND_VISUAL_TIME     := 0.10
 # Reserved for a future seamless panorama. Current harbor art is not tileable.
 const HARBOR_DRIFT_SPEED      := 0.0
 
@@ -148,6 +149,7 @@ var current_enc_id     := Level2EncounterData.NONE
 var enc_step           := 0
 var npc_arriving       := false
 var ending_active      := false
+var _harbor_reveal_active := false
 
 var audio_manager    := AUDIO_MANAGER.new()
 var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
@@ -205,6 +207,7 @@ func _ready() -> void:
 	_build_ambient()
 	_build_ambient_props()
 	_setup_jomana_visual()
+	_tune_level2_player_fx()
 
 	# Level 2 obstacle visual skins (RefCounted helper — not a Node).
 	_obs_vis = L2_OBS_VIS.new()
@@ -259,11 +262,11 @@ func _process(delta: float) -> void:
 
 	# If gameplay is active and Jomana is stuck in IDLE, push her to RUN.
 	# Catches any timing edge-case where set_pose(RUN) was missed.
-	if started and not game_over and not checkpoint_active and not countdown_active:
+	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		if is_instance_valid(_jomana_vis) and _jomana_vis.get_pose() == _jomana_vis.Pose.IDLE:
 			_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
 
-	if started and not game_over and not checkpoint_active and not countdown_active:
+	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		_animate_boats(delta)
 		# No per-frame horizontal tracking — camera is fixed.
 		# Look-ahead is baked into _gameplay_cam_pos once at _ready().
@@ -271,15 +274,27 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not started or game_over or checkpoint_active or countdown_active:
+	if not started or game_over or checkpoint_active or countdown_active or _harbor_reveal_active:
 		return
-	if event.is_action_pressed("ui_accept") \
-	or (event is InputEventMouseButton and event.pressed) \
-	or (event is InputEventScreenTouch and event.pressed):
+	if event.is_action_pressed("ui_accept"):
 		player.jump()
 
 
 func _input(event: InputEvent) -> void:
+	# Pointer input is handled before GUI dispatch so passive HUD Controls cannot
+	# swallow gameplay taps. State gates keep menu/dialogue buttons jump-safe.
+	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
+		var mouse_jump: bool = (
+			event is InputEventMouseButton
+			and event.pressed
+			and event.button_index == MOUSE_BUTTON_LEFT
+		)
+		var touch_jump: bool = event is InputEventScreenTouch and event.pressed
+		if mouse_jump or touch_jump:
+			player.jump()
+			get_viewport().set_input_as_handled()
+			return
+
 	if not checkpoint_active:
 		return
 	var enc := Level2EncounterData.get_encounter(current_enc_id)
@@ -300,6 +315,7 @@ func _input(event: InputEvent) -> void:
 
 func _show_start_screen() -> void:
 	started = false
+	_harbor_reveal_active = false
 	game_over = false
 	ending_active = false
 	score = 0
@@ -308,6 +324,7 @@ func _show_start_screen() -> void:
 	last_checkpoint = Level2EncounterData.NONE
 	start_screen.visible = true
 	score_label.visible = false
+	_update_hud()
 	game_over_panel.visible = false
 	ending_image.visible = false
 	retry_button.text = "إعادة المحاولة من آخر نقطة"
@@ -336,9 +353,10 @@ func _on_play_pressed() -> void:
 		_l2_audio.play_gameplay_music()
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.modulate.a = 0.78
-		_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
+		_jomana_vis.set_pose(_jomana_vis.Pose.IDLE)
 		create_tween().tween_property(_jomana_vis, "modulate:a", 1.0, 0.18)
 	_begin_run(0, Level2EncounterData.NONE, 225.0)
+	player.set_gameplay_active(false)
 	# ONE camera transition. _play_harbor_reveal tweens from open view → gameplay pos.
 	# _begin_run does NOT touch the camera to avoid a race condition.
 	_play_harbor_reveal()
@@ -385,7 +403,7 @@ func _begin_run(initial_score: int, checkpoint: int, speed: float) -> void:
 	npc_arriving = false
 	started = true
 	score_label.visible = true
-	score_label.text = "الأثر: %d" % score
+	_update_hud()
 	game_over_panel.visible = false
 	ending_image.visible = false
 	checkpoint_panel.visible = false
@@ -427,7 +445,7 @@ func _start_runtime_spawners(after_checkpoint := false) -> void:
 
 func _on_obstacle_passed() -> void:
 	score += 1
-	score_label.text = "الأثر: %d" % score
+	_update_hud()
 	_pop(score_label)
 	var char_id := Level2EncounterData.get_encounter_for_score(score)
 	if char_id != Level2EncounterData.NONE:
@@ -472,11 +490,15 @@ func _apply_l2_collectible_visual(c: Node) -> void:
 
 func _on_collected() -> void:
 	collectible_count += 1
-	score_label.text = "الأثر: %d  ✦%d" % [score, collectible_count]
+	_update_hud()
 	if is_instance_valid(_l2_audio):
 		_l2_audio.play_pickup()
 	else:
 		audio_manager.play_shard_pickup()
+
+
+func _update_hud() -> void:
+	score_label.text = "الأثر: %d   ✦ %d" % [score, collectible_count]
 
 
 # ── Checkpoint ────────────────────────────────────────────────────────────
@@ -757,12 +779,18 @@ func _apply_gameplay_cam_tween() -> void:
 
 func _play_harbor_reveal() -> void:
 	# Soft reveal: start slightly zoomed out, settle into full gameplay framing
+	_harbor_reveal_active = true
 	game_camera.position = Vector2(VIEW_W / 2.0, VIEW_H / 2.0 + 20.0)
 	game_camera.zoom = Vector2(CAMERA_REVEAL_FROM, CAMERA_REVEAL_FROM)
 	_tween_cam(_gameplay_cam_pos, Vector2(GAMEPLAY_ZOOM, GAMEPLAY_ZOOM), 1.4)
 	if _cam_tween != null:
 		_cam_tween.finished.connect(
-			func() -> void: print("[L2 play] camera_transition_done=true"),
+			func() -> void:
+				_harbor_reveal_active = false
+				player.set_gameplay_active(true)
+				if is_instance_valid(_jomana_vis):
+					_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
+				print("[L2 play] camera_transition_done=true run_started=true"),
 			CONNECT_ONE_SHOT
 		)
 
@@ -802,6 +830,25 @@ func _setup_jomana_visual() -> void:
 
 	# Start in IDLE — menu should not show Jomana running in place.
 	vis.set_pose(vis.Pose.IDLE)
+
+
+func _tune_level2_player_fx() -> void:
+	# Reuse the Player instance's proven dust emitters, but align them to
+	# Jomana's Level 2 visual baseline. Shared Level 1 code stays untouched.
+	for child: Node in player.get_children():
+		if child is not CPUParticles2D:
+			continue
+		var dust := child as CPUParticles2D
+		dust.position.y += VISUAL_LANE_Y_OFFSET
+		dust.z_index = -1
+		dust.color = Color(0.75, 0.65, 0.50, 0.58)
+		if not dust.one_shot:
+			dust.amount = 6
+			dust.lifetime = 0.4
+			dust.direction = Vector2(-1.0, -0.25)
+			dust.spread = 18.0
+			dust.initial_velocity_min = 30.0
+			dust.initial_velocity_max = 55.0
 
 
 # ── NPC checkpoint card ───────────────────────────────────────────────────
@@ -881,9 +928,11 @@ func _on_player_landed() -> void:
 	if is_instance_valid(_jomana_vis):
 		_jomana_vis.set_pose(_jomana_vis.Pose.LAND)
 		# Return to RUN after a brief landing frame display.
-		await get_tree().create_timer(0.2).timeout
+		await get_tree().create_timer(L2_LAND_VISUAL_TIME).timeout
 		if not game_over and not checkpoint_active and is_instance_valid(_jomana_vis):
-			_jomana_vis.set_pose(_jomana_vis.Pose.RUN)
+			_jomana_vis.set_pose(
+				_jomana_vis.Pose.RUN if player.is_on_floor() else _jomana_vis.Pose.JUMP
+			)
 
 
 # ── Background parallax ───────────────────────────────────────────────────
@@ -1106,9 +1155,9 @@ func _build_ambient() -> void:
 
 
 func _build_ambient_props() -> void:
-	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_BLUE, Vector2(520, 452), 92.0,
+	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_BLUE, Vector2(520, 418), 92.0,
 		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
-	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 458), 68.0,
+	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 424), 68.0,
 		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
 	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 435), 92.0,
 		"HarborFlags", "res://scripts/level2/ambient/harbor_ambient_sway.gd")

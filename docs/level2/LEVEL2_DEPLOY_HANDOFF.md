@@ -69,8 +69,8 @@ Drift on a non-seamless image creates a vertical seam at the copy-join after ~60
 | Asset | Status | Effect |
 |---|---|---|
 | seagull_fly_sheet_4f.png | ACTIVE | 3 animated seagulls in sky |
-| boat_blue_01.png | ACTIVE | Blue fishing boat, bob animation |
-| boat_small_02.png | ACTIVE | Small boat, bob animation |
+| boat_blue_01.png | ACTIVE | Blue fishing boat, raised to Y=418, bob animation |
+| boat_small_02.png | ACTIVE | Small boat, raised to Y=424, bob animation |
 | small_flags_line_01.png | ACTIVE | Colored flags, sway animation |
 | deco_fishing_net_pile_01.png | ACTIVE | Static net pile at ground level |
 | rope_hanging_01.png | DISABLED | Floating without anchor context |
@@ -111,7 +111,7 @@ Pattern: LOW_LINE (4) then SMALL_ARC (5) then FULL_ARC (5) then repeat.
 | jomana_run_01-08.png | ACTIVE - 8-frame run cycle |
 | jomana_idle_01-04.png | ACTIVE - idle on menu |
 | jomana_jump_01.png | ACTIVE - jump pose |
-| jomana_land_01.png | ACTIVE - returns to RUN after 0.2s |
+| jomana_land_01.png | ACTIVE - grounded contact pose, returns after 0.10s |
 | jomana_smile_wave_01.png | ACTIVE - checkpoint/story pose |
 | jomana_dialogue_closeup_01.png | Available - not yet wired to dialogue |
 

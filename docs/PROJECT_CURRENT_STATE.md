@@ -52,26 +52,27 @@ encounter improvements implemented and awaiting owner F6 approval.
 
 ---
 
-## What Needs Codex (Implementation Passes)
+## Implemented Passes Awaiting Owner F6
 
-### Gameplay Feel Pass (from `docs/level2/LEVEL2_CODEX_GAMEPLAY_FEEL_PASS.md`)
+### Gameplay Feel Pass (see `docs/level2/LEVEL2_GAMEPLAY_FEEL_PASS.md`)
 
 | ID | Issue | Priority |
 |---|---|---|
-| P1 | Mouse click doesn't trigger jump | HIGH |
-| P2 | IDLE → RUN transition is abrupt | MEDIUM |
-| P3 | Obstacle visual width too wide for landscape PNGs | MEDIUM |
-| P4 | Boats sinking below pier edge | LOW |
+| P1 | Mouse/touch/Space input | IMPLEMENTED — runtime input smoke passes |
+| P2 | IDLE → RUN transition | IMPLEMENTED — 0.18s visual settle; owner F6 review |
+| P3 | Obstacle visual width | IMPLEMENTED — per-type width caps, collision unchanged |
+| P4 | Boats sinking below pier edge | IMPLEMENTED — raised 34px; owner F6 review |
+| P5 | Running-in-place feel | IMPLEMENTED — foot-aligned dust + ambient motion; true parallax art-blocked |
 
 ### Story / Encounter Pass (from `docs/level2/LEVEL2_STORY_DIALOGUE_QA.md`)
 
 | ID | Issue | Priority |
 |---|---|---|
-| C1 | Checkpoint panel covers characters (Card at Y=382 on 644px screen) | HIGH |
-| C2 | DimBG 72% opacity obscures scene | HIGH |
-| C3 | Speaker name never updates for ROLE_JOMANA steps | HIGH |
-| C5 | NPC doesn't leave screen after "تابع" | HIGH |
-| C_asset | Commit family portrait PNGs | HIGH |
+| C1 | Top subtitle card, characters remain visible | IMPLEMENTED / F6 review |
+| C2 | Dim overlay reduced to 30% | IMPLEMENTED / F6 review |
+| C3 | Explicit speaker per dialogue step | IMPLEMENTED / runtime pass |
+| C5 | NPC cleanup before countdown | IMPLEMENTED / runtime pass |
+| C_asset | Five family portraits tracked | IMPLEMENTED |
 
 ---
 
@@ -98,13 +99,13 @@ encounter improvements implemented and awaiting owner F6 approval.
 | `docs/PROJECT_CURRENT_STATE.md` | NEW — this file |
 | `docs/STORY_PLAN.md` | Updated — reflects new approved L1 dialogue |
 
-### Level 2 Dialogue (final cinematic pass pending this commit)
+### Level 2 Dialogue (COMMITTED — `5a491f3`)
 
 | File | Status |
 |---|---|
-| `scripts/level2/level2_encounter_data.gd` | Modified by Codex — improved dialogue, uncommitted |
-| `scripts/level2/level2_marsa_playable.gd` | Modified by Codex — gameplay fixes, uncommitted |
-| `scripts/level2/gameplay/level2_collectible_spawner.gd` | Modified by Codex — uncommitted |
+| `scripts/level2/level2_encounter_data.gd` | Final dialogue and explicit speakers committed |
+| `scripts/level2/level2_marsa_playable.gd` | Encounter lifecycle committed; gameplay-feel follow-up in progress |
+| `scripts/level2/gameplay/level2_collectible_spawner.gd` | Checkpoint resume delay committed |
 | `scripts/level2/story/level2_family_checkpoint_visuals.gd` | Integrated and fallback-safe |
 | `assets/level2/marsa/characters/family/` | 5 RGBA PNGs tracked since `c8bd6be` |
 
@@ -123,7 +124,7 @@ encounter improvements implemented and awaiting owner F6 approval.
 
 ## Level 2 Owner F6 Checklist (Next Gate)
 
-### After Codex applies P1-P5 + C1-C5 + portrait commit:
+### After the implemented gameplay-feel and encounter passes:
 
 **Gameplay:**
 - [ ] Mouse click triggers jump
