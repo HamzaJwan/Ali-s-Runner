@@ -1,7 +1,7 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
-# Last updated: 2026-07-02 | Encounter cinematic patch pending commit
+# Last updated: 2026-07-02 | Commit: 5a491f3
 
-**Gate: OWNER_F6_REVIEW_REQUIRED — automated encounter and resume checks pass**
+**Gate: PASS_FOR_OWNER_F6 — automated checks pass; visual confirmation required**
 
 Open this file to know where things stand in 30 seconds.
 
@@ -13,7 +13,7 @@ Open this file to know where things stand in 30 seconds.
 |---|---|
 | Scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
 | Branch | `level2/jomana-marsa-mvp-20260701` |
-| Commit | `c8ce6e9` |
+| Commit | `5a491f3` |
 | Deployed | NO |
 | Level 1 | UNTOUCHED — live at game.juanspace.org |
 
@@ -120,7 +120,13 @@ Missing files remain fallback-safe through the existing generated NPC card.
 
 ## Next Actions in Order
 
-1. **Codex** — commit and push the tested encounter cinematic patch.
-2. **Owner** — F6 review: portraits, framing, dialogue, countdown cleanup, and resumed spawning.
-3. **Owner decision** — approve or reject for internal staging.
-4. **Codex** (only if approved) — prepare an isolated staging build. Do not deploy from this task.
+1. **Owner** — F6 review: run checklist in `docs/level2/LEVEL2_PLAYABLE_TEST.md`
+2. **Owner decision** — approve or reject for internal staging
+3. **Codex** (if approved) — cherry-pick to test-web-deploy, export, deploy to internal staging
+4. **Post-F6 polish (LOW priority)** — obstacle visual width constraint, boat Y position
+
+## Level 1 → Level 2 Transition Status
+
+**NOT YET IMPLEMENTED** — documented only.
+See `docs/GAME_CHAPTER_FLOW.md` and `docs/GAME_CHAPTER_STORY_BIBLE.md`.
+Level 2 is not in the main menu. Must NOT be wired until owner approves Level 2 for production.

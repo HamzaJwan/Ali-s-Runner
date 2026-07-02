@@ -61,15 +61,18 @@ Chapter 2 Ending / Family Marsa Scene
 
 ---
 
-## Current State (2026-07-01)
+## Current State (2026-07-02)
 
 | Component | Status |
 |---|---|
-| Level 1 (Ali) | PRODUCTION — deployed |
-| Level 2 (Jomana) F6 scene | INTERNAL TESTING — real art + audio |
-| Chapter transition card | NOT YET IMPLEMENTED |
-| Level 1 → Level 2 transition | NOT YET IMPLEMENTED |
+| Level 1 (Ali) | PRODUCTION — deployed, story polished 2026-07-02 |
+| Level 2 (Jomana) F6 scene | PASS_FOR_OWNER_F6 — commit 5a491f3; real art, portraits, cinematic encounters |
+| Chapter transition card | NOT YET IMPLEMENTED — text documented in GAME_CHAPTER_STORY_BIBLE.md |
+| Level 1 → Level 2 transition | NOT YET IMPLEMENTED — do not implement until Level 2 is owner-approved |
 | Level 2 in main menu | NOT YET — isolated by design |
+
+**Transition implementation gate:** Level 2 must receive owner F6 approval and pass internal staging
+before ANY code connecting Level 1 to Level 2 is written. Do not implement early.
 
 ---
 
