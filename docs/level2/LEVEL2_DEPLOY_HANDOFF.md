@@ -1,19 +1,33 @@
 # Level 2 Deploy Handoff — جمانة وأثر الكلمة
-# Status: READY_FOR_OWNER_F6_FULL_ASSET_REVIEW
+# Status: OWNER_REVIEW_NEEDED
 # Last updated: 2026-07-02
+
+---
+
+## STOP — Read Before Deploying
+
+**DO NOT DEPLOY LEVEL 2 TO PRODUCTION.**
+
+Level 2 is not approved for public release. The production route `game.juanspace.org`
+must only serve Level 1 until the owner explicitly gives go-ahead.
+
+Two showstopper bugs (B1 obstacle skin, B2 buildings seam) must be fixed and
+owner F6 must pass before any staging deployment.
 
 ---
 
 ## Quick Status
 
-| Item | Status |
+| Field | Value |
 |---|---|
-| Branch | level2/jomana-marsa-mvp-20260701 |
-| Level 2 entry scene | scenes/level2/Level2_Marsa_Playable.tscn |
-| Level 1 untouched | YES |
+| Branch | `level2/jomana-marsa-mvp-20260701` |
+| Entry scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
+| Level 1 untouched | YES — confirmed across all commits |
 | Docker/deploy untouched | YES |
-| Playable in F6 | YES |
-| Owner F6 approval | PENDING (needs final review) |
+| Playable in F6 | YES (with known bugs B1-B4) |
+| Owner F6 approval | PENDING (after Codex applies 4-bug patch) |
+| Staging approved | NO |
+| Production approved | NO |
 
 ---
 
@@ -21,12 +35,12 @@
 
 | Constant | Value | Notes |
 |---|---|---|
-| GAMEPLAY_ZOOM | 1.18 | Jomana ≈ 188px tall on screen |
-| CAM_SCREEN_X | 200 | Jomana appears at ~17% from left |
-| LOOKAHEAD_X | 0 | Built into CAM_SCREEN_X (≤200 = far left = more road visible) |
-| VERTICAL_OFFSET | -14 | Camera slightly high: jump arc visible, ground share reduced |
-| Pier on screen | 72% from top | Matches CURB_TOP_Y physics, ground share = 28% |
-| Camera type | FIXED — no per-frame tracking | One tween on Play, then locked |
+| GAMEPLAY_ZOOM | 1.18 | Jomana ~188px tall on screen |
+| CAM_SCREEN_X | 200 | Jomana at ~17% from left edge |
+| LOOKAHEAD_X | 0 | Baked into CAM_SCREEN_X |
+| VERTICAL_OFFSET | -14 | Slightly high: jump arc visible, ground share = 28% |
+| Pier on screen | 72% from top | Matches CURB_TOP_Y=470 world physics |
+| Camera type | FIXED - no per-frame horizontal tracking | One tween on Play, then locked |
 
 ---
 
@@ -34,45 +48,47 @@
 
 | Asset | Status | Role |
 |---|---|---|
-| bg_sky_marsa.png | ACTIVE | Full-screen backdrop, camera-fixed, + sky fill ColorRect behind |
-| bg_harbor_buildings.png | ACTIVE | Harbor middle plate, top-fade shader (55px blend into sky) |
-| fg_pier_ground.png | ACTIVE | Foreground gameplay pier, aligned to CURB_TOP_Y |
+| bg_sky_marsa.png | ACTIVE | Full-screen backdrop, camera-fixed |
+| bg_harbor_buildings.png | ACTIVE | Harbor city silhouette, top-fade shader 55px, FIXED X |
+| fg_pier_ground.png | ACTIVE | Foreground pier, aligned to CURB_TOP_Y |
 
 ## Disabled Opaque Plates
 
-| Asset | Status | Why Disabled |
-|---|---|---|
-| bg_sea_breakwater.png | DISABLED | Opaque RGB — creates visible horizontal seam when stacked on buildings |
-| mg_boats_mid.png | DISABLED | Opaque RGB — same issue |
+| Asset | Why Disabled |
+|---|---|
+| bg_sea_breakwater.png | Opaque RGB - creates visible horizontal seam when stacked |
+| mg_boats_mid.png | Opaque RGB - same issue; replaced by transparent boat props |
 
-**Note:** True five-layer parallax requires transparent cutout layers for sea, buildings, and boats. Current owner art is 24-bit RGB opaque. These assets need transparent (alpha-channel) re-authoring to enable true parallax without seams.
+Note: HARBOR_DRIFT_SPEED const is reserved but buildings X must be fixed (not drifting).
+Drift on a non-seamless image creates a vertical seam at the copy-join after ~60s.
 
 ---
 
-## Transparent Ambient Assets (Active)
+## Active Transparent Ambient Props
 
-| Asset | Status | Role |
+| Asset | Status | Effect |
 |---|---|---|
-| seagull_fly_sheet_4f.png | ACTIVE | Animated seagulls in sky area |
-| boat_blue_01.png | ACTIVE | Gentle background bob; no collision |
-| boat_small_02.png | ACTIVE | Gentle background bob; no collision |
-| small_flags_line_01.png | ACTIVE | Subtle sway behind gameplay |
-| rope_hanging_01.png | ACTIVE | Subtle sway behind gameplay |
-| deco_fishing_net_pile_01.png | ACTIVE | Static decoration behind lane; no collision |
+| seagull_fly_sheet_4f.png | ACTIVE | 3 animated seagulls in sky |
+| boat_blue_01.png | ACTIVE | Blue fishing boat, bob animation |
+| boat_small_02.png | ACTIVE | Small boat, bob animation |
+| small_flags_line_01.png | ACTIVE | Colored flags, sway animation |
+| deco_fishing_net_pile_01.png | ACTIVE | Static net pile at ground level |
+| rope_hanging_01.png | DISABLED | Floating without anchor context |
 
 ---
 
 ## Obstacle Assets
 
-| Level 1 Type | Level 2 Visual | Status |
-|---|---|---|
-| block | obs_concrete_block_01.png | ACTIVE (72px visual height) |
-| barrier | obs_bollard_rope_01.png | ACTIVE (70px) |
-| cone | obs_broken_pier_chunk_01.png | ACTIVE (70px) |
-| crate | obs_crate_stack_01.png | ACTIVE (88px) |
-| sign | obs_broken_pier_chunk_01.png | ACTIVE (64px) |
+| Level 1 Type | Level 2 Visual | PNG | Visual Height |
+|---|---|---|---|
+| block | Concrete block | obs_concrete_block_01.png | 88px |
+| barrier | Bollard+rope | obs_bollard_rope_01.png | 80px |
+| cone | Bollard+rope | obs_bollard_rope_01.png | 80px |
+| crate | Crate stack | obs_crate_stack_01.png | 96px |
+| sign | Pier chunk | obs_broken_pier_chunk_01.png | 72px |
 
-Level 1 visual (ObstacleSprite + Polygon2D) hidden when L2 texture loads.
+Level 1 visuals (ObstacleSprite + Polygon2D) hidden when L2 texture loads.
+B1 bug: skins not applied in current commit (3rd arg to apply_skin).
 
 ---
 
@@ -80,11 +96,10 @@ Level 1 visual (ObstacleSprite + Polygon2D) hidden when L2 texture loads.
 
 | Asset | Status |
 |---|---|
-| col_light_shard_pink_01.png | ACTIVE — single pink/gold shard (30px visual) |
-| col_athar_shard_sheet_6f.png | Available — not yet animated |
+| col_light_shard_pink_01.png | ACTIVE - 48px visual height (after B3 fix) |
+| col_athar_shard_sheet_6f.png | Available - not animated yet |
 
-Collectible patterns: LOW_LINE (4 shards) → SMALL_ARC (5) → FULL_ARC (5) → cycle.
-Level 1 visual (ShardSprite + Polygon2D) hidden on spawn.
+Pattern: LOW_LINE (4) then SMALL_ARC (5) then FULL_ARC (5) then repeat.
 
 ---
 
@@ -92,93 +107,106 @@ Level 1 visual (ShardSprite + Polygon2D) hidden on spawn.
 
 | Asset | Status |
 |---|---|
-| jomana_run_01..08.png | ACTIVE — 8-frame run animation |
-| jomana_idle_01..04.png | ACTIVE — idle on menu |
-| jomana_jump_01.png | ACTIVE — jump pose |
-| jomana_land_01.png | ACTIVE — land pose |
-| jomana_smile_wave_01.png | ACTIVE — story/checkpoint pose |
-| jomana_dialogue_closeup_01.png | Available — not yet wired to dialogue UI |
+| jomana_run_01-08.png | ACTIVE - 8-frame run cycle |
+| jomana_idle_01-04.png | ACTIVE - idle on menu |
+| jomana_jump_01.png | ACTIVE - jump pose |
+| jomana_land_01.png | ACTIVE - returns to RUN after 0.2s |
+| jomana_smile_wave_01.png | ACTIVE - checkpoint/story pose |
+| jomana_dialogue_closeup_01.png | Available - not yet wired to dialogue |
 
 ---
 
-## Checkpoint Story
+## Family Checkpoint
 
-| Score | Character | Arabic | Status |
-|---|---|---|---|
-| 15 | Ali | علي | NPC card with blue background |
-| 35 | Zainab | زينب | NPC card with orange background |
-| 60 | Fatima | فاطمة | NPC card with pink background |
-| 90 | Father | الأب | NPC card with deep-blue background |
-
-Level 2-specific family portrait PNGs not yet generated. Using styled text cards as intentional fallback.
-
-Speed progression: 225 → 240 (after Ali) → 255 (Zainab) → 270 (Fatima).
-After Father: Level 2 ending panel "أحسنتِ يا جمانة / كل كلمة طيبة تترك أثرًا".
+| Score | Character | Status |
+|---|---|---|
+| 15 | Ali | Color-coded text card (blue) - portrait PNG not yet generated |
+| 35 | Zainab | Color-coded text card (orange) - portrait PNG not yet generated |
+| 60 | Fatima | Color-coded text card (pink) - portrait PNG not yet generated |
+| 90 | Father | Color-coded text card (deep blue) then ending panel |
 
 ---
 
 ## Audio
 
-All 8 WAV files present and integrated. WAV loop mode set at runtime.
-OGG conversion: documented as future optimization for smaller Web bundle.
+8/8 WAV files present. WAV loop mode set at runtime. OGG: future optimization.
 
 ---
 
-## Instructions for Codex
+## Bugs to Fix Before Any Deployment
 
-**DEPLOY_STATUS: PARTIAL_OWNER_REVIEW_NEEDED**
-
-Do NOT deploy Level 2 publicly until:
-1. Owner completes F6 review and approves the composition
-2. Family checkpoint portrait art is generated (or owner approves text-card fallback)
-3. RC smoke passes on the merged branch
-
-When deploying to internal staging:
-- Merge/cherry-pick level2/jomana-marsa-mvp-20260701 into test-web-deploy
-- Export Web build with existing settings
-- Deploy to game.juanspace.org/level2 (NOT the main route)
-- Test on mobile landscape (the overlay gate handles portrait)
-- Rollback if Level 1 route (game.juanspace.org) is affected
-
-Do NOT deploy Level 2 to the main public route until the owner explicitly approves.
+| ID | Bug | Fix Location |
+|---|---|---|
+| B1 | L1 red barrier showing | Remove 3rd arg from apply_skin call in level2_marsa_playable.gd line 857 |
+| B2 | Buildings vertical seam at ~60s | Remove harbor_phase drift, set buildings_layer.position.x = left |
+| B3 | Shard 30px too small | Change 30.0 to 48.0 in _apply_l2_collectible_visual() |
+| B4 | Rope prop floating | Comment out AMB_ROPE line in _build_ambient_props() |
 
 ---
 
-## Codex Structural Cleanup (2026-07-02)
+## Instructions for Codex - Internal Staging Only
 
-- Level 2 now owns `scripts/level2/gameplay/level2_collectible_spawner.gd`; it no longer rewrites random Level 1 collectible Y positions after spawn.
-- One pattern is active at a time: `LOW_LINE`, `SMALL_ARC`, then `FULL_ARC`.
-- Visual-only lane offset is `30px`. Physics, gravity, jump, collision, and Level 1 files are unchanged.
-- Gameplay camera is fixed at zoom `1.18`, with Jomana at screen X `200`.
-- Jomana and harbor obstacle art share visual screen baseline Y `550`.
-- Collectible world lanes are `485 / 435 / 390`.
-- Existing Level 1 family art is used as checkpoint fallback when dedicated Level 2 portraits are absent.
-- Checkpoint dialogue card is now 540x220 in the lower-left; the arriving character is staged on the right.
-- Level 2 ending offers both replay and return to the Level 2 menu.
+DEPLOY_STATUS: DO NOT DEPLOY - OWNER_REVIEW_NEEDED
 
-## Start Freeze Hotfix (2026-07-02)
+Only proceed with staging after all of:
+1. Codex applies 4-bug patch
+2. Owner completes F6 review and explicitly approves
+3. Staging RC smoke passes
 
-- Root cause in the owner screenshot: Godot was paused on an active editor breakpoint at the former collectible-spawner line. The source was not hung.
-- The Play path now rejects double clicks, explicitly unpauses the tree, and starts obstacle and collectible spawners independently with warnings instead of blocking the scene.
-- `scripts/tools/level2_runtime_smoke.gd` starts the scene programmatically and verifies gameplay state, player activation, and both timers.
-- Fixed-camera ambient motion is active: sky and pier remain fixed, the duplicated harbor plate drifts at `3px/s`, boats bob, flags/rope sway, and seagulls move independently.
-- Flags and rope were lowered to the harbor/pier anchor zone so they no longer read as floating in open sky.
+### Staging Deployment Steps (When Approved)
 
-## Active Living Harbor Assets
+```
+# 1. Do NOT use main or test-web-deploy directly
+git checkout level2/jomana-marsa-mvp-20260701
 
-| Asset | Runtime role |
-|---|---|
-| seagull_fly_sheet_4f.png | independent sky motion |
-| boat_blue_01.png | transparent background boat with gentle bob |
-| boat_small_02.png | transparent background boat with gentle bob |
-| small_flags_line_01.png | subtle wind sway behind gameplay |
-| rope_hanging_01.png | subtle wind sway behind gameplay |
-| deco_fishing_net_pile_01.png | non-collision background decoration |
+# 2. Cherry-pick approved commit to test-web-deploy (separate worktree)
+git checkout test-web-deploy
+git cherry-pick <approved-commit-hash>
+
+# 3. Export Web build using existing export preset
+# Do NOT change export settings
+
+# 4. Deploy to INTERNAL staging route only
+# Preferred: game.juanspace.org/level2 or level2-test.juanspace.org
+# NOT the main route game.juanspace.org
+
+# 5. Verify Level 1 at game.juanspace.org still works
+
+# 6. If Level 1 is broken: revert immediately
+```
+
+### Validation Commands Before Staging
+
+```
+Godot_v4.7-stable_win64_console.exe --headless --path . --quit
+Godot_v4.7-stable_win64_console.exe --headless --path . -s scripts/tools/level2_asset_check.gd
+Godot_v4.7-stable_win64_console.exe --headless --path . -s scripts/tools/level2_runtime_smoke.gd
+Godot_v4.7-stable_win64_console.exe --headless --path . scenes/Main.tscn --quit
+```
+
+### Rollback Policy
+
+If staging breaks Level 1 or causes any regression:
+- Revert the cherry-pick on test-web-deploy immediately
+- Redeploy Level 1 only
+- Report to owner before any further action
+
+### Production Promotion Checklist (All Required)
+
+- [ ] Owner F6 review passed
+- [ ] Owner staging review passed
+- [ ] All 4 bugs B1-B4 confirmed fixed
+- [ ] Family portrait PNGs added (or owner approves text-card fallback for production)
+- [ ] RC smoke: exit 0 on all validation commands
+- [ ] Level 1 at game.juanspace.org confirmed unaffected
+- [ ] Owner explicitly says "deploy to production"
+
+---
 
 ## Known Limitations
 
-1. Background seams: fully resolved for 3-plate composition. True 5-layer parallax needs transparent assets.
-2. Family checkpoint portraits: using styled text cards (intentional, not broken).
-3. Ambient boats/flags/nets: art available, wiring to ambient system pending.
-4. OGG audio: WAV works; OGG smaller for Web bundle.
-5. Level 1 → Level 2 chapter transition: documented in docs/GAME_CHAPTER_FLOW.md, not yet implemented.
+1. Background seams: fully resolved for 3-plate composition. True 5-layer parallax needs transparent re-authored assets.
+2. Family checkpoint portraits: text card fallback (intentional - art pending).
+3. Ambient rope: disabled (no anchor context).
+4. OGG audio: WAV works; OGG smaller for web.
+5. Level 1 to Level 2 chapter transition: documented in docs/GAME_CHAPTER_FLOW.md, not yet implemented.

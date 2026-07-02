@@ -1,127 +1,85 @@
 # Level 2 Status Board — جمانة وأثر الكلمة
+# Last updated: 2026-07-02 | Commit: 0da5f76
 
-**Current gate (2026-07-02): READY_FOR_OWNER_F6_FULL_ASSET_REVIEW**
+**Gate: OWNER_REVIEW_NEEDED — fix 4 bugs first, then F6, then staging**
 
-Codex structural cleanup completed the Level 2-local collectible pattern spawner, shared visual lane offset, harbor obstacle grounding, ambient transparent props, family-art checkpoint fallback, compact dialogue card, and explicit ending choices. Automated scene loading is green; owner visual/gameplay approval is still required. Do not deploy yet.
-
-**Start hotfix:** the reported freeze was an editor breakpoint, not a runtime deadlock. Play startup is now guarded and covered by `level2_runtime_smoke.gd`. Background depth uses fixed-camera ambient motion: harbor `3px/s`, boats bob, flags/rope sway, sky and pier fixed. Owner F6 confirmation remains required.
-# Last updated: 2026-07-01 | Commit: (see git log)
-
-Quick reference for owner and coders. Open this file to know exactly where things stand.
+Open this file to know where things stand in 30 seconds.
 
 ---
 
-## ✅ COMPLETED
+## Current State
 
-| Item | Notes |
+| Field | Value |
 |---|---|
-| Level 2 playable scene (`Level2_Marsa_Playable.tscn`) | F6 to test in Godot |
-| Camera zoom 1.38 + smooth look-ahead | LOOKAHEAD_X=120, FOLLOW_SPEED=5.5 |
-| Harbor cinematic reveal | 0.95 → 1.38 over 1.4s |
-| Checkpoint zoom micro-focus | +5% on dialogue |
-| Jomana placeholder (teal polygon) | Foot-aligned to pier |
-| Jomana animation pipeline | `jomana_player_visual.gd` — auto-detects PNG frames |
-| Family checkpoint order | ✅ Ali(15)→Zainab(35)→Fatima(60)→Father(90) — canonical, confirmed |
-| Checkpoint dialogue (draft) | In `level2_encounter_data.gd` |
-| Game Over card with Arabic | Animated entrance, warm style |
-| Retry / Restart flow | Working correctly |
-| Progressive difficulty 225→270 | Matches Level 1 speed progression |
-| Water shimmer shader | `water_shimmer.gdshader` (WebGL-safe) |
-| Seagulls (3, procedural) | Looping flight, no collision |
-| Boat bob (3 boats, phase offset) | `harbor_ambient_bob.gd` |
-| Wind sway on ropes | `harbor_ambient_sway.gd` |
-| Distant fisherman silhouette | Tiny polygon in LookDev |
-| 5-layer background (procedural) | ColorRect placeholder, readable |
-| Production Roadmap doc | `LEVEL2_PRODUCTION_ROADMAP.md` |
-| Gap Audit doc | `LEVEL2_GAP_AUDIT.md` |
-| Asset pipeline docs | Environment, Obstacle, Audio requirements |
-| Asset manifest system | `level2_asset_manifest.gd` — single source of truth for all paths |
-| Jomana auto-pipeline | `jomana_player_visual.gd` — 8-frame PNG auto-loads, polygon fallback |
-| Background auto-pipeline | `level2_environment_visual.gd` — each of 5 layers auto-loads independently |
-| Obstacle skin adapter | `level2_obstacle_visuals.gd` — adds Sprite2D skin without touching Level 1 |
-| Family checkpoint sprites | `level2_family_checkpoint_visuals.gd` — auto-loads PNG per character |
-| Audio wrapper | `level2_audio_manager.gd` — plays L2 audio if present, CC0 gate documented |
-| Foot dust | `jomana_foot_dust.gd` — CPUParticles2D, web-safe, easy to disable |
-| Asset check tool | `scripts/tools/level2_asset_check.gd` — headless report, exit 0 always |
-| Asset drop guide | `docs/level2/LEVEL2_ASSET_DROP_GUIDE.md` — owner guide, no code changes needed |
-| Multi-coder workflow | `MULTI_CODER_WORKFLOW.md` |
-| Level 1 untouched | Confirmed |
-| Docker/deploy untouched | Confirmed |
-| Jomana real art integrated | All 16 frames (run/idle/jump/land/story) normalized 384×512, auto-loaded |
-| Real backgrounds integrated | All 5 PNG layers loading, parallax positioning fixed |
-| Background viewport coverage | `_update_background_parallax()` runs every frame — no gray borders |
-| Obstacle visual skins | `level2_obstacle_visuals.gd` wired to `obstacle_spawned` signal |
-| Collectible manifest path | `col_light_shard_pink_01.png` correctly mapped |
-| Audio 8/8 files integrated | sea/theme/seagull/pickup/checkpoint/retry/jump/footstep |
-| Audio manager | `level2_audio_manager.gd` — all events wired, WAV loop support |
-| Game chapter flow doc | `docs/GAME_CHAPTER_FLOW.md` — one game, two chapters, future transition plan |
+| Scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
+| Branch | `level2/jomana-marsa-mvp-20260701` |
+| Commit | `0da5f76` |
+| Deployed | NO |
+| Level 1 | UNTOUCHED — live at game.juanspace.org |
 
 ---
 
-## 🔄 IN PROGRESS
+## What Works Right Now
 
-| Item | Owner/Coder | Notes |
+| Item | Evidence |
+|---|---|
+| Start screen — beautiful harbor | Owner screenshot confirmed: mosque, boats, flags, Jomana idle ✅ |
+| Jomana real art running (8 frames) | Screenshot shows real art, correct animation ✅ |
+| 3-plate background (sky + buildings + pier) | No horizontal band seams ✅ |
+| Seagulls flying | 3 birds visible in gameplay screenshots ✅ |
+| Boat bob animation | Boats behind pier wall ✅ |
+| Flag sway animation | Flags visible in harbor ✅ |
+| Pink shard collectibles spawning | Pink shards visible in screenshots (too small, see B3) ✅ |
+| Collectible patterns cycling (LOW/ARC) | Pattern logic implemented ✅ |
+| Story checkpoint flow | Text card appears, advance with tap, ends after Father ✅ |
+| Game Over panel (Arabic) | Animated, Retry/Restart work ✅ |
+| Fixed camera (no race condition) | No sliding/race condition since commit 524ffda ✅ |
+| Audio 8/8 files integrated | sea/theme/seagull/pickup/checkpoint/retry/jump/footstep ✅ |
+| Mobile landscape overlay | "اقلب الهاتف بالعرض" shows on portrait ✅ |
+| Level 1 completely unaffected | Confirmed across all commits ✅ |
+
+---
+
+## Bugs — Codex Must Fix Before Owner F6
+
+| ID | Bug | Impact |
 |---|---|---|
-| Owner F6 real-art + audio review | **OWNER** | Open Level2_Marsa_Playable.tscn → F6 → confirm Jomana, backgrounds, audio |
-| Chapter transition integration | **After F6 approval** | See docs/GAME_CHAPTER_FLOW.md — safe to implement after owner approves |
-| Level 1 Web deployed | **Codex** (separate worktree) | game.juanspace.org live — Level 2 NOT included until approved |
+| B1 | Level 1 red/white road barrier still shows during gameplay | Showstopper — wrong obstacles |
+| B2 | Hard vertical seam in buildings layer appears ~60s into any run | Showstopper — visible composition break |
+| B3 | Pink collectible shard renders at 30px — too small for Jomana's scale | Polish — barely visible |
+| B4 | `rope_hanging_01.png` appears unsupported in air | Polish — disable it |
+
+Root causes and exact fixes documented in QA report (2026-07-02).
+Codex fix prompt is in the same report.
 
 ---
 
-## ⛔ BLOCKED (needs assets or owner action)
+## Blocked (Not a Code Issue)
 
-| Item | Blocked by | What's needed |
-|---|---|---|
-| NPC sprites at checkpoints | Character art | ali_checkpoint_01.png, zainab_checkpoint_01.png, fatima_checkpoint_01.png, father_checkpoint_01.png |
-| Family ending image | Character art | family_marsa_ending_01.png |
-| Audio OGG conversion (optional) | Owner decision | WAV works; OGG smaller for web |
-| Level 1 → Level 2 transition | Owner F6 approval needed first | See docs/GAME_CHAPTER_FLOW.md |
-
----
-
-## 👁️ NEEDS OWNER F6 REVIEW
-
-| Item | When ready |
+| Item | What Is Needed |
 |---|---|
-| Camera zoom 1.38 — is Jomana big enough? | NOW — open F6 |
-| Camera look-ahead — can you see obstacles early? | NOW |
-| Harbor reveal animation — smooth/cinematic? | NOW |
-| Checkpoint dialogue Arabic text — approved? | After F6 pass |
-| Teal placeholder — is it readable as a character? | NOW |
-| Progressive difficulty — feels fair? | NOW |
+| Family portrait art at checkpoints | Generate ali/zainab/fatima/father checkpoint PNGs → drop in `assets/level2/marsa/characters/family/` |
+| Family ending image | Generate `family_marsa_ending_01.png` |
+| True 5-layer parallax | Re-author bg_sea_breakwater + mg_boats_mid as transparent-channel images |
+| OGG audio conversion | Optional — WAV works; OGG smaller for web |
 
 ---
 
-## ⬜ NEEDS AUDIO
+## Must NOT Be Touched
 
-| Item | Priority |
-|---|---|
-| Sea ambience loop | High |
-| Harbour music loop | High |
-| Seagull distant SFX | Medium |
-| أثر pickup SFX (or reuse L1) | Medium |
-| Footstep on stone | Low (later) |
-
----
-
-## 🔮 FUTURE / NOT NOW
-
-| Item | Reason deferred |
-|---|---|
-| Skeleton2D hair/dress animation | Overengineering risk before 8-frame test |
-| Rare collectibles (shell, starfish) | Scope creep for MVP |
-| Weather transitions | Not core gameplay |
-| Web public release | Export templates + license docs + owner approval |
-| Android release | JDK + SDK + templates + Play Store setup |
-| Level 2 in main menu | Level 2 not production-ready yet |
-| Level 3 (Zainab) | Level 2 must reach production first |
-| Full game title change | Owner decision only |
+- `scenes/Main.tscn` — Level 1 scene
+- `scripts/main.gd` — Level 1 controller
+- `scripts/obstacle.gd` — Level 1 obstacle (shared, no changes allowed)
+- `D:\GODOT\test1\test-web-deploy` — Docker web deploy directory
+- Docker / Web export / Deployment scripts
+- Main menu scene (Level 2 must NOT be wired to main menu yet)
 
 ---
 
-## 2026-07-01 Parser Hotfix
+## Next Actions in Order
 
-- Fixed the Level 2 audio manager preload parse error caused by invalid named-argument syntax.
-- Confirmed `Level2_Marsa_Playable.tscn` loads and detects all eight Level 2 audio files.
-- Level 2 audio remains local to Level 2; Level 1 audio and gameplay were not changed.
-- Escaped the mobile rotate overlay's RTL marks so the project autoload parses in Godot 4.7.
+1. **Codex** — apply 4-bug patch from QA report (B1 obstacle skin arg, B2 buildings drift, B3 shard scale, B4 rope disable)
+2. **Owner** — F6 review: confirm no red barriers, no seam, shard visible, composition clean
+3. **Owner decision** — approve or reject for internal staging
+4. **Codex** (if approved) — cherry-pick to test-web-deploy, export, deploy to internal staging URL
+5. **Owner** — generate family portrait PNGs to unlock styled checkpoint art

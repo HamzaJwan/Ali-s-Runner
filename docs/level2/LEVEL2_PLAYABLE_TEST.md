@@ -1,188 +1,186 @@
-# Level 2 Playable Foundation — Owner Test Guide
-# جمانة وأثر الكلمة — مرسى زليتن
+# Level 2 Playable Test Checklist — جمانة وأثر الكلمة
+# Last updated: 2026-07-02
 
-**Status:** READY_FOR_OWNER_F6_FULL_ASSET_REVIEW - Internal Testing Only
-**Not wired into main menu.  Not default boot scene.  Not public release.**
+**Status: OWNER_REVIEW_NEEDED — run checklist after Codex applies B1-B4 patch**
 
 ---
 
 ## How to Open the Scene
 
-1. Open the Godot editor.
-2. In the **FileSystem** panel, navigate to:
-   ```
-   scenes/level2/Level2_Marsa_Playable.tscn
-   ```
+1. Open Godot editor.
+2. In the FileSystem panel, navigate to `scenes/level2/Level2_Marsa_Playable.tscn`
 3. Double-click to open.
-4. Press **F6** (or the Run Scene button) to play THIS scene directly.
-
-> **Do NOT press F5** — that runs `scenes/Main.tscn` (Level 1). Press F6 for Level 2.
+4. Press **F6** (Run Scene) — NOT F5 (that runs Level 1).
 
 ---
 
-## What You Will See
+## Known Bugs in Current Build (Before Codex Patch)
 
-| Element | Status |
+These items WILL fail before the Codex 4-bug patch is applied.
+Do not judge the scene on these items until the patch is in.
+
+| Bug | What You See | Fix Status |
+|---|---|---|
+| B1 | Level 1 red/white road barrier during gameplay | Codex fix pending |
+| B2 | Hard vertical line in buildings background ~60s into run | Codex fix pending |
+| B3 | Pink shard collectible is tiny (30px) | Codex fix pending |
+| B4 | Rope prop appears floating in air | Codex fix pending |
+
+---
+
+## Full Owner F6 Checklist
+
+Run this checklist after the Codex patch is applied.
+
+### Menu / Start Screen
+
+- [ ] Title "جمانة وأثر الكلمة" is readable and centered
+- [ ] Subtitle "مرسى زليتن" visible
+- [ ] Background shows harbor: sky, buildings, boats, pier
+- [ ] Jomana stands idle on the pier (left side of screen)
+- [ ] No Ali ghost visible
+- [ ] "ابدئي الرحلة" button is visible and clickable
+- [ ] No horizontal seam bands in background
+- [ ] No vertical seam lines in buildings
+- [ ] Seagulls flying in sky (may need a few seconds)
+- [ ] Boats visible in harbor background
+- [ ] Flags visible and swaying gently
+- [ ] No rope prop floating in air
+
+### Starting Gameplay
+
+- [ ] Press "ابدئي الرحلة" → harbor reveal animation plays (1.4s)
+- [ ] Jomana starts running (switches to run animation)
+- [ ] Camera settles into fixed gameplay position
+- [ ] Score "الأثر: 0" visible top-left
+- [ ] No Ali ghost behind Jomana
+
+### Obstacles
+
+- [ ] First obstacle spawns from the right side
+- [ ] Obstacle visual is a HARBOR prop: concrete block, bollard, crates, or pier chunk
+- [ ] NO red/white Level 1 road barrier visible
+- [ ] Obstacle sits on the pier ground (not floating)
+- [ ] Obstacle is proportionally readable vs Jomana's size
+- [ ] Tap/click/Space to jump over obstacle
+- [ ] Score increments by 1 on each obstacle passed
+- [ ] Second obstacle spawns correctly (not only one total)
+
+### Collectibles
+
+- [ ] Pink shard collectibles appear ahead of Jomana
+- [ ] Shard is visible (at least ~48px apparent height)
+- [ ] LOW_LINE pattern: shards at run height (no jump needed)
+- [ ] SMALL_ARC pattern: shards in a low arc (light jump)
+- [ ] FULL_ARC pattern: shards in high arc (full jump)
+- [ ] Collecting a shard updates "✦N" counter
+- [ ] No Level 1 star/heart visual visible on collectibles
+
+### Environment During Gameplay
+
+- [ ] Background stays fixed (buildings do NOT drift left over time)
+- [ ] No vertical seam line in harbor buildings after 60+ seconds
+- [ ] No horizontal seam bands between background plates
+- [ ] Pier ground texture matches the harbor scene
+- [ ] Seagulls continue flying overhead
+- [ ] Boats visible and bobbing behind pier wall
+- [ ] Flags swaying (if small_flags_line_01.png present)
+- [ ] No rope prop floating in air
+
+### Jump Feel
+
+- [ ] Jump feel is same as Level 1 (same physics)
+- [ ] Jump arc is visible (head does not clip top of screen)
+- [ ] Landing animation plays briefly (Jomana crouches)
+- [ ] Returns to run animation automatically after landing
+- [ ] Audio plays on jump (if audio files present)
+
+### Collision and Game Over
+
+- [ ] Hitting an obstacle triggers Game Over
+- [ ] Jomana stops running (IDLE pose)
+- [ ] Game Over panel fades in (Arabic text)
+- [ ] "إعادة المحاولة من آخر نقطة" button visible
+- [ ] "إعادة البدء" button visible
+- [ ] Both buttons work
+
+### Story Checkpoints
+
+Reach the following scores (run for ~5-10 minutes or verify by reviewing code):
+
+- [ ] Score 15 → gameplay pauses → Ali character card appears (BLUE panel)
+- [ ] Ali's Arabic name "علي" visible on the card
+- [ ] Dialogue step 1 shows (character line)
+- [ ] Tap to advance → Jomana response
+- [ ] Tap to advance → reward text + "متابعة" button
+- [ ] Press "متابعة" → countdown 3-2-1 → run resumes at 240 speed
+
+- [ ] Score 35 → Zainab card (ORANGE panel)
+- [ ] Score 60 → Fatima card (PINK panel)
+- [ ] Score 90 → Father card (DEEP BLUE panel) → "متابعة" → ENDING
+
+### Ending
+
+- [ ] After Father checkpoint, ending panel appears
+- [ ] Title: "أحسنتِ يا جمانة!"
+- [ ] Message: "كل كلمة طيبة تترك أثرًا"
+- [ ] "الأثر الذي تركتِه: N" count shown
+- [ ] "العودة إلى القائمة" button → returns to start screen
+- [ ] "إعادة الفصل الثاني" button → restarts from score 0
+
+### Retry Flow
+
+- [ ] After game over → Retry from last checkpoint → countdown → run from last checkpoint score + speed
+- [ ] After game over → Restart → run from score 0, speed 225
+
+### Mobile (Future — No Web Build Yet)
+
+- [ ] Rotate phone to landscape → gameplay visible
+- [ ] Portrait mode → "اقلب الهاتف بالعرض" overlay (already active in main project)
+- [ ] Touch/tap → jump
+
+---
+
+## What to Overlook During This Review
+
+These items are intentionally not ready yet. Do not fail the F6 on these:
+
+| Item | Why It Is Placeholder |
 |---|---|
-| Title screen: "جمانة وأثر الكلمة" | ✅ |
-| Harbour background (5 layers) | ✅ Procedural placeholder |
-| Water shimmer animation | ✅ Shader or tween fallback |
-| Boat bobbing | ✅ Sin animation |
-| Seagulls flying | ✅ Procedural |
-| Jomana character | ✅ Teal placeholder (same physics as Ali) |
-| "جمانة" label above character | ✅ |
-| Run and jump with Space/click/tap | ✅ |
-| Obstacle spawning | ✅ Same engine as Level 1 |
-| Pink/gold أثر collectibles | ✅ Same engine as Level 1 |
-| "الأثر: N" HUD counter | ✅ |
-| Ali checkpoint at score 15 | ✅ Placeholder text |
-| Zainab checkpoint at score 35 | ✅ Placeholder text |
-| Fatima checkpoint at score 60 | ✅ Placeholder text |
-| Father ending at score 90 | ✅ Placeholder text |
-| Game Over card | ✅ Arabic, animated |
-| Retry / Restart buttons | ✅ Working |
-| Camera cinematic reveal on start | ✅ |
-| Harbor establishing zoom-in | ✅ |
+| Family character portrait art | PNG portraits not yet generated; text card is the intentional fallback |
+| `jomana_dialogue_closeup_01.png` wired | Available but not yet connected to dialogue UI |
+| Animated collectible (6-frame sheet) | Not yet wired; single PNG is fine for MVP |
+| Sea / breakwater layer visible | These opaque plates are intentionally disabled; boats replace them |
+| True 5-layer parallax depth | Needs transparent/seamless asset re-authoring |
 
 ---
 
-## What is Placeholder Only — Do NOT Judge Yet
+## Automated Checks (Headless)
 
-| Element | What is missing |
-|---|---|
-| Jomana visual | No real art — teal polygon with label |
-| Harbor backgrounds | Procedural colored shapes — no final art |
-| Checkpoint NPC sprites | Text emoji only — no Ali/Fatima/Zainab/Father art |
-| Obstacle visuals | Same Level 1 shapes — no harbor-specific art |
-| Sea ambience sound | Not yet integrated |
-| Harbor music | Not yet integrated |
-| Seagull sound | Not yet integrated |
-| Jomana voice/expression | Not yet |
-| Checkpoint dialogue (final text) | Draft only — owner approval needed |
+These run without the Godot editor. PASS does not replace human F6 review.
 
----
+```
+# Project loads and boots cleanly
+Godot_v4.7-stable_win64_console.exe --headless --path . --quit
 
-## What to Verify in Testing
+# Level 2 scene loads without parser errors
+Godot_v4.7-stable_win64_console.exe --headless --path . scenes/level2/Level2_Marsa_Playable.tscn --quit
 
-✅ **Gameplay feel:** Does the jump feel the same as Level 1?
-✅ **HUD readable:** Is "الأثر: N" visible and not overlapping anything?
-✅ **Checkpoint flow:** When score reaches 15, does the panel open?
-✅ **Family characters:** Ali → Fatima → Zainab → Father (in this order)?
-✅ **Game Over card:** Is it readable? Do Retry/Restart work?
-✅ **Arabic RTL:** Are all labels right-to-left and not clipped?
-✅ **No visual glitches:** Seagulls, boats, water shimmer — subtle and non-distracting?
-✅ **Camera feel:** Does the harbor reveal feel good at the start?
+# Level 2 asset check (reports present/missing)
+Godot_v4.7-stable_win64_console.exe --headless --path . -s scripts/tools/level2_asset_check.gd
 
----
-
-## Controls
-
-| Action | Input |
-|---|---|
-| Jump | Space bar / Click / Tap |
-| Advance dialogue | Space / Click / Tap |
-| Retry after game over | Click "حاولي من آخر نقطة" |
-| Restart from beginning | Click "ابدئي من البداية" |
-
----
-
-## Testing on Phone (via Docker)
-
-If the web build is deployed (see `docs/WEB_DOCKER_PLAYTEST.md`):
-- The main game (Level 1) loads at `http://localhost:8088`
-- Level 2 is NOT in the web build yet (not wired to main menu)
-- Test Level 2 only via Godot editor for now
-
----
-
-## 2026-07-02 Owner F6 Gate
-
-- Confirm Jomana feet and every obstacle base sit at the same visual lane.
-- Confirm `LOW_LINE` works while running, `SMALL_ARC` with a light jump, and `FULL_ARC` with a full jump.
-- Confirm no Level 1 obstacle or collectible visual appears underneath Level 2 art.
-- Confirm boats, flags, rope, net, and seagulls stay behind the lane and never look interactive.
-- Reach score 15/35/60/90 and confirm Ali/Zainab/Fatima/Father are visibly distinct.
-- Confirm the smaller dialogue card does not cover the arriving character.
-- After Father, test both replay and return-to-menu buttons.
-- This gate is required before staging or deployment.
-
-### If Play Appears Frozen
-
-Look for a red breakpoint dot and the Debugger message `Breakpoint`. Remove the dot by clicking the left gutter, or press Continue (`F12` in the default Godot layout). The automated runtime test confirms the Play path itself starts normally. Do not commit `.godot/editor` breakpoint state.
-
-Run the same automated check with:
-
-```powershell
+# Level 2 runtime smoke (confirms play path starts)
 Godot_v4.7-stable_win64_console.exe --headless --path . -s scripts/tools/level2_runtime_smoke.gd
+
+# Level 1 regression check (must pass - production scene)
+Godot_v4.7-stable_win64_console.exe --headless --path . scenes/Main.tscn --quit
 ```
 
-Expected result: `LEVEL2_RUNTIME_SMOKE=PASS`.
-
-## What Comes Next
-
-1. Owner approves gameplay feel → start character art sprint
-2. Jomana sprite sheets (idle, run 8 frames, jump, land) → replace teal placeholder
-3. Harbor background art → replace procedural shapes
-4. NPC art for Ali, Fatima, Zainab, Father at harbour positions
-5. Final checkpoint dialogue wording → owner approval
-6. Sea ambience audio → source CC0, integrate
-7. Wire Level 2 into main menu (new scene select or continuation)
+Expected: all exit 0, no GDScript parse errors, LEVEL2_RUNTIME_SMOKE=PASS.
 
 ---
 
-## Known Limitations at This Stage
+## 2026-07-02 F6 Gate
 
-- Seagulls disappear when the scene restarts (new ones spawn fresh — normal for MVP)
-- Checkpoint NPC arrives from off-screen right (same as Level 1) — placeholder motion only
-- No sound effects specific to Level 2 yet (reuses Level 1 audio system)
-- Water shimmer may fall back to a tween if the shader fails to compile — still works
-- Background does NOT scroll yet (static procedural layers) — parallax comes in Phase 4
-
----
-
-## Camera / Animation Review Checklist (Phase 2)
-
-After pressing F6, verify:
-
-| Check | What to look for |
-|---|---|
-| **Jomana large enough?** | She should fill roughly 18–22% of screen height |
-| **Camera zoom comfortable?** | Harbor should feel "close-in" but not claustrophobic |
-| **Jump arc visible?** | During a full jump, head should NOT be cropped at top |
-| **Obstacles visible early?** | You should see obstacles 300+ px before they reach Jomana |
-| **Collectible arcs readable?** | Pink gem arcs should be easy to see and judge |
-| **Opening reveal smooth?** | Harbor should zoom in gently over ~1.4 seconds |
-| **Checkpoint focus OK?** | Slight zoom during dialogue should not feel sudden |
-| **UI readable?** | Arabic labels (الأثر: N) must be clear and not too large |
-| **Feet on pier?** | Jomana's feet should always touch the stone surface |
-| **Placeholder acceptable?** | Teal polygon should read clearly as "a character" |
-| **Checkpoint order correct?** | علي (15) → زينب (35) → فاطمة (60) → الأب (90) |
-| **Difficulty feels fair?** | Speed increases gradually, obstacles remain beatable |
-
-## Updated Family Checkpoint Order
-
-| Score | Character | Value |
-|---|---|---|
-| 15 | علي | الكلمة الطيبة بين الأخوة |
-| 35 | زينب | الصبر والتفكير الهادئ |
-| 60 | فاطمة | الرفق والرحمة |
-| 90 | الأب | التوكل والعمل وخير العائلة |
-
-## When to Start Character Art
-
-Once the owner confirms the camera feel is acceptable, signal the Character Lane coder to start generating/sourcing Jomana images per `docs/level2/JOMANA_IMAGE_REQUESTS.md`.
-Drop the PNGs in `assets/level2/marsa/characters/jomana/run/` and re-open the scene — the placeholder disappears automatically.
-
-## After dropping real art
-
-- [ ] Jomana real run animation appears instead of placeholder
-- [ ] Jomana feet stay on pier
-- [ ] no frame jumps in run cycle
-- [ ] camera 1.38 still feels good
-- [ ] obstacles visible early enough
-- [ ] background layers do not distract
-- [ ] pier ground is clear
-- [ ] collectibles readable
-- [ ] seagulls/boats/flags are decorative only
-- [ ] checkpoint order still Ali → Zainab → Fatima → Father
-- [ ] game still runs with missing optional assets
+Apply Codex 4-bug patch first, then run this checklist.
+If all required items pass → owner approves → Codex may proceed with internal staging.
