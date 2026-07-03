@@ -1,6 +1,6 @@
 # Level 2 Deploy Handoff — جمانة وأثر الكلمة
-# Status: OWNER_REVIEW_READY
-# Last updated: 2026-07-02
+# Status: PARALLAX_VISUAL_REVIEW_REQUIRED
+# Last updated: 2026-07-03
 
 ---
 
@@ -11,8 +11,9 @@
 Level 2 is not approved for public release. The production route `game.juanspace.org`
 must only serve Level 1 until the owner explicitly gives go-ahead.
 
-The confirmed B1-B4 source bugs are fixed. Owner F6 must still pass before
-any staging deployment.
+The confirmed B1-B4 source bugs are fixed. Commit `101bdfe` improves running motion with
+manual parallax, but owner screenshots still show vertical joins from repeated opaque plates.
+See `docs/level2/LEVEL2_PARALLAX_REVIEW_20260703.md` before any staging deployment.
 
 ---
 
@@ -22,10 +23,10 @@ any staging deployment.
 |---|---|
 | Branch | `level2/jomana-marsa-mvp-20260701` |
 | Entry scene | `scenes/level2/Level2_Marsa_Playable.tscn` |
-| Level 1 untouched | YES — confirmed across all commits |
+| Level 1 untouched | NO on this branch — completion UI and a direct Chapter 2 button were added |
 | Docker/deploy untouched | YES |
 | Playable in F6 | YES - automated runtime checks pass |
-| Owner F6 approval | PENDING - B1-B4 visual confirmation required |
+| Owner F6 approval | PENDING - parallax feels better, opaque tile joins still need review/fix |
 | Staging approved | NO |
 | Production approved | NO |
 
@@ -35,12 +36,12 @@ any staging deployment.
 
 | Constant | Value | Notes |
 |---|---|---|
-| GAMEPLAY_ZOOM | 1.18 | Jomana ~188px tall on screen |
+| GAMEPLAY_ZOOM | 1.28 | Current readability candidate; owner reaction-time review required |
 | CAM_SCREEN_X | 200 | Jomana at ~17% from left edge |
 | LOOKAHEAD_X | 0 | Baked into CAM_SCREEN_X |
 | VERTICAL_OFFSET | -14 | Slightly high: jump arc visible, ground share = 28% |
 | Pier on screen | 72% from top | Matches CURB_TOP_Y=470 world physics |
-| Camera type | FIXED - no per-frame horizontal tracking | One tween on Play, then locked |
+| Camera type | FIXED | Manual sprite parallax drives motion; no per-frame Camera2D tracking |
 
 ---
 
@@ -49,18 +50,18 @@ any staging deployment.
 | Asset | Status | Role |
 |---|---|---|
 | bg_sky_marsa.png | ACTIVE | Full-screen backdrop, camera-fixed |
-| bg_harbor_buildings.png | ACTIVE | Harbor city silhouette, top-fade shader 55px, FIXED X |
-| fg_pier_ground.png | ACTIVE | Foreground pier, aligned to CURB_TOP_Y |
+| bg_harbor_buildings.png | ACTIVE CANDIDATE | Two opaque copies scroll at 4%; join risk remains |
+| mg_boats_mid.png | ACTIVE CANDIDATE | Two opaque copies scroll at 12%; can duplicate/dominate the harbor plate |
+| fg_pier_ground.png | ACTIVE CANDIDATE | Two opaque copies scroll at 60%; strong motion, frequent join |
 
 ## Disabled Opaque Plates
 
 | Asset | Why Disabled |
 |---|---|
 | bg_sea_breakwater.png | Opaque RGB - creates visible horizontal seam when stacked |
-| mg_boats_mid.png | Opaque RGB - same issue; replaced by transparent boat props |
 
-Note: HARBOR_DRIFT_SPEED const is reserved but buildings X must be fixed (not drifting).
-Drift on a non-seamless image creates a vertical seam at the copy-join after ~60s.
+Note: commit `101bdfe` intentionally re-enabled manual scrolling. The sources are still opaque and
+non-seamless, so individual sprite wrapping prevents gaps but does not hide mismatched image edges.
 
 ---
 
@@ -69,8 +70,8 @@ Drift on a non-seamless image creates a vertical seam at the copy-join after ~60
 | Asset | Status | Effect |
 |---|---|---|
 | seagull_fly_sheet_4f.png | ACTIVE | 3 animated seagulls in sky |
-| boat_blue_01.png | ACTIVE | Blue fishing boat, raised to Y=418, bob animation |
-| boat_small_02.png | ACTIVE | Small boat, raised to Y=424, bob animation |
+| boat_blue_01.png | ACTIVE | Blue fishing boat at Y=438, bob animation |
+| boat_small_02.png | ACTIVE | Small boat at Y=444, bob animation |
 | small_flags_line_01.png | ACTIVE | Colored flags, sway animation |
 | deco_fishing_net_pile_01.png | ACTIVE | Static net pile at ground level |
 | rope_hanging_01.png | DISABLED | Floating without anchor context |
@@ -221,8 +222,8 @@ If staging breaks Level 1 or causes any regression:
 
 ## Known Limitations
 
-1. Background seams: fully resolved for 3-plate composition. True 5-layer parallax needs transparent re-authored assets.
+1. Background joins: reopened by manual parallax in `101bdfe`; true cleanup needs seamless or transparent re-authored assets.
 2. Family checkpoint portraits: integrated; owner F6 composition review pending.
 3. Ambient rope: disabled (no anchor context).
 4. OGG audio: WAV works; OGG smaller for web.
-5. Level 1 to Level 2 chapter transition: documented in docs/GAME_CHAPTER_FLOW.md, not yet implemented.
+5. Level 1 to Level 2 chapter transition: directly implemented in `318d131`; owner flow review and end-to-end coverage remain pending.

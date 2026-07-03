@@ -1,5 +1,5 @@
 # Game Chapter Flow — خطوات الخير
-# One game, multiple chapters. Last updated: 2026-07-01
+# One game, multiple chapters. Last updated: 2026-07-03
 
 ---
 
@@ -61,24 +61,25 @@ Chapter 2 Ending / Family Marsa Scene
 
 ---
 
-## Current State (2026-07-02)
+## Current State (2026-07-03)
 
 | Component | Status |
 |---|---|
 | Level 1 (Ali) | PRODUCTION — deployed, story polished 2026-07-02 |
-| Level 2 (Jomana) F6 scene | PASS_FOR_OWNER_F6 — commit 5a491f3; real art, portraits, cinematic encounters |
-| Chapter transition card | NOT YET IMPLEMENTED — text documented in GAME_CHAPTER_STORY_BIBLE.md |
-| Level 1 → Level 2 transition | NOT YET IMPLEMENTED — do not implement until Level 2 is owner-approved |
+| Level 2 (Jomana) F6 scene | PARALLAX_CANDIDATE — commit 101bdfe; motion improved, tile joins need cleanup |
+| Chapter transition card | PARTIAL — completion UI reuses the Level 1 Game Over card |
+| Level 1 → Level 2 transition | IMPLEMENTED / OWNER FLOW REVIEW REQUIRED in 318d131 |
 | Level 2 in main menu | NOT YET — isolated by design |
 
-**Transition implementation gate:** Level 2 must receive owner F6 approval and pass internal staging
-before ANY code connecting Level 1 to Level 2 is written. Do not implement early.
+**Transition review gate:** direct scene loading was implemented before Level 2 owner approval.
+Keep it isolated on this branch until the visual composition and full chapter flow pass owner F6.
 
 ---
 
 ## Recommended Architecture: GameFlow Scene
 
-When Level 2 passes F6 owner approval, the integration path is:
+The current branch uses a direct button-to-scene change. If a reusable chapter system is desired
+after owner approval, the recommended target architecture remains:
 
 ### Step 1: Level 1 completion signal
 Add to scripts/main.gd:
@@ -151,9 +152,9 @@ and should be kept working at all times.
 
 ## Next Steps for Integration
 
-1. Owner completes F6 real-art + audio review.
-2. If approved: implement Level 1 completion signal (tiny, safe change).
-3. Create chapter_transition.tscn.
-4. Wire GameFlow.
-5. Full integration test: Level 1 → transition → Level 2 → ending.
-6. Merge to main + deploy.
+1. Repair Level 2 opaque-plate tile joins without losing the stronger running motion.
+2. Add a full integration test: Level 1 Father -> completion card -> Level 2 load -> ending.
+3. Owner completes F6 visual, flow, and audio review.
+4. Decide whether to keep the direct button or replace it with a reusable GameFlow scene.
+5. Run internal staging review.
+6. Merge and deploy only after explicit owner approval.
