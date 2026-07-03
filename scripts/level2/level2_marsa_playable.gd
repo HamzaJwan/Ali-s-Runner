@@ -164,7 +164,8 @@ var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
 var _tracking_active: bool = false  # true during gameplay only
 var _boat_times: Array[float] = []
-var _sea_drift_x: float = 0.0  # slow left-drift for the sea/boats mid layer
+var _sea_drift_x: float = 0.0    # boats mid parallax offset (px)
+var _bldg_drift_x: float = 0.0   # buildings parallax offset (px)
 
 # ── Boot ──────────────────────────────────────────────────────────────────
 
@@ -269,12 +270,15 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		_animate_boats(delta)
-		# Advance sea-layer drift — gives the sea band a sense of motion.
-		# 1.8 px/s means the image copy-join enters the viewport after ~98 seconds,
-		# which is well beyond any normal gameplay session length.
-		_sea_drift_x += 1.8 * delta
+		# Parallax scroll — tied to current_speed like Level 1 BackgroundMotion.
+		# Boats (close): 10% of speed  → ~22 px/s at 225 — clearly visible motion.
+		# Buildings (far): 4% of speed → ~9 px/s  — subtle depth layer.
+		_sea_drift_x += current_speed * 0.10 * delta
 		if _sea_drift_x > VIEW_W:
 			_sea_drift_x -= VIEW_W
+		_bldg_drift_x += current_speed * 0.04 * delta
+		if _bldg_drift_x > VIEW_W:
+			_bldg_drift_x -= VIEW_W
 		# No per-frame horizontal tracking — camera is fixed.
 		# Look-ahead is baked into _gameplay_cam_pos once at _ready().
 		# _tracking_active and _look_x are kept for compatibility but unused.
@@ -324,6 +328,7 @@ func _show_start_screen() -> void:
 	started = false
 	_harbor_reveal_active = false
 	_sea_drift_x = 0.0
+	_bldg_drift_x = 0.0
 	game_over = false
 	ending_active = false
 	score = 0
@@ -966,20 +971,17 @@ func _update_background_parallax() -> void:
 	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
 	sky_layer.position = Vector2(left, top)
 
-	# Boats-mid plate: drifts slowly left to give the harbour a living sea feel.
-	# Two side-by-side copies cover 2×VIEW_W; at 1.8 px/s the copy-join enters
-	# the viewport only after ~98 s, well beyond a typical run.
-	# Positioned at 38% from screen top — the sea band between buildings (30%)
-	# and the pier wall (72%).  z=-12 renders behind pier (z=-5) and in front
-	# of buildings (z=-18), so boats appear to float in the harbour.
+	# ── Buildings: slow parallax (4% of speed) — far-depth city layer ───────
+	# Two side-by-side copies give 2×VIEW_W of coverage before the wrap seam.
+	buildings_layer.position.x = left - _bldg_drift_x
+	buildings_layer.position.y = top + VIEW_H * 0.30 / zoom
+
+	# ── Boats-mid: medium parallax (10% of speed) — sea/harbour mid layer ───
+	# Positioned at 34% from screen top — between buildings (30%) and pier (72%).
+	# z=-12 puts boats in front of buildings (z=-18) but behind pier (z=-5).
 	boats_layer.visible = true
 	boats_layer.position.x = left - _sea_drift_x
-	boats_layer.position.y = top + VIEW_H * 0.38 / zoom
-
-	# ── Buildings: fixed X, 30% down — harbor skyline behind the pier ────────
-	# Current opaque harbor plate is not tileable; horizontal drift exposes its seam.
-	buildings_layer.position.x = left
-	buildings_layer.position.y = top + VIEW_H * 0.30 / zoom
+	boats_layer.position.y = top + VIEW_H * 0.34 / zoom
 
 	# ── Pier: camera-fixed to gameplay lane ───────────────────────────────────
 	# 68% from top aligns the stone curb with CURB_TOP_Y world position.

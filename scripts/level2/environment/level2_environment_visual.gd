@@ -154,12 +154,13 @@ func _apply_layer(layer: Node2D, tex: Texture2D, node_name: String) -> void:
 		spr.position = Vector2(i * VIEW_W, 0.0)
 		spr.scale = Vector2(s_x, s_x)
 
-		# Apply top-fade shader to the buildings plate so it blends into the sky
-		# instead of showing a hard rectangular top edge.
-		if node_name == "L2_FarBuildingsLayer":
+		# Apply top-fade shader to buildings and boats plates so their top edges
+		# blend into the sky/buildings above them instead of showing a hard line.
+		if node_name in ["L2_FarBuildingsLayer", "L2_BoatsMidLayer"]:
+			var fade_px := 55.0 if node_name == "L2_FarBuildingsLayer" else 40.0
 			var mat := ShaderMaterial.new()
 			mat.shader = TOP_FADE_SH
-			mat.set_shader_parameter("fade_px", 55.0)
+			mat.set_shader_parameter("fade_px", fade_px)
 			spr.material = mat
 
 		layer.add_child(spr)
