@@ -83,6 +83,22 @@ func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0
 	skin.position.y = col_h / 2.0 - drawn_height / 2.0 + visual_lane_offset
 
 	obstacle.add_child(skin)
+
+	# Drop shadow — flat dark ellipse at ground level to anchor the obstacle visually.
+	var shadow := Polygon2D.new()
+	shadow.name = "L2Shadow"
+	shadow.color = Color(0.0, 0.0, 0.0, 0.32)
+	shadow.z_index = -1   # render just behind the skin
+	var sw := drawn_width * 0.70
+	var sh := drawn_width * 0.12
+	var pts := PackedVector2Array()
+	for i in 12:
+		var a := i * TAU / 12.0
+		pts.append(Vector2(cos(a) * sw * 0.5, sin(a) * sh * 0.5))
+	shadow.polygon = pts
+	shadow.position = Vector2(0.0, col_h / 2.0 + visual_lane_offset + 3.0)
+	obstacle.add_child(shadow)
+
 	print("[L2 obstacle] type=%s texture=%s loaded=true size=%.0fx%.0f visual_bottom_y=%.1f" %
 		[obstacle_type, tex.resource_path, drawn_width, drawn_height, col_h / 2.0 + visual_lane_offset])
 	return true

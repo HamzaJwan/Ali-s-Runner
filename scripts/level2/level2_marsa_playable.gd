@@ -67,7 +67,7 @@ const HARBOR_DRIFT_SPEED      := 0.0
 # spawn X=1292 appear ~475 px ahead (world space) — comfortable react time.
 const GAMEPLAY_ZOOM           := 1.28
 const CAMERA_REVEAL_FROM      := 0.88
-const CAMERA_CHECKPOINT_BOOST := 0.05
+const CAMERA_CHECKPOINT_BOOST := 0.18   # 18% zoom in on checkpoint for cinematic feel
 # CAM_SCREEN_X: where Jomana appears on screen (px from left at gameplay zoom).
 # 200 gives ≈17% from left — plenty of road ahead visible, feels like Level 1.
 const CAM_SCREEN_X            := 200.0
@@ -124,6 +124,7 @@ const C_PIER_EDGE  := Color(0.54, 0.48, 0.38, 1.0)
 @onready var retry_button: Button          = $UI/GameOverPanel/Card/RetryButton
 @onready var restart_button: Button        = $UI/GameOverPanel/Card/RestartButton
 @onready var checkpoint_panel: Control     = $UI/CheckpointPanel
+@onready var cp_card: Panel                = $UI/CheckpointPanel/Card
 @onready var cp_speaker: Label             = $UI/CheckpointPanel/Card/SpeakerName
 @onready var cp_char_line: Label           = $UI/CheckpointPanel/Card/CharacterLine
 @onready var cp_jomana_line: Label         = $UI/CheckpointPanel/Card/JomanaLine
@@ -581,6 +582,29 @@ func _show_enc_step() -> void:
 
 	checkpoint_panel.visible = true
 	cp_speaker.text = Level2EncounterData.rtl_safe(speaker)
+
+	# Position card above the speaking character's head for speech-bubble feel.
+	# Card is 720×148px; VIEW_W=1152. Characters are at bottom ~35-55% of screen.
+	# NPC speaks → card floats at right (~60% from left), Jomana → left (~30%).
+	const CARD_W := 720.0
+	const CARD_H := 148.0
+	var card_cy := 230.0   # vertical center of card in screen space
+	var card_cx := VIEW_W / 2.0  # default center
+	match role:
+		Level2EncounterData.ROLE_HELPER:
+			card_cx = VIEW_W * 0.66  # NPC (right side) speaks
+		Level2EncounterData.ROLE_JOMANA:
+			card_cx = VIEW_W * 0.36  # Jomana (left) responds
+		Level2EncounterData.ROLE_REWARD:
+			card_cx = VIEW_W / 2.0   # centered for reward
+			card_cy = 200.0
+	var cl := clampf(card_cx - CARD_W / 2.0, 20.0, VIEW_W - CARD_W - 20.0)
+	var ct := clampf(card_cy - CARD_H / 2.0, 10.0, 320.0)
+	cp_card.set_offsets_preset(Control.PRESET_TOP_LEFT)
+	cp_card.offset_left   = cl
+	cp_card.offset_top    = ct
+	cp_card.offset_right  = cl + CARD_W
+	cp_card.offset_bottom = ct + CARD_H
 
 	match role:
 		Level2EncounterData.ROLE_HELPER:

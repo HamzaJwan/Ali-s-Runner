@@ -41,10 +41,10 @@ func _run_smoke() -> void:
 			failures.append("%s skin bottom alignment is incorrect" % obstacle_type)
 		dummy_obstacle.free()
 	var expected_step_counts := {
-		Level2EncounterData.ALI: 3,
-		Level2EncounterData.ZAINAB: 3,
-		Level2EncounterData.FATIMA: 3,
-		Level2EncounterData.FATHER: 4,
+		Level2EncounterData.ALI: 4,    # greet, Jomana responds, Ali teaches, reward
+		Level2EncounterData.ZAINAB: 5, # ask, Jomana explains, Zainab teaches, Jomana thanks, reward
+		Level2EncounterData.FATIMA: 3, # exclaim, Jomana reflects, reward
+		Level2EncounterData.FATHER: 5, # greet, Jomana thanks, Father teaches, Jomana resolves, reward
 	}
 	for encounter_id: int in expected_step_counts:
 		var encounter := Level2EncounterData.get_encounter(encounter_id)

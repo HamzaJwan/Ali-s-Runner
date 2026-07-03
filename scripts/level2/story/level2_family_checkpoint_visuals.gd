@@ -8,11 +8,13 @@ extends RefCounted
 const MANIFEST := preload("res://scripts/level2/level2_asset_manifest.gd")
 const ASSET_UTILS := preload("res://scripts/asset_utils.gd")
 
+## Heights enforce the real age hierarchy. Jomana (hero) is 160px.
+## Father > Ali > Jomana > Zainab > Fatima (baby).
 const NPC_VISUAL_HEIGHTS := {
-	1: 165.0, # Ali
-	2: 155.0, # Zainab
-	3: 140.0, # Fatima remains the smallest
-	4: 205.0, # Father
+	1: 192.0, # Ali    — older brother, clearly taller than Jomana (160)
+	2: 115.0, # Zainab — younger, clearly shorter than Jomana
+	3:  75.0, # Fatima — baby, obviously smallest
+	4: 232.0, # Father — adult, tallest of all
 }
 
 
