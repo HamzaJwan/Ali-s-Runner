@@ -175,6 +175,16 @@ var _boats_b_x: float = VIEW_W    # boats-mid sprite B local X
 var _bldg_a_x: float = 0.0        # buildings sprite A local X
 var _bldg_b_x: float = VIEW_W     # buildings sprite B local X
 
+# ── Background cycle: alternates between buildings view and boats closeup ──
+# Phase 0 = buildings dominant, boats_mid transparent
+# Phase 1 = boats_mid fades in (closeup of harbor boats)
+# Creates visual variety as Jomana runs through different harbor zones.
+const BG_CYCLE_HOLD    := 8.0   # seconds each view is held
+const BG_CYCLE_FADE    := 1.5   # crossfade duration
+var _bg_phase      := 0         # 0=buildings, 1=boats
+var _bg_timer      := 0.0       # time in current phase
+var _bg_tween: Tween = null
+
 # ── Boot ──────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
@@ -285,6 +295,12 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		_animate_boats(delta)
+		# Background cycle: alternate between buildings view and boats closeup.
+		_bg_timer += delta
+		if _bg_timer >= BG_CYCLE_HOLD:
+			_bg_timer = 0.0
+			_bg_phase = 1 - _bg_phase
+			_trigger_bg_cycle()
 		# BackgroundMotion-style parallax (same technique as Level 1).
 		# Sprites move left; when a sprite's right edge clears 0, snap it
 		# to follow the other sprite — no hard fmod jump.
@@ -297,8 +313,11 @@ func _process(delta: float) -> void:
 		if _gnd_a_x + VIEW_W <= 0: _gnd_a_x = _gnd_b_x + VIEW_W
 		if _gnd_b_x + VIEW_W <= 0: _gnd_b_x = _gnd_a_x + VIEW_W
 
-		# boats_mid layer disabled — no boats parallax scroll needed
-		# _boats_a_x / _boats_b_x kept for future use but not updated
+		# Boats-mid scrolls at 8% (slightly faster than buildings at 4%).
+		# Sprites wrap individually — no hard position jump.
+		_boats_a_x -= boat_move; _boats_b_x -= boat_move
+		if _boats_a_x + VIEW_W <= 0: _boats_a_x = _boats_b_x + VIEW_W
+		if _boats_b_x + VIEW_W <= 0: _boats_b_x = _boats_a_x + VIEW_W
 
 		_bldg_a_x -= bldg_move;  _bldg_b_x -= bldg_move
 		if _bldg_a_x + VIEW_W <= 0: _bldg_a_x = _bldg_b_x + VIEW_W
@@ -354,6 +373,9 @@ func _show_start_screen() -> void:
 	_gnd_a_x = 0.0;   _gnd_b_x = VIEW_W
 	_boats_a_x = 0.0; _boats_b_x = VIEW_W
 	_bldg_a_x = 0.0;  _bldg_b_x = VIEW_W
+	_bg_phase = 0;    _bg_timer = 0.0
+	boats_layer.visible = false
+	boats_layer.modulate.a = 0.0
 	game_over = false
 	ending_active = false
 	score = 0
@@ -1077,11 +1099,18 @@ func _update_background_parallax() -> void:
 	if ba: ba.position.x = _bldg_a_x
 	if bb: bb.position.x = _bldg_b_x
 
-	# ── Boats-mid: DISABLED — mg_boats_mid.png is 233px tall which at gameplay zoom
-	# covers ~50% of screen height, completely hiding the buildings layer.
-	# The bg_harbor_buildings.png photograph already shows boats naturally.
-	# Re-enable only if a smaller or transparent-channel boats layer is available.
-	boats_layer.visible = false
+	# ── Boats-mid: CYCLE — shown only during phase 1 of the bg cycle.
+	# When visible, positioned at 30% from top (same level as buildings) so
+	# the boats layer fills the harbour zone and creates a closeup-of-boats view.
+	# Scrolls slightly faster than buildings (8% vs 4%) to feel like foreground.
+	# Visibility and alpha are controlled by _trigger_bg_cycle() / modulate.a.
+	if boats_layer.visible:
+		boats_layer.position.x = left
+		boats_layer.position.y = top + VIEW_H * 0.30 / zoom
+		var boa := boats_layer.get_node_or_null("RealBG_L2_BoatsMidLayer_0") as Sprite2D
+		var bob := boats_layer.get_node_or_null("RealBG_L2_BoatsMidLayer_1") as Sprite2D
+		if boa: boa.position.x = _boats_a_x
+		if bob: bob.position.x = _boats_b_x
 
 	# ── Pier/ground: 60% parallax — closest layer, strongest motion cue ─────
 	# Ground scrolling is the primary "you are running" signal (same as Level 1).
@@ -1235,6 +1264,28 @@ func _animate_boats(delta: float) -> void:
 			continue
 		var base_y: float = boat.get_meta("bob_base_y", boat.position.y)
 		boat.position.y = base_y + sin(_boat_times[i] * TAU / 2.6) * 2.8
+
+
+func _trigger_bg_cycle() -> void:
+	# Kill any active crossfade tween before starting a new one.
+	if _bg_tween != null and _bg_tween.is_valid():
+		_bg_tween.kill()
+	_bg_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+
+	if _bg_phase == 1:
+		# Buildings view → Boats closeup: fade boats IN over buildings.
+		# Boats layer is positioned in _update_background_parallax() when visible.
+		boats_layer.visible = true
+		boats_layer.modulate.a = 0.0
+		_bg_tween.tween_property(boats_layer, "modulate:a", 1.0, BG_CYCLE_FADE) \
+			.set_trans(Tween.TRANS_SINE)
+		print("[L2 bg] cycle → boats closeup")
+	else:
+		# Boats closeup → Buildings view: fade boats OUT.
+		_bg_tween.tween_property(boats_layer, "modulate:a", 0.0, BG_CYCLE_FADE) \
+			.set_trans(Tween.TRANS_SINE)
+		_bg_tween.tween_callback(func() -> void: boats_layer.visible = false)
+		print("[L2 bg] cycle → buildings view")
 
 
 func _build_pier() -> void:
