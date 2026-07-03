@@ -53,7 +53,7 @@ const START_PLAYER_POSITION   := Vector2(PLAYER_START_X, ROAD_SURFACE_Y - PLAYER
 const ENCOUNTER_TARGET_X      := 780.0
 const ENCOUNTER_PLAYER_POSITION := Vector2(300.0, ROAD_SURFACE_Y - PLAYER_COLLISION_HALF_H)
 const ENCOUNTER_CAMERA_POSITION := Vector2(540.0, 334.0)
-const ENCOUNTER_CAMERA_ZOOM   := 1.05
+const ENCOUNTER_CAMERA_ZOOM   := 1.35   # was 1.05 — larger = characters bigger on screen
 const CHECKPOINT_ARRIVAL_SPEED := 360.0
 const COUNTDOWN_DURATION      := 3.0
 const GAME_OVER_DELAY         := 0.45
@@ -602,6 +602,7 @@ func _show_enc_step() -> void:
 	const CARD_H := 100.0
 	const CARD_T := 8.0    # distance from screen top
 	cp_card.set_offsets_preset(Control.PRESET_TOP_LEFT)
+	cp_card.clip_contents = true   # prevent labels overflowing card bounds
 	cp_card.offset_top    = CARD_T
 	cp_card.offset_bottom = CARD_T + CARD_H
 	match role:
@@ -617,6 +618,24 @@ func _show_enc_step() -> void:
 			# Centered
 			cp_card.offset_left  = (VIEW_W - CARD_W) / 2.0
 			cp_card.offset_right = (VIEW_W + CARD_W) / 2.0
+
+	# Fit internal labels to the compact 100px card height.
+	# speaker: 4-26px, text area: 28-94px, button: 58-94px (reward only).
+	cp_speaker.offset_top    = 4;   cp_speaker.offset_bottom    = 26
+	cp_speaker.offset_left   = 0;   cp_speaker.offset_right     = CARD_W
+	cp_char_line.offset_top  = 28;  cp_char_line.offset_bottom  = 94
+	cp_char_line.offset_left = 10;  cp_char_line.offset_right   = CARD_W - 10
+	cp_jomana_line.offset_top  = 28; cp_jomana_line.offset_bottom  = 94
+	cp_jomana_line.offset_left = 10; cp_jomana_line.offset_right   = CARD_W - 10
+	cp_reward.offset_top  = 26;  cp_reward.offset_bottom  = 62
+	cp_reward.offset_left = 0;   cp_reward.offset_right   = CARD_W
+	cp_continue.offset_top  = 60; cp_continue.offset_bottom  = 96
+	cp_continue.offset_left = 90; cp_continue.offset_right   = CARD_W - 90
+	# Smaller font so text fits cleanly in 66px text area
+	cp_char_line.add_theme_font_size_override("font_size", 19)
+	cp_jomana_line.add_theme_font_size_override("font_size", 19)
+	cp_speaker.add_theme_font_size_override("font_size", 15)
+	cp_reward.add_theme_font_size_override("font_size", 17)
 
 	match role:
 		Level2EncounterData.ROLE_HELPER:
@@ -1256,8 +1275,9 @@ func _build_ambient_props() -> void:
 		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd", true)
 	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 444), 68.0,
 		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd", true)
-	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 435), 92.0,
-		"HarborFlags", "res://scripts/level2/ambient/harbor_ambient_sway.gd")
+	# Flags disabled: the bunting art has no visible anchor pole on the left side,
+	# making it appear to float in the air. Re-enable if a version with poles is provided.
+	# _add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, ...)
 	# Rope disabled: the current transparent art has no visible posts/anchor context.
 	_add_ambient_sprite(L2_MANIFEST.AMB_DECO_NET, Vector2(1080, 490), 58.0,
 		"HarborNet", "")
