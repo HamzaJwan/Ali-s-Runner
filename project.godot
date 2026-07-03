@@ -14,7 +14,8 @@ MobileRotateOverlay="*res://scripts/ui/mobile_rotate_overlay.gd"
 
 [application]
 
-config/name="test"
+config/name="خطوات الخير"
+config/description="حكايات من زليتن — لعبة عائلية تعليمية"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
