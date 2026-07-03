@@ -65,7 +65,7 @@ const HARBOR_DRIFT_SPEED      := 0.0
 # Increase GAMEPLAY_ZOOM to bring Jomana closer; safe range: 1.25–1.45.
 # At 1.38 the visible world width is 1152/1.38 ≈ 835 px, obstacles at
 # spawn X=1292 appear ~475 px ahead (world space) — comfortable react time.
-const GAMEPLAY_ZOOM           := 1.18
+const GAMEPLAY_ZOOM           := 1.28
 const CAMERA_REVEAL_FROM      := 0.88
 const CAMERA_CHECKPOINT_BOOST := 0.05
 # CAM_SCREEN_X: where Jomana appears on screen (px from left at gameplay zoom).
@@ -164,8 +164,14 @@ var _gameplay_cam_pos: Vector2
 var _look_x: float = 0.0          # smoothed look-ahead X target
 var _tracking_active: bool = false  # true during gameplay only
 var _boat_times: Array[float] = []
-var _sea_drift_x: float = 0.0    # boats mid parallax offset (px)
-var _bldg_drift_x: float = 0.0   # buildings parallax offset (px)
+# Per-sprite scroll positions (BackgroundMotion approach — no hard wrap jump).
+# Each layer has two sprites (a=left, b=right); they move left and wrap individually.
+var _gnd_a_x: float = 0.0         # pier ground sprite A local X
+var _gnd_b_x: float = VIEW_W      # pier ground sprite B local X
+var _boats_a_x: float = 0.0       # boats-mid sprite A local X
+var _boats_b_x: float = VIEW_W    # boats-mid sprite B local X
+var _bldg_a_x: float = 0.0        # buildings sprite A local X
+var _bldg_b_x: float = VIEW_W     # buildings sprite B local X
 
 # ── Boot ──────────────────────────────────────────────────────────────────
 
@@ -270,15 +276,25 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		_animate_boats(delta)
-		# Parallax scroll — tied to current_speed like Level 1 BackgroundMotion.
-		# Boats (close): 10% of speed  → ~22 px/s at 225 — clearly visible motion.
-		# Buildings (far): 4% of speed → ~9 px/s  — subtle depth layer.
-		_sea_drift_x += current_speed * 0.10 * delta
-		if _sea_drift_x > VIEW_W:
-			_sea_drift_x -= VIEW_W
-		_bldg_drift_x += current_speed * 0.04 * delta
-		if _bldg_drift_x > VIEW_W:
-			_bldg_drift_x -= VIEW_W
+		# BackgroundMotion-style parallax (same technique as Level 1).
+		# Sprites move left; when a sprite's right edge clears 0, snap it
+		# to follow the other sprite — no hard fmod jump.
+		# Factors: ground 60% (Level 1 uses 65%), boats 12%, buildings 4%.
+		var gnd_move  := current_speed * 0.60 * delta
+		var boat_move := current_speed * 0.12 * delta
+		var bldg_move := current_speed * 0.04 * delta
+
+		_gnd_a_x -= gnd_move;  _gnd_b_x -= gnd_move
+		if _gnd_a_x + VIEW_W <= 0: _gnd_a_x = _gnd_b_x + VIEW_W
+		if _gnd_b_x + VIEW_W <= 0: _gnd_b_x = _gnd_a_x + VIEW_W
+
+		_boats_a_x -= boat_move; _boats_b_x -= boat_move
+		if _boats_a_x + VIEW_W <= 0: _boats_a_x = _boats_b_x + VIEW_W
+		if _boats_b_x + VIEW_W <= 0: _boats_b_x = _boats_a_x + VIEW_W
+
+		_bldg_a_x -= bldg_move;  _bldg_b_x -= bldg_move
+		if _bldg_a_x + VIEW_W <= 0: _bldg_a_x = _bldg_b_x + VIEW_W
+		if _bldg_b_x + VIEW_W <= 0: _bldg_b_x = _bldg_a_x + VIEW_W
 		# No per-frame horizontal tracking — camera is fixed.
 		# Look-ahead is baked into _gameplay_cam_pos once at _ready().
 		# _tracking_active and _look_x are kept for compatibility but unused.
@@ -327,8 +343,9 @@ func _input(event: InputEvent) -> void:
 func _show_start_screen() -> void:
 	started = false
 	_harbor_reveal_active = false
-	_sea_drift_x = 0.0
-	_bldg_drift_x = 0.0
+	_gnd_a_x = 0.0;   _gnd_b_x = VIEW_W
+	_boats_a_x = 0.0; _boats_b_x = VIEW_W
+	_bldg_a_x = 0.0;  _bldg_b_x = VIEW_W
 	game_over = false
 	ending_active = false
 	score = 0
@@ -971,22 +988,31 @@ func _update_background_parallax() -> void:
 	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
 	sky_layer.position = Vector2(left, top)
 
-	# ── Buildings: slow parallax (4% of speed) — far-depth city layer ───────
-	# Two side-by-side copies give 2×VIEW_W of coverage before the wrap seam.
-	buildings_layer.position.x = left - _bldg_drift_x
+	# ── Buildings: 4% parallax — far city layer, sprites scroll individually ─
+	buildings_layer.position.x = left
 	buildings_layer.position.y = top + VIEW_H * 0.30 / zoom
+	var ba := buildings_layer.get_node_or_null("RealBG_L2_FarBuildingsLayer_0") as Sprite2D
+	var bb := buildings_layer.get_node_or_null("RealBG_L2_FarBuildingsLayer_1") as Sprite2D
+	if ba: ba.position.x = _bldg_a_x
+	if bb: bb.position.x = _bldg_b_x
 
-	# ── Boats-mid: medium parallax (10% of speed) — sea/harbour mid layer ───
-	# Positioned at 34% from screen top — between buildings (30%) and pier (72%).
-	# z=-12 puts boats in front of buildings (z=-18) but behind pier (z=-5).
+	# ── Boats-mid: 12% parallax — sea/harbour mid layer, z=-12 ─────────────
 	boats_layer.visible = true
-	boats_layer.position.x = left - _sea_drift_x
+	boats_layer.position.x = left
 	boats_layer.position.y = top + VIEW_H * 0.34 / zoom
+	var boa := boats_layer.get_node_or_null("RealBG_L2_BoatsMidLayer_0") as Sprite2D
+	var bob := boats_layer.get_node_or_null("RealBG_L2_BoatsMidLayer_1") as Sprite2D
+	if boa: boa.position.x = _boats_a_x
+	if bob: bob.position.x = _boats_b_x
 
-	# ── Pier: camera-fixed to gameplay lane ───────────────────────────────────
-	# 68% from top aligns the stone curb with CURB_TOP_Y world position.
+	# ── Pier/ground: 60% parallax — closest layer, strongest motion cue ─────
+	# Ground scrolling is the primary "you are running" signal (same as Level 1).
 	foreground_layer.position.x = left
 	foreground_layer.position.y = top + VIEW_H * 0.72 / zoom  # 72% = CURB_TOP_Y≈470
+	var ga := foreground_layer.get_node_or_null("RealBG_L2_ForegroundPierLayer_0") as Sprite2D
+	var gb := foreground_layer.get_node_or_null("RealBG_L2_ForegroundPierLayer_1") as Sprite2D
+	if ga: ga.position.x = _gnd_a_x
+	if gb: gb.position.x = _gnd_b_x
 
 
 # ── Level 2 obstacle visual skins ─────────────────────────────────────────
