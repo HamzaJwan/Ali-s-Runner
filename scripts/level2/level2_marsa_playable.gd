@@ -156,8 +156,9 @@ var audio_manager    := AUDIO_MANAGER.new()
 var _obs_vis          = null         # L2ObstacleVisuals (RefCounted)
 var _family_vis       = null         # Level2 family checkpoint visual helper
 var _l2_audio: Node   = null         # Level2AudioManager
-var _jomana_vis: Node    = null   # JomanaPlayerVisual (the active instance)
-var _ali_polygon: Node2D = null   # cached $Player/Polygon2D — hidden every frame
+var _jomana_vis: Node    = null        # JomanaPlayerVisual (the active instance)
+var _ali_polygon: Node2D = null        # cached $Player/Polygon2D — hidden every frame
+var _jomana_shadow: Polygon2D = null   # static ground shadow at ROAD_SURFACE_Y
 var _init_cam_x: float   = 0.0   # camera X at scene start, for scroll-based parallax
 var _ground_base: Node2D = null   # $Ground/GroundBase — hidden when pier PNG loads
 var _cam_tween: Tween
@@ -248,6 +249,11 @@ func _process(delta: float) -> void:
 		jomana_sprite.visible = false
 		if _ali_polygon != null:
 			_ali_polygon.visible = false
+
+	# Ground shadow tracks Jomana's X but stays on the pier surface.
+	if _jomana_shadow != null and is_instance_valid(player):
+		_jomana_shadow.position.x = player.position.x
+		_jomana_shadow.visible = started and not game_over
 
 	if npc_arriving and encounter_npc != null:
 		encounter_npc.position.x = move_toward(
@@ -885,6 +891,24 @@ func _setup_jomana_visual() -> void:
 	# Start in IDLE — menu should not show Jomana running in place.
 	vis.set_pose(vis.Pose.IDLE)
 
+	# Static ground shadow — stays at ROAD_SURFACE_Y + visual offset regardless of
+	# jump height. Follows player X every frame via _process(). z=-3 renders behind
+	# player (z=0) and obstacles but above the pier ground (z=-5).
+	if _jomana_shadow == null:
+		var shd := Polygon2D.new()
+		shd.name = "JomanaGroundShadow"
+		shd.color = Color(0.0, 0.0, 0.0, 0.30)
+		shd.z_index = -3
+		shd.z_as_relative = false
+		var pts := PackedVector2Array()
+		for i in 16:
+			var a := i * TAU / 16.0
+			pts.append(Vector2(cos(a) * 22.0, sin(a) * 6.0))
+		shd.polygon = pts
+		shd.position = Vector2(PLAYER_START_X, ROAD_SURFACE_Y + VISUAL_LANE_Y_OFFSET)
+		add_child(shd)
+		_jomana_shadow = shd
+
 
 func _tune_level2_player_fx() -> void:
 	# Reuse the Player instance's proven dust emitters, but align them to
@@ -1221,10 +1245,11 @@ func _build_ambient() -> void:
 
 
 func _build_ambient_props() -> void:
+	# flip_h=true: boats face RIGHT so they look like they're sailing WITH Jomana.
 	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_BLUE, Vector2(520, 438), 92.0,
-		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
+		"HarborBoatBlue", "res://scripts/level2/ambient/harbor_ambient_bob.gd", true)
 	_add_ambient_sprite(L2_MANIFEST.AMB_BOAT_SMALL, Vector2(790, 444), 68.0,
-		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd")
+		"HarborBoatSmall", "res://scripts/level2/ambient/harbor_ambient_bob.gd", true)
 	_add_ambient_sprite(L2_MANIFEST.AMB_FLAGS, Vector2(935, 435), 92.0,
 		"HarborFlags", "res://scripts/level2/ambient/harbor_ambient_sway.gd")
 	# Rope disabled: the current transparent art has no visible posts/anchor context.
@@ -1234,7 +1259,7 @@ func _build_ambient_props() -> void:
 
 func _add_ambient_sprite(
 		path: String, world_pos: Vector2, target_height: float,
-		node_name: String, motion_script_path: String
+		node_name: String, motion_script_path: String, flip_h: bool = false
 ) -> void:
 	var tex := load(path) as Texture2D
 	if tex == null or tex.get_height() <= 0:
@@ -1251,9 +1276,10 @@ func _add_ambient_sprite(
 	var sprite := Sprite2D.new()
 	sprite.texture = tex
 	sprite.scale = Vector2.ONE * (target_height / float(tex.get_height()))
+	sprite.flip_h = flip_h   # true for boats so they face the direction Jomana runs
 	holder.add_child(sprite)
 	ambient_layer.add_child(holder)
-	print("[L2 ambient] active=%s path=%s" % [node_name, path])
+	print("[L2 ambient] active=%s path=%s flip_h=%s" % [node_name, path, flip_h])
 
 
 # ── UI pop ────────────────────────────────────────────────────────────────

@@ -84,19 +84,24 @@ func apply_skin(obstacle: Node2D, obstacle_type: String, visual_lane_offset := 0
 
 	obstacle.add_child(skin)
 
-	# Drop shadow — flat dark ellipse at ground level to anchor the obstacle visually.
+	# Drop shadow — flat dark ellipse at the PHYSICS ground level.
+	# Ground in obstacle local coords = col_h/2 (bottom of collision box).
+	# visual_lane_offset shifts the artwork DOWN but the physics ground stays at col_h/2.
+	# We render the shadow AT the physics ground so it always appears on the pier surface.
 	var shadow := Polygon2D.new()
 	shadow.name = "L2Shadow"
-	shadow.color = Color(0.0, 0.0, 0.0, 0.32)
-	shadow.z_index = -1   # render just behind the skin
-	var sw := drawn_width * 0.70
-	var sh := drawn_width * 0.12
+	shadow.color = Color(0.0, 0.0, 0.0, 0.38)
+	shadow.z_index    = -2
+	shadow.z_as_relative = false   # absolute z so it renders under skin regardless of parent
+	var sw := drawn_width * 0.85
+	var sh := maxf(drawn_width * 0.14, 6.0)
 	var pts := PackedVector2Array()
-	for i in 12:
-		var a := i * TAU / 12.0
+	for i in 16:
+		var a := i * TAU / 16.0
 		pts.append(Vector2(cos(a) * sw * 0.5, sin(a) * sh * 0.5))
 	shadow.polygon = pts
-	shadow.position = Vector2(0.0, col_h / 2.0 + visual_lane_offset + 3.0)
+	# Place shadow AT physics ground level, not at visual bottom.
+	shadow.position = Vector2(0.0, col_h / 2.0 + 2.0)
 	obstacle.add_child(shadow)
 
 	print("[L2 obstacle] type=%s texture=%s loaded=true size=%.0fx%.0f visual_bottom_y=%.1f" %
