@@ -589,21 +589,22 @@ func _show_enc_step() -> void:
 	checkpoint_panel.visible = true
 	cp_speaker.text = Level2EncounterData.rtl_safe(speaker)
 
-	# Position card above the speaking character's head for speech-bubble feel.
-	# Card is 720×148px; VIEW_W=1152. Characters are at bottom ~35-55% of screen.
-	# NPC speaks → card floats at right (~60% from left), Jomana → left (~30%).
+	# Speech bubble: card floats on the OPPOSITE side from the speaker so we can
+	# always see the speaking character clearly.
+	# NPC (right side)  → card goes LEFT (near Jomana, NPC stays fully visible).
+	# Jomana (left side) → card goes RIGHT (NPC side, Jomana stays visible).
 	const CARD_W := 720.0
 	const CARD_H := 148.0
-	var card_cy := 230.0   # vertical center of card in screen space
+	var card_cy := 90.0    # top area, clear of characters
 	var card_cx := VIEW_W / 2.0  # default center
 	match role:
 		Level2EncounterData.ROLE_HELPER:
-			card_cx = VIEW_W * 0.66  # NPC (right side) speaks
+			card_cx = VIEW_W * 0.34  # NPC speaks → card on LEFT (shows NPC clearly)
 		Level2EncounterData.ROLE_JOMANA:
-			card_cx = VIEW_W * 0.36  # Jomana (left) responds
+			card_cx = VIEW_W * 0.66  # Jomana speaks → card on RIGHT
 		Level2EncounterData.ROLE_REWARD:
 			card_cx = VIEW_W / 2.0   # centered for reward
-			card_cy = 200.0
+			card_cy = 80.0
 	var cl := clampf(card_cx - CARD_W / 2.0, 20.0, VIEW_W - CARD_W - 20.0)
 	var ct := clampf(card_cy - CARD_H / 2.0, 10.0, 320.0)
 	cp_card.set_offsets_preset(Control.PRESET_TOP_LEFT)
