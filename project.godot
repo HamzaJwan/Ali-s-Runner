@@ -11,13 +11,15 @@ config_version=5
 [autoload]
 
 MobileRotateOverlay="*res://scripts/ui/mobile_rotate_overlay.gd"
+FullscreenButton="*res://scripts/ui/fullscreen_button.gd"
 
 [application]
 
-config/name="test"
+config/name="خطوات الخير"
+config/description="حكايات من زليتن — لعبة عائلية تعليمية"
+run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
-run/main_scene="res://scenes/Main.tscn"
 
 [display]
 

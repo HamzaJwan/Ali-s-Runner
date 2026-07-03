@@ -1,13 +1,12 @@
 # Mobile Web Playtest Guide — خطوات الخير
 # Last updated: 2026-07-01
 
-Deployment status: **DEPLOYED TO LEVEL 1 HTTPS PLAYTEST / OWNER MOBILE
+Deployment status: **LEVEL 1 + LEVEL 2 PRODUCTION CANDIDATE / OWNER MOBILE
 CONFIRMATION REQUIRED**.
 
-The overlay code is reusable across future chapters, but the build currently
-served at `game.juanspace.org` contains Level 1 only. Level 2 remains excluded
-until owner F6 approval and a later reviewed merge/cherry-pick.
-
+The overlay and fullscreen controls are shared by both chapters. The candidate
+build keeps Level 1 as the boot scene and exposes Level 2 only through the
+approved Father-ending transition.
 ---
 
 ## Public Playtest URL
@@ -49,8 +48,7 @@ When a mobile user opens the game in portrait orientation, an overlay appears:
 ## Overlay Technical Notes
 
 - Implemented as a Godot 4 autoload (CanvasLayer, layer=100)
-- Active in all scenes included by a build; the current hosted build includes
-  Level 1 (Ali) only
+- Active in ALL scenes: Level 1 (Ali), Level 2 (Jomana), and future chapters
 - Detection: `viewport_height > viewport_width` AND screen fits phone/tablet dimensions
 - Desktop windows are unaffected (screen long-side > 1400px is ignored)
 - Game tree paused only if WE triggered the pause — checkpoint dialogues are unaffected

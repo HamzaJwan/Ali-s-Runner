@@ -92,8 +92,10 @@ Story meeting order: Fatima → Zainab → Jomana → Father.
 ---
 
 ## 7. Level 1 Dialogue (CURRENT APPROVED TEXT)
+## Last polished: 2026-07-02
 
-All Arabic. RTL enforced in code. No long quotes in UI — short, warm, child-friendly.
+All Arabic. RTL enforced in code via rtl_safe(). No emojis in gameplay strings.
+No long quotes in UI — short, warm, child-friendly. Real back-and-forth conversation.
 
 ### Intro
 
@@ -109,9 +111,9 @@ All Arabic. RTL enforced in code. No long quotes in UI — short, warm, child-fr
 
 ### Fatima Checkpoint (score 15)
 
-فاطمة: "آآ… علي! ⭐"
+فاطمة: "آآ علي!"
 
-علي: "فاطمة! ضحكتك تذكّرني إن الطريق أهون بالعيلة."
+علي: "فاطمة! ابتسامتك تذكّرني إن حتى أصغر خطوة بخير فيها أثر."
 
 نص المكافأة: "حصلت على نجمة الفرح."
 
@@ -120,11 +122,11 @@ All Arabic. RTL enforced in code. No long quotes in UI — short, warm, child-fr
 
 ### Zainab Checkpoint (score 35)
 
-زينب: "علي، دير بالك… الطريق بدأ يصعب."
+زينب: "علي، الطريق بدأ يصعب — والشجاعة مش غياب الخوف."
 
-علي: "ما نخافش يا زينب."
+علي: "إذن الشجاعة إنك تمشي برغم الصعوبة؟"
 
-زينب: "خذ قلب الشجاعة."
+زينب: "بالضبط يا خوي… خطوة واحدة برغم الخوف تساوي كثير."
 
 نص المكافأة: "حصلت على قلب الشجاعة."
 
@@ -133,9 +135,11 @@ All Arabic. RTL enforced in code. No long quotes in UI — short, warm, child-fr
 
 ### Jomana Checkpoint (score 60)
 
-جمانة: "قريب توصل يا خوي علي… لكن لازم تختار الطريق الصح."
+جمانة: "قريب توصل يا خوي… وأنا شايفاك تجاوزت كل شي بخطوة وكلمة."
 
-علي: "وريني الطريق يا جمانة."
+علي: "الكلمة برضو لها دور يا جمانة؟"
+
+جمانة: "أيه… الكلمة الطيبة تخلي الطريق أخف. خذ مفتاح الطريق وكمل لبابا."
 
 جمانة: "خذ مفتاح الطريق… وكمل لبابا."
 
@@ -146,15 +150,15 @@ All Arabic. RTL enforced in code. No long quotes in UI — short, warm, child-fr
 
 ### Father Ending (score 90)
 
-الأب: "أحسنت يا علي… وصلت وخطواتك تركت أثرًا."
+الأب: "أحسنت يا علي… وصلت وكل خطوة طيبة تركت أثرًا في طريقك."
 
-علي: "الأثر ما يكون إلا بالمحاولة يا بابا."
+علي: "الأثر ما يكون إلا بالمحاولة والتوكل يا بابا."
 
-الأب: "بالضبط… اللي يحاول ويقوم مرة ثانية يترك أثرًا طيبًا."
+الأب: "بالضبط — اعمل اللي عليك، وتوكل على الله، وكلامك وخطواتك تترك أثرًا طيبًا."
 
 نص نهاية الرحلة: "اكتملت الرحلة — المنطرحة، زليتن."
 
-*Note: The owner approved the general direction of the father ending phrase. Any rewording of "اكتملت الرحلة" must be owner-approved before implementation.*
+*Note: "اكتملت الرحلة — المنطرحة، زليتن." is owner-approved. This exact reward text must not change without owner approval. The preceding dialogue lines were improved 2026-07-02 to include التوكل and the "كلامك وخطواتك" dual lesson (words + steps), which seeds Level 2's theme.*
 
 ### Game Over (before first checkpoint)
 
