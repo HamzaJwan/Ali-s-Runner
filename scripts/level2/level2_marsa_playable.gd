@@ -250,10 +250,12 @@ func _process(delta: float) -> void:
 		if _ali_polygon != null:
 			_ali_polygon.visible = false
 
-	# Ground shadow tracks Jomana's X but stays on the pier surface.
+	# Ground shadow: tracks player X, fixed at pier surface Y = ROAD_SURFACE_Y + VISUAL_LANE_Y_OFFSET.
+	# Visible only while playing (not on menu, not game over, not checkpoint pause).
 	if _jomana_shadow != null and is_instance_valid(player):
 		_jomana_shadow.position.x = player.position.x
-		_jomana_shadow.visible = started and not game_over
+		_jomana_shadow.position.y = ROAD_SURFACE_Y + VISUAL_LANE_Y_OFFSET
+		_jomana_shadow.visible = started and not game_over and not checkpoint_active
 
 	if npc_arriving and encounter_npc != null:
 		encounter_npc.position.x = move_toward(
@@ -589,29 +591,32 @@ func _show_enc_step() -> void:
 	checkpoint_panel.visible = true
 	cp_speaker.text = Level2EncounterData.rtl_safe(speaker)
 
-	# Speech bubble: card floats on the OPPOSITE side from the speaker so we can
-	# always see the speaking character clearly.
-	# NPC (right side)  → card goes LEFT (near Jomana, NPC stays fully visible).
-	# Jomana (left side) → card goes RIGHT (NPC side, Jomana stays visible).
-	const CARD_W := 720.0
-	const CARD_H := 148.0
-	var card_cy := 90.0    # top area, clear of characters
-	var card_cx := VIEW_W / 2.0  # default center
+	# Speech bubble — compact card fixed near screen top, positioned on the
+	# SAME SIDE as the speaker (natural/intuitive):
+	#   Jomana (left of screen) → card LEFT
+	#   NPC    (right of screen) → card RIGHT
+	#   Reward                  → centered
+	# Card is narrow (500px) and short (100px) so it stays ABOVE all characters'
+	# heads even for the tall Father portrait (head at ~y≈117px, card ends at y≈108).
+	const CARD_W := 500.0
+	const CARD_H := 100.0
+	const CARD_T := 8.0    # distance from screen top
+	cp_card.set_offsets_preset(Control.PRESET_TOP_LEFT)
+	cp_card.offset_top    = CARD_T
+	cp_card.offset_bottom = CARD_T + CARD_H
 	match role:
 		Level2EncounterData.ROLE_HELPER:
-			card_cx = VIEW_W * 0.34  # NPC speaks → card on LEFT (shows NPC clearly)
+			# NPC is on the RIGHT — card anchors to right edge
+			cp_card.offset_right = VIEW_W - 16.0
+			cp_card.offset_left  = VIEW_W - 16.0 - CARD_W
 		Level2EncounterData.ROLE_JOMANA:
-			card_cx = VIEW_W * 0.66  # Jomana speaks → card on RIGHT
+			# Jomana is on the LEFT — card anchors to left edge
+			cp_card.offset_left  = 16.0
+			cp_card.offset_right = 16.0 + CARD_W
 		Level2EncounterData.ROLE_REWARD:
-			card_cx = VIEW_W / 2.0   # centered for reward
-			card_cy = 80.0
-	var cl := clampf(card_cx - CARD_W / 2.0, 20.0, VIEW_W - CARD_W - 20.0)
-	var ct := clampf(card_cy - CARD_H / 2.0, 10.0, 320.0)
-	cp_card.set_offsets_preset(Control.PRESET_TOP_LEFT)
-	cp_card.offset_left   = cl
-	cp_card.offset_top    = ct
-	cp_card.offset_right  = cl + CARD_W
-	cp_card.offset_bottom = ct + CARD_H
+			# Centered
+			cp_card.offset_left  = (VIEW_W - CARD_W) / 2.0
+			cp_card.offset_right = (VIEW_W + CARD_W) / 2.0
 
 	match role:
 		Level2EncounterData.ROLE_HELPER:
