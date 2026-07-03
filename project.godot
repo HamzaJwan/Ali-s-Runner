@@ -11,6 +11,7 @@ config_version=5
 [autoload]
 
 MobileRotateOverlay="*res://scripts/ui/mobile_rotate_overlay.gd"
+FullscreenButton="*res://scripts/ui/fullscreen_button.gd"
 
 [application]
 
