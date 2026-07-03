@@ -367,7 +367,7 @@ func _show_start_screen() -> void:
 	_harbor_reveal_active = false
 	_gnd_a_x = 0.0;   _gnd_b_x = VIEW_W
 	_boats_a_x = 0.0; _boats_b_x = VIEW_W
-	_bldg_a_x = 0.0;  _bldg_b_x = maxf(_pano_w, VIEW_W)
+	_bldg_a_x = 0.0;  _bldg_b_x = _pano_w   # pano_step (not VIEW_W) keeps copies touching
 	boats_layer.visible = false
 	game_over = false
 	ending_active = false
@@ -1314,8 +1314,9 @@ func _build_merged_panorama() -> void:
 		buildings_layer.add_child(spr)
 		_pano_sprites.append(spr)
 
-	# Store pano_step for the wrap logic (it uses pano_w - overlap, not pano_w).
-	_pano_w = pano_step   # overwrite with effective step so wrap logic is simple
+	# Store pano_step as _pano_w so wrap logic (_bldg_a_x + _pano_w <= 0) and
+	# _show_start_screen() (_bldg_b_x = _pano_w) both use the correct step.
+	_pano_w = pano_step
 
 	print("[L2 pano] loaded: scale=%.3f w=%.0f overlap=%.0f fade_px=%.0f" %
 		[s, float(tex.get_width()) * s, PANO_OVERLAP, fade_px])
