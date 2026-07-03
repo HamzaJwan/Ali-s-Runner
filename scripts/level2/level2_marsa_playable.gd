@@ -1307,9 +1307,9 @@ func _build_merged_panorama() -> void:
 		if fade_sh != null:
 			var mat := ShaderMaterial.new()
 			mat.shader = fade_sh
-			mat.set_shader_parameter("fade_left",  fade_px)
+			mat.set_shader_parameter("fade_left",  0.0)    # no left fade — prevents blue haze on left
 			mat.set_shader_parameter("fade_right", 0.0)   # no right fade — prevents sky showing through
-			mat.set_shader_parameter("fade_top",   45.0)
+			mat.set_shader_parameter("fade_top",   45.0)  # only top fade to blend into sky
 			spr.material = mat
 		buildings_layer.add_child(spr)
 		_pano_sprites.append(spr)

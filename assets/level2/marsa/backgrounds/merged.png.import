@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://merged_harbor_panorama_l2"
-path="res://.godot/imported/merged.png-harbor_panorama.ctex"
+uid="uid://d2cte51byjf3g"
+path="res://.godot/imported/merged.png-e0edb8bb0c7a5af94d4da51ce1aa86f5.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/level2/marsa/backgrounds/merged.png"
-dest_files=["res://.godot/imported/merged.png-harbor_panorama.ctex"]
+dest_files=["res://.godot/imported/merged.png-e0edb8bb0c7a5af94d4da51ce1aa86f5.ctex"]
 
 [params]
 
