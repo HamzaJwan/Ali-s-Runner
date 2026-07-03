@@ -175,15 +175,11 @@ var _boats_b_x: float = VIEW_W    # boats-mid sprite B local X
 var _bldg_a_x: float = 0.0        # buildings sprite A local X
 var _bldg_b_x: float = VIEW_W     # buildings sprite B local X
 
-# ── Background cycle: alternates between buildings view and boats closeup ──
-# Phase 0 = buildings dominant, boats_mid transparent
-# Phase 1 = boats_mid fades in (closeup of harbor boats)
-# Creates visual variety as Jomana runs through different harbor zones.
-const BG_CYCLE_HOLD    := 8.0   # seconds each view is held
-const BG_CYCLE_FADE    := 1.5   # crossfade duration
-var _bg_phase      := 0         # 0=buildings, 1=boats
-var _bg_timer      := 0.0       # time in current phase
-var _bg_tween: Tween = null
+# ── Merged harbour panorama (buildings + boats, 2203×253px) ─────────────────
+# Scrolls as one continuous strip: city → boats → city → boats → ...
+# Width per copy in world units set after texture loads (_pano_w).
+var _pano_sprites: Array[Sprite2D] = []
+var _pano_w: float = VIEW_W   # panorama world-width per copy (set in _build_merged_panorama)
 
 # ── Boot ──────────────────────────────────────────────────────────────────
 
@@ -216,6 +212,10 @@ func _ready() -> void:
 	var any_real := env_loader.setup(bg_node)
 	if not any_real:
 		_build_backgrounds()   # procedural fallback
+
+	# Replace buildings layer with merged panorama (city+boats continuous scroll).
+	# Must run AFTER env_visual so we can replace its sprites.
+	_build_merged_panorama()
 
 	# Hide the GroundBase visual polygon when the real pier PNG is loaded.
 	# GroundBase z_index=-1 renders in front of the pier sprite z_index=-5 and
@@ -295,12 +295,6 @@ func _process(delta: float) -> void:
 
 	if started and not game_over and not checkpoint_active and not countdown_active and not _harbor_reveal_active:
 		_animate_boats(delta)
-		# Background cycle: alternate between buildings view and boats closeup.
-		_bg_timer += delta
-		if _bg_timer >= BG_CYCLE_HOLD:
-			_bg_timer = 0.0
-			_bg_phase = 1 - _bg_phase
-			_trigger_bg_cycle()
 		# BackgroundMotion-style parallax (same technique as Level 1).
 		# Sprites move left; when a sprite's right edge clears 0, snap it
 		# to follow the other sprite — no hard fmod jump.
@@ -319,9 +313,10 @@ func _process(delta: float) -> void:
 		if _boats_a_x + VIEW_W <= 0: _boats_a_x = _boats_b_x + VIEW_W
 		if _boats_b_x + VIEW_W <= 0: _boats_b_x = _boats_a_x + VIEW_W
 
+		# Panorama wraps using _pano_w (merged image world width, wider than VIEW_W).
 		_bldg_a_x -= bldg_move;  _bldg_b_x -= bldg_move
-		if _bldg_a_x + VIEW_W <= 0: _bldg_a_x = _bldg_b_x + VIEW_W
-		if _bldg_b_x + VIEW_W <= 0: _bldg_b_x = _bldg_a_x + VIEW_W
+		if _bldg_a_x + _pano_w <= 0: _bldg_a_x = _bldg_b_x + _pano_w
+		if _bldg_b_x + _pano_w <= 0: _bldg_b_x = _bldg_a_x + _pano_w
 		# No per-frame horizontal tracking — camera is fixed.
 		# Look-ahead is baked into _gameplay_cam_pos once at _ready().
 		# _tracking_active and _look_x are kept for compatibility but unused.
@@ -372,10 +367,8 @@ func _show_start_screen() -> void:
 	_harbor_reveal_active = false
 	_gnd_a_x = 0.0;   _gnd_b_x = VIEW_W
 	_boats_a_x = 0.0; _boats_b_x = VIEW_W
-	_bldg_a_x = 0.0;  _bldg_b_x = VIEW_W
-	_bg_phase = 0;    _bg_timer = 0.0
+	_bldg_a_x = 0.0;  _bldg_b_x = _pano_w
 	boats_layer.visible = false
-	boats_layer.modulate.a = 0.0
 	game_over = false
 	ending_active = false
 	score = 0
@@ -1091,13 +1084,19 @@ func _update_background_parallax() -> void:
 		if sky_a.texture != null:
 			sky_a.scale.x = (VIEW_W * 2.0) / float(sky_a.texture.get_width())
 
-	# ── Buildings: 4% parallax — far city layer, sprites scroll individually ─
+	# ── Merged panorama: city+boats continuous scroll at 4% parallax ─────────
+	# Uses _pano_sprites[0] and [1] loaded from merged.png.
+	# Fallback: if merged.png unavailable, uses env_visual buildings sprites.
 	buildings_layer.position.x = left
 	buildings_layer.position.y = top + VIEW_H * 0.30 / zoom
-	var ba := buildings_layer.get_node_or_null("RealBG_L2_FarBuildingsLayer_0") as Sprite2D
-	var bb := buildings_layer.get_node_or_null("RealBG_L2_FarBuildingsLayer_1") as Sprite2D
-	if ba: ba.position.x = _bldg_a_x
-	if bb: bb.position.x = _bldg_b_x
+	if _pano_sprites.size() >= 2:
+		_pano_sprites[0].position.x = _bldg_a_x
+		_pano_sprites[1].position.x = _bldg_b_x
+	else:
+		var ba := buildings_layer.get_node_or_null("RealBG_L2_FarBuildingsLayer_0") as Sprite2D
+		var bb := buildings_layer.get_node_or_null("RealBG_L2_FarBuildingsLayer_1") as Sprite2D
+		if ba: ba.position.x = _bldg_a_x
+		if bb: bb.position.x = _bldg_b_x
 
 	# ── Boats-mid: CYCLE — shown only during phase 1 of the bg cycle.
 	# When visible, positioned at 30% from top (same level as buildings) so
@@ -1266,26 +1265,44 @@ func _animate_boats(delta: float) -> void:
 		boat.position.y = base_y + sin(_boat_times[i] * TAU / 2.6) * 2.8
 
 
-func _trigger_bg_cycle() -> void:
-	# Kill any active crossfade tween before starting a new one.
-	if _bg_tween != null and _bg_tween.is_valid():
-		_bg_tween.kill()
-	_bg_tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+func _build_merged_panorama() -> void:
+	## Load merged.png (buildings+boats panorama) and replace the buildings layer
+	## sprites with two side-by-side copies of the panorama for seamless scrolling.
+	## The panorama is 2203×253px. Scale it so height = 260 world units (fills harbor zone).
+	var tex := load(L2_MANIFEST.BG_MERGED) as Texture2D
+	if tex == null:
+		push_warning("[L2 pano] merged.png not found — keeping buildings from env_visual")
+		return
 
-	if _bg_phase == 1:
-		# Buildings view → Boats closeup: fade boats IN over buildings.
-		# Boats layer is positioned in _update_background_parallax() when visible.
-		boats_layer.visible = true
-		boats_layer.modulate.a = 0.0
-		_bg_tween.tween_property(boats_layer, "modulate:a", 1.0, BG_CYCLE_FADE) \
-			.set_trans(Tween.TRANS_SINE)
-		print("[L2 bg] cycle → boats closeup")
-	else:
-		# Boats closeup → Buildings view: fade boats OUT.
-		_bg_tween.tween_property(boats_layer, "modulate:a", 0.0, BG_CYCLE_FADE) \
-			.set_trans(Tween.TRANS_SINE)
-		_bg_tween.tween_callback(func() -> void: boats_layer.visible = false)
-		print("[L2 bg] cycle → buildings view")
+	# Remove env_visual sprites from buildings layer (they loaded bg_harbor_buildings.png).
+	for child in buildings_layer.get_children():
+		child.queue_free()
+
+	# Scale uniformly so the panorama is 260 world units tall.
+	var s := 260.0 / float(tex.get_height())
+	_pano_w = float(tex.get_width()) * s   # panorama world width per copy
+	_bldg_a_x = 0.0
+	_bldg_b_x = _pano_w   # second copy starts where first ends
+
+	# Top-fade shader to blend panorama top into the sky seamlessly.
+	var fade_sh := load("res://assets/level2/marsa/shaders/bg_top_fade.gdshader") as Shader
+
+	for i in 2:
+		var spr := Sprite2D.new()
+		spr.name = "Pano_%d" % i
+		spr.texture = tex
+		spr.centered = false
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(float(i) * _pano_w, 0.0)
+		if fade_sh != null:
+			var mat := ShaderMaterial.new()
+			mat.shader = fade_sh
+			mat.set_shader_parameter("fade_px", 40.0)
+			spr.material = mat
+		buildings_layer.add_child(spr)
+		_pano_sprites.append(spr)
+
+	print("[L2 pano] merged panorama ready: pano_w=%.0f world_units" % _pano_w)
 
 
 func _build_pier() -> void:

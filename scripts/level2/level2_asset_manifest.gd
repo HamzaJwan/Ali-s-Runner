@@ -42,6 +42,7 @@ const BG_SEA       := ROOT_BG + "bg_sea_breakwater.png"
 const BG_BUILDINGS := ROOT_BG + "bg_harbor_buildings.png"
 const BG_BOATS     := ROOT_BG + "mg_boats_mid.png"
 const BG_PIER      := ROOT_BG + "fg_pier_ground.png"
+const BG_MERGED    := ROOT_BG + "merged.png"   # panorama: buildings+boats side-by-side
 
 # ── Obstacles ───────────────────────────────────────────────────────────────
 const OBS_CONCRETE := ROOT_OBS + "obs_concrete_block_01.png"
