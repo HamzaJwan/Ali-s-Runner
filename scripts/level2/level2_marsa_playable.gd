@@ -367,7 +367,7 @@ func _show_start_screen() -> void:
 	_harbor_reveal_active = false
 	_gnd_a_x = 0.0;   _gnd_b_x = VIEW_W
 	_boats_a_x = 0.0; _boats_b_x = VIEW_W
-	_bldg_a_x = 0.0;  _bldg_b_x = _pano_w
+	_bldg_a_x = 0.0;  _bldg_b_x = maxf(_pano_w, VIEW_W)
 	boats_layer.visible = false
 	game_over = false
 	ending_active = false
@@ -1266,26 +1266,36 @@ func _animate_boats(delta: float) -> void:
 
 
 func _build_merged_panorama() -> void:
-	## Load merged.png (buildings+boats panorama) and replace the buildings layer
-	## sprites with two side-by-side copies of the panorama for seamless scrolling.
-	## The panorama is 2203×253px. Scale it so height = 260 world units (fills harbor zone).
+	## Load merged.png and set up TWO overlapping copies with edge-fade shader.
+	## The fade on left+right edges of each copy blends them at the join point,
+	## eliminating the visible seam in the loop.
+	##
+	## Scale: height → 300 world units gives width ≈ IMAGE_W/IMAGE_H × 300.
+	## For 2172×724: width ≈ 300 × (2172/724) = 900 world units (covers viewport).
+	## Overlap: 65 world units — the copies overlap by this amount at the join.
+	##   Fade in texture pixels = overlap / scale ≈ 65 / 0.414 ≈ 157 px per edge.
 	var tex := load(L2_MANIFEST.BG_MERGED) as Texture2D
 	if tex == null:
 		push_warning("[L2 pano] merged.png not found — keeping buildings from env_visual")
 		return
 
-	# Remove env_visual sprites from buildings layer (they loaded bg_harbor_buildings.png).
 	for child in buildings_layer.get_children():
 		child.queue_free()
 
-	# Scale uniformly so the panorama is 260 world units tall.
-	var s := 260.0 / float(tex.get_height())
-	_pano_w = float(tex.get_width()) * s   # panorama world width per copy
-	_bldg_a_x = 0.0
-	_bldg_b_x = _pano_w   # second copy starts where first ends
+	# Scale so height = 300 world units (width follows aspect ratio).
+	var s := 300.0 / float(tex.get_height())
+	_pano_w = float(tex.get_width()) * s    # full world width of one copy
 
-	# Top-fade shader to blend panorama top into the sky seamlessly.
-	var fade_sh := load("res://assets/level2/marsa/shaders/bg_top_fade.gdshader") as Shader
+	# Overlap zone where copy A fades out and copy B fades in.
+	const PANO_OVERLAP := 65.0              # world units of cross-fade at join
+	var pano_step := _pano_w - PANO_OVERLAP # effective spacing between copies
+
+	_bldg_a_x = 0.0
+	_bldg_b_x = pano_step                   # copy B already overlapping copy A's end
+
+	# Edge+top fade shader — hides seam between copies.
+	var fade_sh := load("res://assets/level2/marsa/shaders/pano_edge_fade.gdshader") as Shader
+	var fade_px := PANO_OVERLAP / s         # convert overlap world units → texture pixels
 
 	for i in 2:
 		var spr := Sprite2D.new()
@@ -1293,16 +1303,22 @@ func _build_merged_panorama() -> void:
 		spr.texture = tex
 		spr.centered = false
 		spr.scale = Vector2(s, s)
-		spr.position = Vector2(float(i) * _pano_w, 0.0)
+		spr.position = Vector2(float(i) * pano_step, 0.0)
 		if fade_sh != null:
 			var mat := ShaderMaterial.new()
 			mat.shader = fade_sh
-			mat.set_shader_parameter("fade_px", 40.0)
+			mat.set_shader_parameter("fade_left",  fade_px)
+			mat.set_shader_parameter("fade_right", fade_px)
+			mat.set_shader_parameter("fade_top",   45.0)
 			spr.material = mat
 		buildings_layer.add_child(spr)
 		_pano_sprites.append(spr)
 
-	print("[L2 pano] merged panorama ready: pano_w=%.0f world_units" % _pano_w)
+	# Store pano_step for the wrap logic (it uses pano_w - overlap, not pano_w).
+	_pano_w = pano_step   # overwrite with effective step so wrap logic is simple
+
+	print("[L2 pano] loaded: scale=%.3f w=%.0f overlap=%.0f fade_px=%.0f" %
+		[s, float(tex.get_width()) * s, PANO_OVERLAP, fade_px])
 
 
 func _build_pier() -> void:
