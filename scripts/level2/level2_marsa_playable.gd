@@ -297,9 +297,8 @@ func _process(delta: float) -> void:
 		if _gnd_a_x + VIEW_W <= 0: _gnd_a_x = _gnd_b_x + VIEW_W
 		if _gnd_b_x + VIEW_W <= 0: _gnd_b_x = _gnd_a_x + VIEW_W
 
-		_boats_a_x -= boat_move; _boats_b_x -= boat_move
-		if _boats_a_x + VIEW_W <= 0: _boats_a_x = _boats_b_x + VIEW_W
-		if _boats_b_x + VIEW_W <= 0: _boats_b_x = _boats_a_x + VIEW_W
+		# boats_mid layer disabled — no boats parallax scroll needed
+		# _boats_a_x / _boats_b_x kept for future use but not updated
 
 		_bldg_a_x -= bldg_move;  _bldg_b_x -= bldg_move
 		if _bldg_a_x + VIEW_W <= 0: _bldg_a_x = _bldg_b_x + VIEW_W
@@ -1058,8 +1057,17 @@ func _update_background_parallax() -> void:
 	# Scroll-based drift is always safe — layers never go off-screen.
 	var scroll := cam_x - _init_cam_x
 
-	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
+	# ── Sky: camera-fixed. Use 2× width so it covers the wider field-of-view
+	# during the harbor reveal (zoom=0.88) without exposing a gray right edge.
 	sky_layer.position = Vector2(left, top)
+	var sky_a := sky_layer.get_node_or_null("RealBG_Sky") as Sprite2D
+	if sky_a != null:
+		# Always keep local x at 0 so the sky starts at the camera left edge.
+		sky_a.position.x = 0
+		# Scale x to cover 2× viewport width so the sky always fills the screen
+		# regardless of reveal zoom level (0.88 → 1.28 range).
+		if sky_a.texture != null:
+			sky_a.scale.x = (VIEW_W * 2.0) / float(sky_a.texture.get_width())
 
 	# ── Buildings: 4% parallax — far city layer, sprites scroll individually ─
 	buildings_layer.position.x = left
@@ -1069,14 +1077,11 @@ func _update_background_parallax() -> void:
 	if ba: ba.position.x = _bldg_a_x
 	if bb: bb.position.x = _bldg_b_x
 
-	# ── Boats-mid: 12% parallax — sea/harbour mid layer, z=-12 ─────────────
-	boats_layer.visible = true
-	boats_layer.position.x = left
-	boats_layer.position.y = top + VIEW_H * 0.34 / zoom
-	var boa := boats_layer.get_node_or_null("RealBG_L2_BoatsMidLayer_0") as Sprite2D
-	var bob := boats_layer.get_node_or_null("RealBG_L2_BoatsMidLayer_1") as Sprite2D
-	if boa: boa.position.x = _boats_a_x
-	if bob: bob.position.x = _boats_b_x
+	# ── Boats-mid: DISABLED — mg_boats_mid.png is 233px tall which at gameplay zoom
+	# covers ~50% of screen height, completely hiding the buildings layer.
+	# The bg_harbor_buildings.png photograph already shows boats naturally.
+	# Re-enable only if a smaller or transparent-channel boats layer is available.
+	boats_layer.visible = false
 
 	# ── Pier/ground: 60% parallax — closest layer, strongest motion cue ─────
 	# Ground scrolling is the primary "you are running" signal (same as Level 1).
