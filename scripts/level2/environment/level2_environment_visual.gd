@@ -35,10 +35,9 @@ const LAYER_Z: Dictionary = {
 	"L2_ForegroundPierLayer": -5,
 }
 
-## bg_sea_breakwater is still skipped (too tall, wrong colour register for current stack).
-## mg_boats_mid is now handled by level2_marsa_playable.gd via sea_layer.position
-## — it drifts slowly and is positioned at the 48% sea band.  Hidden here so the
-## env_visual setup does not double-apply it.
+## bg_sea_breakwater: still skipped — too tall and wrong colour register for this stack.
+## mg_boats_mid: loaded here for texture caching; its position/drift is driven every
+## frame by level2_marsa_playable._update_background_parallax() via boats_layer.
 const SKIPPED_LAYERS := ["L2_SeaBreakwaterLayer"]
 
 var _loaded_count := 0

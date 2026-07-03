@@ -966,14 +966,15 @@ func _update_background_parallax() -> void:
 	# ── Sky: fully camera-fixed ───────────────────────────────────────────────
 	sky_layer.position = Vector2(left, top)
 
-	# Sea layer: boats_mid plate drifts slowly left to give the harbour a living feel.
+	# Boats-mid plate: drifts slowly left to give the harbour a living sea feel.
 	# Two side-by-side copies cover 2×VIEW_W; at 1.8 px/s the copy-join enters
 	# the viewport only after ~98 s, well beyond a typical run.
-	# The sea layer sits at 48% from screen top — the water band between the
-	# harbour buildings (30%) and the pier wall (72%).
-	sea_layer.visible = true
-	sea_layer.position.x = left - _sea_drift_x
-	sea_layer.position.y = top + VIEW_H * 0.48 / zoom
+	# Positioned at 38% from screen top — the sea band between buildings (30%)
+	# and the pier wall (72%).  z=-12 renders behind pier (z=-5) and in front
+	# of buildings (z=-18), so boats appear to float in the harbour.
+	boats_layer.visible = true
+	boats_layer.position.x = left - _sea_drift_x
+	boats_layer.position.y = top + VIEW_H * 0.38 / zoom
 
 	# ── Buildings: fixed X, 30% down — harbor skyline behind the pier ────────
 	# Current opaque harbor plate is not tileable; horizontal drift exposes its seam.
