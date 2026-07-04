@@ -66,7 +66,30 @@
 			text-align: center;
 		}
 		#portrait-gate { z-index: 10001; background: #111; }
-		#portrait-gate .icon { font-size: 68px; line-height: 1; }
+		.rotate-icon { display: flex; align-items: center; gap: 14px; direction: ltr; }
+		.rotate-icon .phone {
+			display: block;
+			border: 4px solid #f5c542;
+			border-radius: 7px;
+			background: rgba(245, 197, 66, 0.12);
+		}
+		.rotate-icon .portrait-phone { width: 34px; height: 58px; }
+		.rotate-icon .landscape-phone { width: 58px; height: 34px; }
+		.rotate-icon .arrow {
+			position: relative;
+			width: 38px;
+			height: 4px;
+			background: #f5c542;
+		}
+		.rotate-icon .arrow::after {
+			content: "";
+			position: absolute;
+			right: -2px;
+			top: -7px;
+			border-top: 9px solid transparent;
+			border-bottom: 9px solid transparent;
+			border-left: 12px solid #f5c542;
+		}
 		#portrait-gate h2, #start-overlay h1 { margin: 0; color: #f5c542; }
 		#portrait-gate h2 { font-size: clamp(24px, 7vw, 34px); }
 		#portrait-gate p, #start-overlay p { margin: 0; opacity: 0.76; }
@@ -132,7 +155,11 @@
 	</div>
 
 	<div id="portrait-gate" role="dialog" aria-modal="true">
-		<div class="icon" aria-hidden="true">📱↻</div>
+		<div class="rotate-icon" aria-hidden="true">
+			<span class="phone portrait-phone"></span>
+			<span class="arrow"></span>
+			<span class="phone landscape-phone"></span>
+		</div>
 		<h2>لف الهاتف للعب</h2>
 		<p>اللعبة تعمل بالوضع الأفقي فقط</p>
 	</div>
@@ -159,7 +186,6 @@
 		const portraitGate = document.getElementById('portrait-gate');
 		const startOverlay = document.getElementById('start-overlay');
 		const startButton = document.getElementById('btn-start');
-		const mobileQuery = window.matchMedia('(pointer: coarse)');
 		let engineStarted = false;
 		let engineStarting = false;
 		let statusMode = '';
@@ -170,7 +196,10 @@
 		}
 
 		function isMobileDevice() {
-			return mobileQuery.matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+			const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+			const touchTablet = (navigator.maxTouchPoints || 0) > 1
+				&& Math.min(screen.width || 9999, screen.height || 9999) <= 900;
+			return uaMobile || touchTablet;
 		}
 
 		function isPortrait() {

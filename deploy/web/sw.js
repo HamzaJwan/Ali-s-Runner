@@ -1,6 +1,6 @@
 'use strict';
 
-const COMMIT_HASH = '829fc55';
+const COMMIT_HASH = 'mobile-gate-hotfix-20260704';
 const CACHE = 'khutuat-v' + COMMIT_HASH;
 const CORE_ASSETS = [
   '/index.js',

@@ -11,22 +11,19 @@ extends CanvasLayer
 ## Set false to disable globally (e.g. for a headless CI run or specific build).
 const ENABLE := true
 
-## Dimensions that classify "this looks like a phone or tablet."
-## Values are CSS/logical pixels, not device pixels.
-const MIN_MOBILE_SHORT_SIDE := 300    # minimum short side (width in portrait)
-const MAX_MOBILE_LONG_SIDE  := 1400   # maximum long side (height in portrait)
-
 ## How often we re-check viewport size (seconds). 0.25 is fast enough to feel instant.
 const CHECK_INTERVAL := 0.25
 
 var _panel: Control   = null
 var _check_timer: float = 0.0
 var _we_paused: bool = false     # true only when WE issued get_tree().paused = true
+var _is_mobile_runtime := false
 
 
 func _ready() -> void:
 	layer = 100                              # render above every CanvasLayer in the game
 	process_mode = Node.PROCESS_MODE_ALWAYS  # keep running even when game tree is paused
+	_is_mobile_runtime = _detect_mobile_runtime()
 	_build_overlay()
 	_check_orientation()                     # evaluate immediately on scene load
 
@@ -44,6 +41,9 @@ func _check_orientation() -> void:
 	if not ENABLE:
 		_apply(false)
 		return
+	if not _is_mobile_runtime:
+		_apply(false)
+		return
 
 	var vp := get_viewport()
 	if vp == null:
@@ -55,12 +55,27 @@ func _check_orientation() -> void:
 		return
 
 	var is_portrait   := h > w
-	var short_side    := minf(w, h)
-	var long_side     := maxf(w, h)
-	# Only trigger for devices whose dimensions match a phone or tablet.
-	# Desktop monitors are typically taller/wider than MAX_MOBILE_LONG_SIDE.
-	var looks_mobile  := short_side >= MIN_MOBILE_SHORT_SIDE and long_side <= MAX_MOBILE_LONG_SIDE
-	_apply(is_portrait and looks_mobile)
+	_apply(is_portrait)
+
+
+func _detect_mobile_runtime() -> bool:
+	if OS.has_feature("mobile") and not OS.has_feature("web"):
+		return true
+	if not OS.has_feature("web"):
+		return false
+
+	# Window dimensions alone misclassify narrow desktop browser windows as phones.
+	# UA covers Android/iPhone; touch + physical screen size covers modern iPad UA.
+	var detected: Variant = JavaScriptBridge.eval("""
+		(function () {
+			var ua = navigator.userAgent || '';
+			var uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+			var touchTablet = (navigator.maxTouchPoints || 0) > 1 &&
+				Math.min(screen.width || 9999, screen.height || 9999) <= 900;
+			return uaMobile || touchTablet;
+		})()
+	""", true)
+	return bool(detected)
 
 
 func _apply(should_block: bool) -> void:
@@ -146,6 +161,7 @@ func _build_overlay() -> void:
 func _add_phone_icon(parent: Control) -> void:
 	var hbox := HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.layout_direction = Control.LAYOUT_DIRECTION_LTR
 	hbox.add_theme_constant_override("separation", 16)
 	parent.add_child(hbox)
 
@@ -155,12 +171,22 @@ func _add_phone_icon(parent: Control) -> void:
 	phone.custom_minimum_size = Vector2(28, 52)
 	hbox.add_child(phone)
 
-	# Rotation arrows (two labels)
-	var arrow := Label.new()
-	arrow.text = "↔"
-	arrow.add_theme_font_size_override("font_size", 36)
-	arrow.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+	# Draw the arrow from shapes so it never depends on a font glyph.
+	var arrow := Control.new()
+	arrow.custom_minimum_size = Vector2(42, 24)
 	hbox.add_child(arrow)
+
+	var arrow_bar := ColorRect.new()
+	arrow_bar.color = Color(1.0, 0.85, 0.3, 1.0)
+	arrow_bar.position = Vector2(3, 10)
+	arrow_bar.size = Vector2(28, 4)
+	arrow.add_child(arrow_bar)
+
+	var arrow_head := Polygon2D.new()
+	arrow_head.color = Color(1.0, 0.85, 0.3, 1.0)
+	arrow_head.position = Vector2(30, 5)
+	arrow_head.polygon = PackedVector2Array([Vector2.ZERO, Vector2(10, 7), Vector2(0, 14)])
+	arrow.add_child(arrow_head)
 
 	# Landscape phone rectangle
 	var phone2 := ColorRect.new()
