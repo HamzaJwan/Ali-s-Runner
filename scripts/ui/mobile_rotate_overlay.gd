@@ -65,14 +65,12 @@ func _detect_mobile_runtime() -> bool:
 		return false
 
 	# Window dimensions alone misclassify narrow desktop browser windows as phones.
-	# UA covers Android/iPhone; touch + physical screen size covers modern iPad UA.
+	# Touch capability is not a safe discriminator: touch-enabled Windows laptops
+	# report it too. Android tablets and iPads are already covered by their UA.
 	var detected: Variant = JavaScriptBridge.eval("""
 		(function () {
 			var ua = navigator.userAgent || '';
-			var uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-			var touchTablet = (navigator.maxTouchPoints || 0) > 1 &&
-				Math.min(screen.width || 9999, screen.height || 9999) <= 900;
-			return uaMobile || touchTablet;
+			return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
 		})()
 	""", true)
 	return bool(detected)

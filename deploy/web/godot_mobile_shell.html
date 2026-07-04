@@ -197,9 +197,7 @@
 
 		function isMobileDevice() {
 			const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
-			const touchTablet = (navigator.maxTouchPoints || 0) > 1
-				&& Math.min(screen.width || 9999, screen.height || 9999) <= 900;
-			return uaMobile || touchTablet;
+			return uaMobile;
 		}
 
 		function isPortrait() {
