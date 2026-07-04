@@ -21,6 +21,22 @@ try {
         throw "Godot reported success but did not create $indexPath"
     }
 
+    $webRoot = Join-Path $repoRoot "builds\web_rc"
+    $webExtras = @(
+        @{ Source = "deploy\web\manifest.webmanifest"; Destination = "manifest.webmanifest" },
+        @{ Source = "deploy\web\sw.js"; Destination = "sw.js" },
+        @{ Source = "deploy\web\icon-192.png"; Destination = "icon-192.png" },
+        @{ Source = "deploy\web\icon-512.png"; Destination = "icon-512.png" },
+        @{ Source = "assets\fonts\Cairo-Regular.ttf"; Destination = "Cairo-Regular.ttf" }
+    )
+    foreach ($extra in $webExtras) {
+        $source = Join-Path $repoRoot $extra.Source
+        if (-not (Test-Path -LiteralPath $source)) {
+            throw "Required Web shell asset is missing: $source"
+        }
+        Copy-Item -LiteralPath $source -Destination (Join-Path $webRoot $extra.Destination) -Force
+    }
+
     docker compose -f docker-compose.web.yml config --quiet
     if ($LASTEXITCODE -ne 0) {
         throw "Docker Compose validation failed with exit code $LASTEXITCODE"

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+	<meta name="theme-color" content="#111111">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<link rel="manifest" href="manifest.webmanifest">
+	<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+	<link rel="apple-touch-icon" href="icon-192.png">
+	<title>$GODOT_PROJECT_NAME</title>
+	<style>
+		@font-face {
+			font-family: "Cairo Web";
+			src: url("Cairo-Regular.ttf") format("truetype");
+			font-display: swap;
+		}
+
+		:root { --app-h: 100dvh; }
+		*, *::before, *::after { box-sizing: border-box; }
+		html, body {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			overflow: hidden;
+			background: #111;
+			touch-action: none;
+			overscroll-behavior: none;
+		}
+
+		#shell {
+			position: fixed;
+			inset: 0;
+			width: 100vw;
+			height: var(--app-h);
+			background: #111;
+			overflow: hidden;
+		}
+
+		#canvas {
+			display: block;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			border: 0;
+			background: #111;
+		}
+		#canvas:focus { outline: none; }
+
+		#portrait-gate, #start-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			width: 100vw;
+			height: var(--app-h);
+			padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+				max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 20px;
+			color: #fff;
+			font-family: "Cairo Web", "Noto Sans Arabic", sans-serif;
+			text-align: center;
+		}
+		#portrait-gate { z-index: 10001; background: #111; }
+		#portrait-gate .icon { font-size: 68px; line-height: 1; }
+		#portrait-gate h2, #start-overlay h1 { margin: 0; color: #f5c542; }
+		#portrait-gate h2 { font-size: clamp(24px, 7vw, 34px); }
+		#portrait-gate p, #start-overlay p { margin: 0; opacity: 0.76; }
+
+		#start-overlay { z-index: 10000; background: rgba(8, 8, 8, 0.94); }
+		#start-overlay h1 { font-size: clamp(30px, 6vw, 44px); }
+		#start-overlay p { max-width: 360px; font-size: 15px; }
+		#btn-start {
+			min-width: 220px;
+			padding: 14px 36px;
+			border: 0;
+			border-radius: 40px;
+			background: #f5c542;
+			box-shadow: 0 4px 20px rgba(245, 197, 66, 0.42);
+			color: #111;
+			font: 700 20px "Cairo Web", "Noto Sans Arabic", sans-serif;
+			cursor: pointer;
+		}
+		#btn-start:active { transform: scale(0.97); }
+		#btn-start:disabled { opacity: 0.65; cursor: wait; }
+		#fallback-tip { font-size: 12px !important; opacity: 0.52 !important; }
+
+		#status {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			visibility: hidden;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			background: #242424;
+			color: #fff;
+			font-family: "Cairo Web", sans-serif;
+			z-index: 9000;
+		}
+		#status-splash { max-width: 100%; max-height: 100%; margin: auto; }
+		#status-splash.show-image--false { display: none; }
+		#status-splash.fullsize--true { width: 100%; height: 100%; object-fit: contain; }
+		#status-splash.use-filter--false { image-rendering: pixelated; }
+		#status-progress { display: none; width: 50%; margin-bottom: 10%; }
+		#status-notice {
+			display: none;
+			max-width: 720px;
+			margin: 2rem;
+			padding: 1rem;
+			border: 1px solid #9b3943;
+			border-radius: 0.5rem;
+			background: #5b3943;
+			line-height: 1.5;
+			text-align: center;
+		}
+	</style>
+	$GODOT_HEAD_INCLUDE
+</head>
+<body>
+	<div id="shell">
+		<canvas id="canvas">متصفحك لا يدعم تشغيل اللعبة.</canvas>
+		<div id="status">
+			<img id="status-splash" class="$GODOT_SPLASH_CLASSES" src="$GODOT_SPLASH" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
+	</div>
+
+	<div id="portrait-gate" role="dialog" aria-modal="true">
+		<div class="icon" aria-hidden="true">📱↻</div>
+		<h2>لف الهاتف للعب</h2>
+		<p>اللعبة تعمل بالوضع الأفقي فقط</p>
+	</div>
+
+	<div id="start-overlay" role="dialog" aria-modal="true">
+		<h1>خطوات الخير</h1>
+		<p>لأفضل تجربة، اضغط لبدء اللعبة بملء الشاشة</p>
+		<button id="btn-start" type="button">ابدأ اللعبة ←</button>
+		<p id="fallback-tip">إذا لم يعمل ملء الشاشة، أضف اللعبة إلى شاشتك الرئيسية</p>
+	</div>
+
+	<noscript>يجب تفعيل JavaScript لتشغيل اللعبة.</noscript>
+	<script src="$GODOT_URL"></script>
+	<script>
+		'use strict';
+
+		const GODOT_CONFIG = $GODOT_CONFIG;
+		const GODOT_THREADS_ENABLED = false;
+		const engine = new Engine(GODOT_CONFIG);
+		const canvas = document.getElementById('canvas');
+		const statusOverlay = document.getElementById('status');
+		const statusProgress = document.getElementById('status-progress');
+		const statusNotice = document.getElementById('status-notice');
+		const portraitGate = document.getElementById('portrait-gate');
+		const startOverlay = document.getElementById('start-overlay');
+		const startButton = document.getElementById('btn-start');
+		const mobileQuery = window.matchMedia('(pointer: coarse)');
+		let engineStarted = false;
+		let engineStarting = false;
+		let statusMode = '';
+
+		function applyViewportHeight() {
+			const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+			document.documentElement.style.setProperty('--app-h', height + 'px');
+		}
+
+		function isMobileDevice() {
+			return mobileQuery.matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+		}
+
+		function isPortrait() {
+			return window.innerHeight > window.innerWidth;
+		}
+
+		function setStatusMode(mode) {
+			if (statusMode === mode) return;
+			if (mode === 'hidden') {
+				statusOverlay.style.display = 'none';
+				statusMode = mode;
+				return;
+			}
+			statusOverlay.style.display = 'flex';
+			statusOverlay.style.visibility = 'visible';
+			statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+			statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+			statusMode = mode;
+		}
+
+		function displayFailureNotice(error) {
+			console.error(error);
+			statusNotice.textContent = error instanceof Error ? error.message : String(error);
+			setStatusMode('notice');
+			engineStarting = false;
+		}
+
+		async function bootGodot() {
+			if (engineStarted || engineStarting) return;
+			engineStarting = true;
+			const missing = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+			if (missing.length) {
+				displayFailureNotice('تعذر تشغيل اللعبة في هذا المتصفح:\n' + missing.join('\n'));
+				return;
+			}
+			setStatusMode('progress');
+			try {
+				await engine.startGame({
+					onProgress: function(current, total) {
+						if (current > 0 && total > 0) {
+							statusProgress.value = current;
+							statusProgress.max = total;
+						} else {
+							statusProgress.removeAttribute('value');
+							statusProgress.removeAttribute('max');
+						}
+					}
+				});
+				engineStarted = true;
+				setStatusMode('hidden');
+				canvas.focus();
+			} catch (error) {
+				displayFailureNotice(error);
+			}
+		}
+
+		function checkOrientation() {
+			applyViewportHeight();
+			if (!isMobileDevice()) {
+				portraitGate.style.display = 'none';
+				startOverlay.style.display = 'none';
+				bootGodot();
+				return;
+			}
+			if (isPortrait()) {
+				portraitGate.style.display = 'flex';
+				startOverlay.style.display = 'none';
+			} else {
+				portraitGate.style.display = 'none';
+				startOverlay.style.display = engineStarted || engineStarting ? 'none' : 'flex';
+			}
+		}
+
+		async function requestImmersiveMode() {
+			const element = document.documentElement;
+			const request = element.requestFullscreen || element.webkitRequestFullscreen
+				|| element.mozRequestFullScreen || element.msRequestFullscreen;
+			if (request) {
+				try {
+					await Promise.resolve(request.call(element, { navigationUI: 'hide' }));
+					console.log('[mobile-web] fullscreen enabled');
+				} catch (error) {
+					console.log('[mobile-web] fullscreen unavailable, continuing:', error);
+				}
+			}
+			if (screen.orientation && screen.orientation.lock) {
+				try {
+					await screen.orientation.lock('landscape');
+				} catch (error) {
+					console.log('[mobile-web] orientation lock unavailable, continuing:', error);
+				}
+			}
+		}
+
+		startButton.addEventListener('click', async function() {
+			startButton.disabled = true;
+			await requestImmersiveMode();
+			startOverlay.style.display = 'none';
+			await bootGodot();
+		});
+
+		applyViewportHeight();
+		checkOrientation();
+		window.addEventListener('resize', checkOrientation);
+		window.addEventListener('orientationchange', function() { setTimeout(checkOrientation, 300); });
+		if (window.visualViewport) window.visualViewport.addEventListener('resize', applyViewportHeight);
+
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', function() {
+				navigator.serviceWorker.register('/sw.js')
+					.then(function(registration) { console.log('[sw] registered', registration.scope); })
+					.catch(function(error) { console.log('[sw] registration failed', error); });
+			});
+		}
+	</script>
+</body>
+</html>
