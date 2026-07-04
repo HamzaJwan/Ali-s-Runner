@@ -1,6 +1,6 @@
 'use strict';
 
-const COMMIT_HASH = 'a97e516-mobile-ux';
+const COMMIT_HASH = '829fc55';
 const CACHE = 'khutuat-v' + COMMIT_HASH;
 const CORE_ASSETS = [
   '/index.js',
